@@ -1,9 +1,7 @@
-// import { Navigation } from "../../layouts/components/navigation/Navigation"
-// import { Footer } from "../../layouts/components/footer/Footer"
+import { Link } from 'react-router-dom'; // Thêm import Link
 import PropTypes from 'prop-types';
 import { Sidebar } from '../../layouts/components/sidebar/Sidebar';
 import './ProductPage.scss';
-
 
 // Product Collection Data
 const productCollection = {
@@ -35,13 +33,13 @@ const productCollection = {
 const ProductItem = ({ product }) => {
   return (
     <div className="col-md-4">
-      <div className="card">
+      <Link to={`/product/${product.id}`} className="card"> {/* Thêm liên kết */}
         <img src={product.image} alt={product.name} className="card-img-top" />
         <div className="card-body">
           <h5 className="card-title">{product.name}</h5>
           <p className="card-text">${product.price}</p>
         </div>
-      </div>
+      </Link>
     </div>
   );
 };
@@ -55,7 +53,6 @@ ProductItem.propTypes = {
     image: PropTypes.string.isRequired,
   }).isRequired,
 };
-
 
 // Product Collection Component
 const Product = () => {
@@ -71,7 +68,7 @@ const Product = () => {
   );
 };
 
- const ProductPage = () => {
+const ProductPage = () => {
   return (
     <>
       {/* <Navigation /> */}
@@ -100,8 +97,6 @@ const Product = () => {
         </div>
       </div>
 
-      
-
       {/* Banner Section */}
       <div className="banner-container">
         <img src="https://owen.vn/media/catalog/category/veston_2.jpg" className="banner-image" alt="Áo Vest Nam" />
@@ -115,22 +110,19 @@ const Product = () => {
         </div>
       </div>
 
-      
-    <div className="columns">
-      {/* Sidebar */}
-      <Sidebar />
+      <div className="columns">
+        {/* Sidebar */}
+        <Sidebar />
 
-      {/* Main Product Section */}
-      <div className="row-9 main">
-        <Product />
+        {/* Main Product Section */}
+        <div className="row-9 main">
+          <Product />
+        </div>
       </div>
-    </div>
-
 
       {/* <Footer /> */}
     </>
   )
 }
-
 
 export default ProductPage;
