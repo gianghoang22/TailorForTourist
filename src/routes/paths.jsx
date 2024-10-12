@@ -34,7 +34,7 @@ export const routes = [
         element: <ProductPage />
     },
     {
-        path: "/products/:productId", // Thêm đường dẫn cho ProductDetail với ID sản phẩm
+        path: "/products/:productId", 
         element: <ProductDetail />
     },
     {

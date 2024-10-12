@@ -1,53 +1,45 @@
-import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import './ProductDetail.scss';
-
-// Mock Product Data (Thay thế bằng dữ liệu thực tế từ API của bạn)
-const products = [
-  {
-    id: 1,
-    name: "Veston",
-    price: 200,
-    image: "https://owen.cdn.vccloud.vn/media/catalog/product/cache/01755127bd64f5dde3182fd2f139143a/v/e/ves231494._40.jpg",
-    description: "Stylish and elegant vest suitable for formal occasions.",
-  },
-  {
-    id: 2,
-    name: "Polo Shirt",
-    price: 150,
-    image: "https://owen.cdn.vccloud.vn/media/catalog/product/cache/01755127bd64f5dde3182fd2f139143a/v/e/ves231494._40.jpg",
-    description: "Comfortable polo shirt for casual wear.",
-  },
-  {
-    id: 3,
-    name: "Shirts",
-    price: 100,
-    image: "https://owen.cdn.vccloud.vn/media/catalog/product/cache/01755127bd64f5dde3182fd2f139143a/v/e/ves231494._40.jpg",
-    description: "Classic shirts made from high-quality fabric.",
-  },
-  // Thêm sản phẩm khác nếu cần
-];
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
 
 const ProductDetail = () => {
-  const { productId } = useParams(); // Lấy ID sản phẩm từ URL
-  const navigate = useNavigate();
+  const { id } = useParams(); // Lấy productID từ URL
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Tìm sản phẩm dựa trên ID
-  const product = products.find(item => item.id === parseInt(productId));
+  useEffect(() => {
+    const fetchProductDetail = async () => {
+      try {
+        const response = await axios.get(`https://localhost:7244/api/product/${id}`); // Gọi API để lấy thông tin sản phẩm
+        setProduct(response.data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (!product) {
-    return <div>Product not found</div>; // Hiển thị thông báo nếu không tìm thấy sản phẩm
-  }
+    fetchProductDetail();
+  }, [id]); // Chạy lại khi id thay đổi
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className="product-detail">
-      <button onClick={() => navigate('/products')} className="back-button">Back to Products</button>
-      <div className="product-detail__content">
-        <img src={product.image} alt={product.name} className="product-detail__image" />
-        <h1 className="product-detail__title">{product.name}</h1>
-        <p className="product-detail__price">${product.price}</p>
-        <p className="product-detail__description">{product.description}</p>
-      </div>
+    <div>
+      <h1>Product Detail</h1>
+      {product && (
+        <div>
+          <h2>{product.productCode}</h2>
+          <p>Measurement ID: {product.measurementID}</p>
+          <p>Category ID: {product.categoryID}</p>
+          <p>Fabric ID: {product.fabricID}</p>
+          <p>Lining ID: {product.liningID}</p>
+          <p>Order ID: {product.orderID}</p>
+          {/* Hiển thị thêm thông tin chi tiết nếu cần */}
+        </div>
+      )}
     </div>
   );
 };
