@@ -79,6 +79,54 @@
     font-size: 1.1vw;
 }
 
+//product-content
+.all {
+    position: relative;
+    margin: 0 auto;
+    width: 1170px;
+    max-width: 100%;
+}
 
+.clear {
+    clear: both;
+}
+
+
+.product-list-wrap {
+    position: relative;
+    padding-bottom: 30px;
+}
+
+.product-ul {
+    margin-left: -15px;
+    margin-right: -15px;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+}
+
+.page-width-sidebar .product-list-wrap .product-ul > li {
+    width: 25%;
+}
+
+.product-ul>li {
+    display: block;
+    float: left;
+    width: 20%;
+    padding: 15px;
+}
+
+//sidebar
+
+.side-left {
+    width: 20%;
+    float: left;
+    clear: left;
+    padding:0 30px 30px 0;
+
+}
 
 

@@ -10,7 +10,7 @@ const CustomFabric = () => {
       try {
         const response = await fetch('https://localhost:7244/api/Fabrics');
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${respone.status}`);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
         setFabrics(data); // Assuming the response is an array of fabrics

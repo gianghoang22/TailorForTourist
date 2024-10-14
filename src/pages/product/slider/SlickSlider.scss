@@ -1,0 +1,31 @@
+//left gallery
+
+.pd-single-info .left-gallery {
+    float: left;
+    width: 50%;
+    padding-right: 15px;
+    clear: left;
+    min-height: 1px;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.slider-pd-main.slick-dotted {
+    margin-bottom: 0;
+}
+
+.slick-slider .slick-track, .slick-slider .slick-list {
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
+    -ms-transform: translate3d(0, 0, 0);
+    -o-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+}
+.slick-list {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    margin: 0;
+    /* padding: 0; */
+}
+

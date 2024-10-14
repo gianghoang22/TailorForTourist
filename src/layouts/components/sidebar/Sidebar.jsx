@@ -42,10 +42,10 @@ const Sidebar = () => {
         <ul id="meu-widget" className="menu">
           {/* categories */}
           {parentCategories.map(category => (
-            <li key={category.categoryId} className="menu-item menu-item-type-post_type menu-item-object-page menu-item-has-children">
+            <li id='menu-item' key={category.categoryId} className="menu-item menu-item-type-taxonomy menu-item-object-product_cat menu-item-has-children dropdown">
               <a href="#">{category.name}</a>
               {/* sub-menu */}
-              <ul className="sub-menu">
+              <ul id='menu-widget' className="menu">
                 {getSubcategories(category.categoryId).map(subcategory => (
                   <li key={subcategory.categoryId} className="menu-item menu-item-type-post_type menu-item-object-page">
                     <a href="#">{subcategory.name}</a>

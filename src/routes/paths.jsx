@@ -11,9 +11,9 @@ import CustomSuit from "../pages/customSuit/CustomSuit";
 import CustomFabric from "../pages/customSuit/custom/CustomFabric";
 import CustomStyle from "../pages/customSuit/custom/CustomStyle";
 import CustomLining from "../pages/customSuit/custom/CustomLining";
-import OrderList from "../pages/staff/OrderList";
-import BookingList from "../pages/staff/BookingList";
-import ShipmentList from "../pages/staff/ShipmentList";
+import OrderList from "../pages/staff/staffManager/OrderList";
+import BookingList from "../pages/staff/staffManager/BookingList";
+import ShipmentList from "../pages/staff/staffManager/ShipmentList";
 import ProductDetail from "../pages/product/ProductDetail";
 
 export const routes = [

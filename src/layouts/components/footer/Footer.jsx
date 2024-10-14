@@ -17,19 +17,19 @@ export const Footer = () => {
                     <h3 className='ft-tt'>POLICIES</h3>
                     <div className="menu-ft1-container">
                         <ul id='menu-ft1' className='menu'>
-                            <li id='menu-item-59' className='menu-item menu-item-type-post_type menu-item-object-page menu-item-59'>
+                            <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
                                 <a href="#">Term of use</a>
                             </li>
-                            <li id='menu-item-58' className='menu-item menu-item-type-post_type menu-item-object-page menu-item-58'>
+                            <li id='menu-item-58' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
                                 <a href="#">Privacy policy</a>
                             </li>
-                            <li id='menu-item-57' className='menu-item menu-item-type-post_type menu-item-object-page menu-item-57'>
+                            <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
                                 <a href="#">Shipping policy</a>
                             </li>
-                            <li id='menu-item-56' className='menu-item menu-item-type-post_type menu-item-object-page menu-item-56'>
+                            <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
                                 <a href="#">Payment policy</a>
                             </li>
-                            <li id='menu-item-55' className='menu-item menu-item-type-post_type menu-item-object-page menu-item-55'>
+                            <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
                                 <a href="#">Warranty policy</a>
                             </li>
                         </ul>
@@ -41,16 +41,16 @@ export const Footer = () => {
                     <h3 className='ft-tt'>QUESTIONS</h3>
                     <div className="menu-ft2-container">
                         <ul id='menu-ft2' className='menu'>
-                            <li id='menu-item-565' className='menu-item menu-item-type-post_type menu-item-object-page menu-item-565'>
+                            <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
                                 <a href="#">FAQS</a>
                             </li>
-                            <li id='menu-item-571' className='menu-item menu-item-type-post_type menu-item-object-page menu-item-571'>
+                            <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
                                 <a href="#">RESELLER</a>
                             </li>
-                            <li id='menu-item-576' className='menu-item menu-item-type-post_type menu-item-object-page menu-item-576'>
+                            <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
                                 <a href="#">How to order</a>
                             </li>
-                            <li id='menu-item-707' className='menu-item menu-item-type-post_type menu-item-object-page menu-item-707'>
+                            <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
                                 <a href="#">How to measure</a>
                             </li>
                         </ul>
@@ -62,13 +62,13 @@ export const Footer = () => {
                     <h3 className='ft-tt'>EXPERIENCES</h3>
                     <div className="menu-ft3-container">
                         <ul id='menu-ft3' className='menu'>
-                            <li id='menu-item-699' className='menu-item menu-item-type-post_type menu-item-object-page menu-item-59'>
+                            <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
                                 <a href="#">blog</a>
                             </li>
-                            <li id='menu-item-700' className='menu-item menu-item-type-post_type menu-item-object-page menu-item-700'>
+                            <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
                                 <a href="#">tip for custom tailor</a>
                             </li>
-                            <li id='menu-item-3956' className='menu-item menu-item-type-post_type menu-item-object-page menu-item-3956'>
+                            <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
                                 <a href="#">Customer Review</a>
                             </li>
                         </ul>
@@ -127,10 +127,9 @@ export const Footer = () => {
             </article>
         </div>
     </div>
-</div>
 
-<section>
-<div className='footer'>
+
+    <div className='footer'>
         <div className="ft-inner">
             <div className="all">
                 <div id="mona_contact-2" className="Mona_contact">
@@ -173,7 +172,9 @@ export const Footer = () => {
             </div>
         </div> */}
     </div>
-</section>
+
+</div>
+
 </>
   )
 }

@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom'; 
 import PropTypes from 'prop-types';
-import Sidebar from '../../layouts/components/sidebar/Sidebar';
 import axios from 'axios';
 import './ProductPage.scss';
+
+import Sidebar from '../../layouts/components/sidebar/Sidebar';
+import { Footer } from "../../layouts/components/footer/Footer"
+
 
 const ProductItem = ({ product }) => {
   return (
     <div className="col-md-4">
-      <Link to={`/product/${product.productID}`} className="card"> {/* Sử dụng productID từ product */}
+      <Link to={`/product-collection/${product.productID}`} className="card"> {/* Sử dụng productID từ product */}
         <div className="card-body">
           <h5 className="card-title">Product Code: {product.productCode}</h5>
           <p className="card-text">Measurement ID: {product.measurementID}</p>
@@ -139,8 +142,9 @@ const ProductPage = () => {
           </div>
         </div>
       </div>
-      </div>
+    </div>
 
+    <div className="all">
       <div className="page-width-sidebar clear">
         <div className="product-list-wrap">
           <ul className="product-ul">
@@ -151,6 +155,11 @@ const ProductPage = () => {
           <Sidebar />
         </div>
       </div>
+</div>
+
+
+    <Footer />
+      
     </>
   )
 }
