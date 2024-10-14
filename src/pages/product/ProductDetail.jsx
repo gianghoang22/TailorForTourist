@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import './ProductDetail.scss'; // Import SCSS for styling
 
-const ProductDetail = () => {
-  const { id } = useParams(); // Lấy productID từ URL
+const ProductDetailPage = () => {
+  const { id } = useParams(); // Get id from URL
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchProductDetail = async () => {
+    const fetchProduct = async () => {
       try {
-        const response = await axios.get(`https://localhost:7244/api/product/${id}`); // Gọi API để lấy thông tin sản phẩm
+        const response = await axios.get(`https://localhost:7244/api/Product/details/${id}`);
         setProduct(response.data);
       } catch (err) {
         setError(err.message);
@@ -20,28 +21,25 @@ const ProductDetail = () => {
       }
     };
 
-    fetchProductDetail();
-  }, [id]); // Chạy lại khi id thay đổi
+    fetchProduct();
+  }, [id]);
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error}</p>;
+  if (loading) return <p className="loading">Loading...</p>;
+  if (error) return <p className="error">Error: {error}</p>;
+  if (!product) return <p>No product found.</p>;
 
   return (
-    <div>
-      <h1>Product Detail</h1>
-      {product && (
-        <div>
-          <h2>{product.productCode}</h2>
-          <p>Measurement ID: {product.measurementID}</p>
-          <p>Category ID: {product.categoryID}</p>
-          <p>Fabric ID: {product.fabricID}</p>
-          <p>Lining ID: {product.liningID}</p>
-          <p>Order ID: {product.orderID}</p>
-          {/* Hiển thị thêm thông tin chi tiết nếu cần */}
-        </div>
-      )}
+    <div className="product-detail">
+      <h1>{product.productCode}</h1>
+      <img src={product.imageUrl} alt={product.productCode} className="product-image" /> {/* Assume your API returns image URL */}
+      <p>Measurement ID: {product.measurementID}</p>
+      <p>Category ID: {product.categoryID}</p>
+      <p>Fabric ID: {product.fabricID}</p>
+      <p>Lining ID: {product.liningID}</p>
+      <p>Order ID: {product.orderID}</p>
+      <button className="add-to-cart-button">Add to Cart</button>
     </div>
   );
 };
 
-export default ProductDetail;
+export default ProductDetailPage;

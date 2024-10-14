@@ -1,0 +1,86 @@
+
+#header {
+
+    padding: 5px 0;
+    text-align: center;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    z-index: 999;
+    background-color: #fff;
+}
+
+#header>.all {
+    padding-right: 210px;
+}
+
+.all {
+    position: relative;
+    margin: 0 auto;
+    width: 1170px;
+    max-width: 100%;
+}
+
+.logo {
+    width: 210px;
+    float: left;
+}
+
+#header .logo a {
+    display: flex;
+    width: 270px;
+}
+
+#header .logo a img {
+    width: 100%;
+    object-fit: contain;
+}
+
+.logo img {
+    height: 40px;
+    margin-top: -5px;
+    display: block;
+    max-width: 100%;
+}
+
+.customMenu li>a.active:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    bottom: 0;
+    height: 1px;
+    background-color: #a4712a;
+    width: 100%;
+}
+
+.customMenu {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.customMenu li {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.customMenu li>a {
+    display: block;
+    line-height: 20px;
+    padding: 10px;
+    position: relative;
+}
+
+.fa {
+    display: inline-block;
+    font: normal normal normal 14px / 1 FontAwesome;
+    font-size: inherit;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.fa-angle-right:before {
+    content: "\f105";
+}

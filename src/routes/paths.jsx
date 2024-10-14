@@ -5,9 +5,9 @@ import SignIn from "../pages/signIn/signIn";
 import SignUp from "../pages/signUp/signUp";
 import Checkout from "../pages/checkout/Checkout";
 import Fabric from "../pages/fabric/Fabric";
-import ManagerDashboard from "../pages/managerdashboard/ManagerDashboard";
+import ManagerDashboard from "../pages/managerDashboard/ManagerDashboard";
 import StaffDashboard from "../pages/staff/StaffDashboard";
-import CustomSuit from "../pages/customsuit/CustomSuit";
+import CustomSuit from "../pages/customSuit/CustomSuit";
 import CustomFabric from "../pages/customSuit/custom/CustomFabric";
 import CustomStyle from "../pages/customSuit/custom/CustomStyle";
 import CustomLining from "../pages/customSuit/custom/CustomLining";
@@ -30,11 +30,11 @@ export const routes = [
         element: <BookingPage />
     },
     {
-        path: "/products",
+        path: "/product-collection",
         element: <ProductPage />
     },
     {
-        path: "/products/:productId", 
+        path: "/product-collection/:id", 
         element: <ProductDetail />
     },
     {
@@ -79,18 +79,18 @@ export const routes = [
         path: "/custom-suits",
         element: <CustomSuit />,
         children: [
-            {
-                path: "fabric",
-                element: <CustomFabric />
-            },
-            {
-                path: "style",
-                element: <CustomStyle />
-            },
-            {
-                path: "lining",
-                element: <CustomLining />
-            }
+          {
+            path: "fabric", 
+            element: <CustomFabric />
+          },
+          {
+            path: "style",
+            element: <CustomStyle />
+          },
+          {
+            path: "lining",
+            element: <CustomLining />
+          }
         ]
-    }
+      }
 ];

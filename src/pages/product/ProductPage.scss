@@ -79,50 +79,6 @@
     font-size: 1.1vw;
 }
 
-//item
-
-.columns {
-    display: grid;
-    grid-template-columns: 3fr 9fr;
-    gap: 20px;
-  }
-
-  .row-3 {
-    padding: 20px;
-  }
-
-  .row-9 {
-    padding: 20px;
-  }
-  
 
 
-//item
-#amasty-shopby-product-list {
-    margin-bottom: 50px;
-}
-
-#amasty-shopby-product-list .products.wrapper {
-    position: relative;
-}
-
-.page-products .products {
-    margin: 0;
-}
-
-.products-grid .product-items {
-    display: flex;
-    flex-wrap: wrap;
-    margin: 0 -5px !important;
-}
-
-.product-item .product-item-info {
-    position: relative;
-    width: 100% !important;
-}
-
-.product-item .product-item-photo {
-    display: block;
-    position: relative;
-}
 

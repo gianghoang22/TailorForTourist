@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom'; 
 import PropTypes from 'prop-types';
-import { Sidebar } from '../../layouts/components/sidebar/Sidebar';
+import Sidebar from '../../layouts/components/sidebar/Sidebar';
 import axios from 'axios';
 import './ProductPage.scss';
 
@@ -42,24 +42,42 @@ const Product = ({ products }) => {
       <h1>Product Collection</h1>
       <div className="row">
         {products.map((product) => (
-          <ProductItem key={product.id} product={product} />
+          // Use the correct key (productID instead of id)
+          <ProductItem key={product.productID} product={product} />
         ))}
       </div>
     </div>
   );
 };
 
-// PropTypes validation for Product
+ProductItem.propTypes = {
+  product: PropTypes.shape({
+    productID: PropTypes.number.isRequired,
+    productCode: PropTypes.string.isRequired,
+    measurementID: PropTypes.number, 
+    categoryID: PropTypes.number.isRequired,
+    fabricID: PropTypes.number.isRequired,
+    liningID: PropTypes.number.isRequired,
+    orderID: PropTypes.number.isRequired,
+  }).isRequired,
+};
+
+
 Product.propTypes = {
   products: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      name: PropTypes.string.isRequired,
-      price: PropTypes.number.isRequired,
-      image: PropTypes.string.isRequired,
+      productID: PropTypes.number.isRequired,
+      productCode: PropTypes.string.isRequired,
+      measurementID: PropTypes.number, 
+      categoryID: PropTypes.number.isRequired,
+      fabricID: PropTypes.number.isRequired,
+      liningID: PropTypes.number.isRequired,
+      orderID: PropTypes.number.isRequired,
     })
   ).isRequired,
 };
+
+
 
 const ProductPage = () => {
   const [products, setProducts] = useState([]); 
@@ -123,10 +141,14 @@ const ProductPage = () => {
       </div>
       </div>
 
-      <div className="columns">
-        <Sidebar />
-        <div className="row-9 main">
+      <div className="page-width-sidebar clear">
+        <div className="product-list-wrap">
+          <ul className="product-ul">
           <Product products={products} /> 
+          </ul>
+        </div>
+        <div className="side-left">
+          <Sidebar />
         </div>
       </div>
     </>
