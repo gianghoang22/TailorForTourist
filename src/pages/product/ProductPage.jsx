@@ -1,83 +1,113 @@
-// import { Navigation } from "../../layouts/components/navigation/Navigation"
-// import { Footer } from "../../layouts/components/footer/Footer"
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom'; 
 import PropTypes from 'prop-types';
-import { Sidebar } from '../../layouts/components/sidebar/Sidebar';
+import Sidebar from '../../layouts/components/sidebar/Sidebar';
+import axios from 'axios';
 import './ProductPage.scss';
 
-
-// Product Collection Data
-const productCollection = {
-  title: "Product Collection",
-  products: [
-    {
-      id: 1,
-      name: "Veston",
-      price: 200,
-      image: "https://owen.cdn.vccloud.vn/media/catalog/product/cache/01755127bd64f5dde3182fd2f139143a/v/e/ves231494._40.jpg",
-    },
-    {
-      id: 2,
-      name: "Polo Shirt",
-      price: 150,
-      image: "https://owen.cdn.vccloud.vn/media/catalog/product/cache/01755127bd64f5dde3182fd2f139143a/v/e/ves231494._40.jpg",
-    },
-    {
-      id: 3,
-      name: "Shirts",
-      price: 100,
-      image: "https://owen.cdn.vccloud.vn/media/catalog/product/cache/01755127bd64f5dde3182fd2f139143a/v/e/ves231494._40.jpg",
-    },
-    // Add more products here
-  ],
-};
-
-// ProductItem Component
 const ProductItem = ({ product }) => {
   return (
     <div className="col-md-4">
-      <div className="card">
-        <img src={product.image} alt={product.name} className="card-img-top" />
+      <Link to={`/product/${product.productID}`} className="card"> {/* Sử dụng productID từ product */}
         <div className="card-body">
-          <h5 className="card-title">{product.name}</h5>
-          <p className="card-text">${product.price}</p>
+          <h5 className="card-title">Product Code: {product.productCode}</h5>
+          <p className="card-text">Measurement ID: {product.measurementID}</p>
+          <p className="card-text">Category ID: {product.categoryID}</p>
+          <p className="card-text">Fabric ID: {product.fabricID}</p>
+          <p className="card-text">Lining ID: {product.liningID}</p>
+          <p className="card-text">Order ID: {product.orderID}</p>
         </div>
-      </div>
+      </Link>
     </div>
   );
 };
 
-// PropTypes validation for ProductItem
+
+// Cập nhật PropTypes validation
 ProductItem.propTypes = {
   product: PropTypes.shape({
-    id: PropTypes.number.isRequired,
-    name: PropTypes.string.isRequired,
-    price: PropTypes.number.isRequired,
-    image: PropTypes.string.isRequired,
+    productID: PropTypes.number.isRequired,
+    productCode: PropTypes.string.isRequired,
+    measurementID: PropTypes.number.isRequired,
+    categoryID: PropTypes.number.isRequired,
+    fabricID: PropTypes.number.isRequired,
+    liningID: PropTypes.number.isRequired,
+    orderID: PropTypes.number.isRequired,
   }).isRequired,
 };
-
-
 // Product Collection Component
-const Product = () => {
+const Product = ({ products }) => {
   return (
     <div>
-      <h1>{productCollection.title}</h1>
+      <h1>Product Collection</h1>
       <div className="row">
-        {productCollection.products.map((product) => (
-          <ProductItem key={product.id} product={product} />
+        {products.map((product) => (
+          // Use the correct key (productID instead of id)
+          <ProductItem key={product.productID} product={product} />
         ))}
       </div>
     </div>
   );
 };
 
- const ProductPage = () => {
+ProductItem.propTypes = {
+  product: PropTypes.shape({
+    productID: PropTypes.number.isRequired,
+    productCode: PropTypes.string.isRequired,
+    measurementID: PropTypes.number, 
+    categoryID: PropTypes.number.isRequired,
+    fabricID: PropTypes.number.isRequired,
+    liningID: PropTypes.number.isRequired,
+    orderID: PropTypes.number.isRequired,
+  }).isRequired,
+};
+
+
+Product.propTypes = {
+  products: PropTypes.arrayOf(
+    PropTypes.shape({
+      productID: PropTypes.number.isRequired,
+      productCode: PropTypes.string.isRequired,
+      measurementID: PropTypes.number, 
+      categoryID: PropTypes.number.isRequired,
+      fabricID: PropTypes.number.isRequired,
+      liningID: PropTypes.number.isRequired,
+      orderID: PropTypes.number.isRequired,
+    })
+  ).isRequired,
+};
+
+
+
+const ProductPage = () => {
+  const [products, setProducts] = useState([]); 
+  const [loading, setLoading] = useState(true); 
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // Hàm để gọi API
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get('https://localhost:7244/api/product'); 
+        setProducts(response.data); 
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []); 
+
+  if (loading) return <p className="loading-message">Loading...</p>; 
+  if (error) return <p className="error-message">Error: {error}</p>; 
+
   return (
     <>
-      {/* <Navigation /> */}
-
-      {/* Header promotion */}
       <div className="header-promotion">
+        {/* Header promotion content */}
+        <div className="header-promotion">
         <div className="header-promotion__slide slick-initialized slick-slider slick-vertical">
           <div className="slick-list draggable">
             <div className="slick-track">
@@ -85,12 +115,7 @@ const Product = () => {
                 <div>
                   <div className="header-promotion__slide-item">
                     <p>
-                      VEST COLLECTION - 
-                      <span>
-                        <strong>
-                          <a href="#">BUY NOW</a>
-                        </strong>
-                      </span>
+                      VEST COLLECTION
                     </p>
                   </div>
                 </div>
@@ -99,11 +124,11 @@ const Product = () => {
           </div>
         </div>
       </div>
+      </div>
 
-      
-
-      {/* Banner Section */}
       <div className="banner-container">
+        {/* Banner Section content */}
+        <div className="banner-container">
         <img src="https://owen.vn/media/catalog/category/veston_2.jpg" className="banner-image" alt="Áo Vest Nam" />
         <div className="banner-category">
           <h1 className="banner-title">
@@ -114,23 +139,20 @@ const Product = () => {
           </div>
         </div>
       </div>
-
-      
-    <div className="columns">
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main Product Section */}
-      <div className="row-9 main">
-        <Product />
       </div>
-    </div>
 
-
-      {/* <Footer /> */}
+      <div className="page-width-sidebar clear">
+        <div className="product-list-wrap">
+          <ul className="product-ul">
+          <Product products={products} /> 
+          </ul>
+        </div>
+        <div className="side-left">
+          <Sidebar />
+        </div>
+      </div>
     </>
   )
 }
-
 
 export default ProductPage;
