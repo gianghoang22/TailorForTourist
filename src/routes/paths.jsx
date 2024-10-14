@@ -11,7 +11,7 @@ import UserProfile from "../pages/profile/UserProfile";
 import ChangePassword from "../pages/profile/ChangePassword";
 // import StaffDashboard from "../pages/staff/StaffDashboard";
 import CustomSuit from "../pages/customsuit/CustomSuit";
-import CustomFabric from "../pages/customSuit/custom/CustomFabric";
+// import CustomFabric from "../pages/customSuit/custom/CustomFabric";
 import CustomStyle from "../pages/customSuit/custom/CustomStyle";
 import CustomLining from "../pages/customSuit/custom/CustomLining";
 import OrderHistory from "../pages/profile/OrderHistory";
