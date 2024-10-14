@@ -1,0 +1,150 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+}
+
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.order-history-title {
+  text-align: center;
+  font-size: 36px; // Size of the headline
+  font-weight: bold;
+  color: #333; // Dark color for contrast
+  margin: 40px 0; // Top and bottom margin for spacing
+  text-transform: uppercase; // Uppercase for style
+  letter-spacing: 1px; // Slightly spaced letters
+}
+
+.order-history-table {
+  width: 80%; // Adjust the width as needed
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f9f9f9;
+    }
+  }
+
+  .status {
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: #fff;
+    font-size: 12px;
+  }
+
+  .delivered {
+    background-color: #28a745;
+  }
+
+  .shipping {
+    background-color: #6f42c1;
+  }
+
+  .out-of-delivery {
+    background-color: #dc3545;
+  }
+
+  .pending {
+    background-color: #ffc107;
+  }
+}
+
+.promo-section {
+  margin-top: 100px!important;
+  width: 100vw; // Use viewport width
+  padding: 40px;
+  text-align: center;
+  background-color: #0e0d0d;
+  color: #fff;
+  box-sizing: border-box;
+  margin-left: calc(-50vw + 50%); // Center the section
+  margin-right: calc(-50vw + 50%); // Center the section
+
+  h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  p {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+
+  input[type="email"] {
+    padding: 10px;
+    width: 300px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-right: 10px;
+  }
+
+  button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .promo-image {
+    margin-top: 20px;
+
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+    }
+  }
+}
+
+.product-image {
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+.product-info {
+  display: inline-block;
+}
+
+.product-category {
+  font-size: 12px;
+  color: #888;
+}
+
+.shop-link {
+  color: #0286c4;
+}
+
+.continue-shopping {
+  display: block;
+  width: 200px;
+  margin: 20px auto;
+  padding: 10px;
+  background-color: #000000;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 5px;
+}
