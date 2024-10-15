@@ -24,7 +24,7 @@ const CustomStyle = () => {
   const [styleOptions, setStyleOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [openOptionType, setOpenOptionType] = useState([]); // Tracks open option types
+  const [openOptionType, setOpenOptionType] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
