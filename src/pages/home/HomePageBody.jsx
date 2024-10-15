@@ -49,7 +49,7 @@ export function HomePageBody() {
     </div>
 
         {/* Clients Area */}
-      <div className="sec-thumb sec-featbn">
+      <div id='sec-thumb' className="sec-thumb sec-featbn">
         <section className="bn-feat-item">
           <a href="#" className="img">
           <img 
@@ -58,7 +58,11 @@ export function HomePageBody() {
           src="https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an.jpg" 
           className="attachment-info_thumb size-info_thumb" 
           alt="" 
-          srcSet="https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an.jpg 640w, https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-300x188.jpg 300w, https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-488x305.jpg 488w, https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-216x135.jpg 216w, https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-600x375.jpg 600w" 
+          srcSet="https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an.jpg 640w, 
+          https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-300x188.jpg 300w, 
+          https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-488x305.jpg 488w, 
+          https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-216x135.jpg 216w, 
+          https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-600x375.jpg 600w" 
           sizes="(max-width: 640px) 100vw, 640px" 
            />
           </a>
@@ -79,7 +83,11 @@ export function HomePageBody() {
           src="https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2.jpg" 
           className="attachment-info_thumb size-info_thumb" 
           alt="" 
-          srcSet="https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2.jpg 640w, https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-300x188.jpg 300w, https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-488x305.jpg 488w, https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-216x135.jpg 216w, https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-600x375.jpg 600w" 
+          srcSet="https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2.jpg 640w, 
+          https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-300x188.jpg 300w,
+          https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-488x305.jpg 488w, 
+          https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-216x135.jpg 216w, 
+          https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-600x375.jpg 600w" 
           sizes="(max-width: 640px) 100vw, 640px" 
             />
           </a>
@@ -100,7 +108,11 @@ export function HomePageBody() {
     src="https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an.png" 
     className="attachment-info_thumb size-info_thumb" 
     alt="" 
-    srcSet="https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an.png 640w, https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-300x188.png 300w, https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-488x305.png 488w, https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-216x135.png 216w, https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-600x375.png 600w" 
+    srcSet="https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an.png 640w, 
+    https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-300x188.png 300w, 
+    https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-488x305.png 488w, 
+    https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-216x135.png 216w, 
+    https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-600x375.png 600w" 
     sizes="(max-width: 640px) 100vw, 640px" 
   />
 </a>

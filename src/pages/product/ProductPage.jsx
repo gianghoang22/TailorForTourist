@@ -7,11 +7,10 @@ import './ProductPage.scss';
 import Sidebar from '../../layouts/components/sidebar/Sidebar';
 import { Footer } from "../../layouts/components/footer/Footer"
 
-
 const ProductItem = ({ product }) => {
   return (
     <div className="col-md-4">
-      <Link to={`/product-collection/${product.productID}`} className="card"> {/* Sử dụng productID từ product */}
+      <Link to={`/product-collection/${product.productID}`} className="card">
         <div className="card-body">
           <h5 className="card-title">Product Code: {product.productCode}</h5>
           <p className="card-text">Measurement ID: {product.measurementID}</p>
@@ -21,34 +20,6 @@ const ProductItem = ({ product }) => {
           <p className="card-text">Order ID: {product.orderID}</p>
         </div>
       </Link>
-    </div>
-  );
-};
-
-
-// Cập nhật PropTypes validation
-ProductItem.propTypes = {
-  product: PropTypes.shape({
-    productID: PropTypes.number.isRequired,
-    productCode: PropTypes.string.isRequired,
-    measurementID: PropTypes.number.isRequired,
-    categoryID: PropTypes.number.isRequired,
-    fabricID: PropTypes.number.isRequired,
-    liningID: PropTypes.number.isRequired,
-    orderID: PropTypes.number.isRequired,
-  }).isRequired,
-};
-// Product Collection Component
-const Product = ({ products }) => {
-  return (
-    <div>
-      <h1>Product Collection</h1>
-      <div className="row">
-        {products.map((product) => (
-          // Use the correct key (productID instead of id)
-          <ProductItem key={product.productID} product={product} />
-        ))}
-      </div>
     </div>
   );
 };
@@ -65,6 +36,19 @@ ProductItem.propTypes = {
   }).isRequired,
 };
 
+// Product Collection Component
+const Product = ({ products }) => {
+  return (
+    <div>
+      <h1>Product Collection</h1>
+      <div className="row">
+        {products.map((product) => (
+          <ProductItem key={product.productID} product={product} />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 Product.propTypes = {
   products: PropTypes.arrayOf(
@@ -80,15 +64,12 @@ Product.propTypes = {
   ).isRequired,
 };
 
-
-
 const ProductPage = () => {
   const [products, setProducts] = useState([]); 
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Hàm để gọi API
     const fetchProducts = async () => {
       try {
         const response = await axios.get('https://localhost:7244/api/product'); 
@@ -109,17 +90,13 @@ const ProductPage = () => {
   return (
     <>
       <div className="header-promotion">
-        {/* Header promotion content */}
-        <div className="header-promotion">
         <div className="header-promotion__slide slick-initialized slick-slider slick-vertical">
           <div className="slick-list draggable">
             <div className="slick-track">
               <div className="slick-slide slick-current slick-active" data-slick-index="0" aria-hidden="false">
                 <div>
                   <div className="header-promotion__slide-item">
-                    <p>
-                      VEST COLLECTION
-                    </p>
+                    <p>COLLECTION</p>
                   </div>
                 </div>
               </div>
@@ -127,41 +104,33 @@ const ProductPage = () => {
           </div>
         </div>
       </div>
-      </div>
 
       <div className="banner-container">
-        {/* Banner Section content */}
-        <div className="banner-container">
         <img src="https://owen.vn/media/catalog/category/veston_2.jpg" className="banner-image" alt="Áo Vest Nam" />
         <div className="banner-category">
-          <h1 className="banner-title">
-            Áo Vest Nam
-          </h1>
+          <h1 className="banner-title">Áo Vest Nam</h1>
           <div className="banner-description">
             Áo vest nam đẹp, cập nhật phong cách theo xu hướng mới nhất, được sản xuất từ những chất liệu cao cấp của OWEN mang đến cho các quý ông một phong cách lịch lãm
           </div>
         </div>
       </div>
-    </div>
 
-    <div className="all">
-      <div className="page-width-sidebar clear">
-        <div className="product-list-wrap">
-          <ul className="product-ul">
-          <Product products={products} /> 
-          </ul>
-        </div>
-        <div className="side-left">
-          <Sidebar />
-        </div>
-      </div>
+      <div className="all">
+  <div className="page-width-sidebar clear">
+    <div className="side-left">
+      <Sidebar />
+    </div>
+    <div>
+      <ul className="product-ul">
+        <Product products={products} />
+      </ul>
+    </div>
+  </div>
 </div>
 
-
-    <Footer />
-      
+<Footer />
     </>
-  )
-}
+  );
+};
 
 export default ProductPage;

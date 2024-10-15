@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+// import { Outlet, Link } from 'react-router-dom';
 import axios from 'axios';
 import './StaffDashboard.scss';
 const DataList = () => {
@@ -82,7 +82,7 @@ const DataList = () => {
         ))}
       </div>
     </div>
-    <Outlet />
+    {/* <Outlet /> */}
     </>
   );
 };

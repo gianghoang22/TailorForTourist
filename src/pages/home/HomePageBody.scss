@@ -4,22 +4,6 @@
     box-sizing: border-box;
 }
 
-
-.section-padding40{
-    @media screen and (min-width: 768px) and (max-width: 991px){
-        padding-top: 70px;
-        padding-bottom: 70px;
-    }
-    @media screen and (min-width: 576px) and (max-width: 767px){
-        padding-top: 60px;
-        padding-bottom: 40px;
-    }
-    @media screen  and (max-width:575px){
-        padding-top: 60px;
-        padding-bottom: 60px;
-    }
-}
-
 .sec-thumb {
     float: left;
     width: 100%;
@@ -44,8 +28,8 @@
     display: block;
 }
 
-a {
-    color: inherit;
+#sec-thumb a {
+    color: #fff !important;
     text-decoration: none;
 }
 
@@ -84,11 +68,6 @@ img {
 
 .bn-feat-item .info .sub-name {
     font-size: 18px;
-}
-
-a {
-    color: inherit;
-    text-decoration: none;
 }
 
 .bn-feat-item .info .feat-name {

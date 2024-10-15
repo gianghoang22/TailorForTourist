@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './CustomLining.scss';
 
 const CustomLining = () => {
   const [linings, setLinings] = useState([]);
@@ -13,6 +14,7 @@ const CustomLining = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
+        console.log(data);
         setLinings(data);
       } catch (error) {
         setError(error.message);
@@ -33,10 +35,23 @@ const CustomLining = () => {
   }
 
   return (
-    <div>
+    <div className='sec-product'>
       <ul>
-        {linings.map((lining, index) => (
-          <li key={lining.id || index}>{lining.name}</li>
+        {linings.map((lining) => (
+          <li key={lining.id}>
+            <div className='lining-id'>
+            {lining.liningId}
+            </div>
+
+            <div className="lining-name">
+            {lining.liningName}
+            </div>
+
+            <div className="lining-img">
+            <img src={lining.imageUrl} alt={lining.liningName} />
+
+            </div>
+            </li>
         ))}
       </ul>
     </div>

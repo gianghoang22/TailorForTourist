@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import './CustomSuit.scss';
 import './Header.scss';
-import CustomFabric from './custom/CustomFabric.jsx';
+// import CustomFabric from './custom/CustomFabric.jsx';
 import SuitSidebar from '../../layouts/components/customSuitSidebar/SuitSidebar.jsx';
 
 const CustomSuit = () => {
@@ -65,7 +65,7 @@ const CustomSuit = () => {
       </header>
       <div className="content">
         <SuitSidebar />
-        {location.pathname === '/custom-suits' && <CustomFabric />}
+        {/* {location.pathname === '/custom-suits' && <CustomFabric />} */}
         <Outlet />
       </div>
     </div>

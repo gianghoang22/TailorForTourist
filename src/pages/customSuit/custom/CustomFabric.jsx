@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './customFabric.scss';
 
 const CustomFabric = () => {
   const [fabrics, setFabrics] = useState([]);
@@ -13,7 +14,7 @@ const CustomFabric = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        setFabrics(data); // Assuming the response is an array of fabrics
+        setFabrics(data);
       } catch (error) {
         setError(error.message);
       } finally {
@@ -22,20 +23,42 @@ const CustomFabric = () => {
     };
 
     fetchFabrics();
-  }, []); // Empty dependency array to run only on mount
+  }, []);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div>
+    <div className='sec-product'>
       <ul>
         {fabrics.map((fabric) => (
           <li key={fabric.fabricId}>
-            {fabric.fabricName}
-            {fabric.price}
-            {fabric.description}
-            {fabric.imageUrl}
+            <div className="fabric-id">
+              <span>Fabric ID:</span>
+              {fabric.fabricId}
+            </div>
+
+            <div className="fabric-name">
+              <span>Fabric Name:</span>
+              {fabric.fabricName}
+            </div>
+
+            <div className="fabric-price">
+              <span>Fabric Price:</span>
+
+              {/* Add currency symbol or formatting */}
+              {fabric.price}
+            </div>
+
+            <div className="fabric-description">
+              <span>Fabric Description:</span>
+              {fabric.description}
+            </div>
+
+            <div className="fabic-img">
+              <span>Fabric Image:</span>
+              <img src={fabric.imageUrl} alt={fabric.fabricName} />
+            </div>
             </li>
         ))}
       </ul>

@@ -210,7 +210,7 @@ const ProductDetailPage = () => {
             <input type="hidden" name="_wpcf7_container_post" value="0" />
           </div>
           <div className="form-design-info">
-            <p className="title bold">Product Information</p>
+            <p className="title bold">Design your own suits</p>
             <div className="fgroup">
               <div className="lb"><span className="num">1</span> Info</div>
               <div className="controls-wrap">

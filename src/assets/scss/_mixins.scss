@@ -1,0 +1,133 @@
+// Flexbox display
+@mixin flexbox() {
+  display: flex;
+}
+
+// Inline flex display
+@mixin inline-flex {
+  display: inline-flex;
+}
+
+// Flex wrap
+@mixin flex-wrap($value: nowrap) {
+  flex-wrap: $value;
+}
+
+// Flex-flow (flex-direction + flex-wrap)
+@mixin flex-flow($values: (row nowrap)) {
+  flex-flow: $values;
+}
+
+// Order for flex items
+@mixin order($int: 0) {
+  order: $int;
+}
+
+// Flex grow factor
+@mixin flex-grow($int: 1) {
+  flex-grow: $int;
+}
+
+// Flex shrink factor
+@mixin flex-shrink($int: 0) {
+  flex-shrink: $int;
+}
+
+// Flex basis (initial main size)
+@mixin flex-basis($value: auto) {
+  flex-basis: $value;
+}
+
+// Justify content
+@mixin justify-content($value: flex-start) {
+  justify-content: $value;
+}
+
+// Align items on cross-axis
+@mixin align-items($value: stretch) {
+  align-items: $value;
+}
+
+// Align self for individual flex items
+@mixin align-self($value: auto) {
+  align-self: $value;
+}
+
+// Align content (flex lines)
+@mixin align-content($value: stretch) {
+  align-content: $value;
+}
+
+// Flex direction
+@mixin flex-direction($direction: row) {
+  flex-direction: $direction;
+}
+
+// Transition
+@mixin transition($args: all 0.6s ease 0s) {
+  transition: $args;
+}
+
+// Transform
+@mixin transform($value) {
+  transform: $value;
+}
+
+// Translate
+@mixin translate($x, $y) {
+  transform: translate($x, $y);
+}
+
+// TranslateX
+@mixin translateX($x) {
+  transform: translateX($x);
+}
+
+// TranslateY
+@mixin translateY($y) {
+  transform: translateY($y);
+}
+
+// Box shadow
+@mixin box-shadow($shadow...) {
+  box-shadow: $shadow;
+}
+
+// Opacity
+@mixin opacity($opacity) {
+  opacity: $opacity;
+}
+
+// Border radius
+@mixin border-radius($radius) {
+  border-radius: $radius;
+}
+
+// Background
+@mixin background($imgpath, $position: center, $size: cover, $repeat: no-repeat) {
+  background: {
+    image: url($imgpath);
+    position: $position;
+    size: $size;
+    repeat: $repeat;
+  }
+}
+
+// Transition time
+@mixin transform_time($time) {
+  transition: $time;
+}
+
+// Placeholder styling
+@mixin placeholder {
+  &::placeholder {
+    @content;
+  }
+}
+
+// Keyframes
+@mixin keyframes($name) {
+  @keyframes #{$name} {
+    @content;
+  }
+}

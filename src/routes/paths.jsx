@@ -1,33 +1,32 @@
-import BookingPage from "../pages/booking/BookingPage";
-import ProductPage from "../pages/product/ProductPage";
-import HomePage from "../pages/home/HomePage";
 import SignIn from "../pages/signIn/signIn";
 import SignUp from "../pages/signUp/signUp";
+
+import HomePage from "../pages/home/HomePage";
+import BookingPage from "../pages/booking/BookingPage";
 import Checkout from "../pages/checkout/Checkout";
+
+import ProductPage from "../pages/product/ProductPage";
+import ProductDetail from "../pages/product/ProductDetail";
 import Fabric from "../pages/fabric/Fabric";
-import ManagerDashboard from "../pages/managerdashboard/ManagerDashboard";
-import StaffManagement from "../pages/managerdashboard/StaffManagement";
+
 import UserProfile from "../pages/profile/UserProfile";
 import ChangePassword from "../pages/profile/ChangePassword";
-// import StaffDashboard from "../pages/staff/StaffDashboard";
+
 import CustomSuit from "../pages/customsuit/CustomSuit";
-// import CustomFabric from "../pages/customSuit/custom/CustomFabric";
 import CustomStyle from "../pages/customSuit/custom/CustomStyle";
 import CustomLining from "../pages/customSuit/custom/CustomLining";
-<<<<<<< HEAD
+import CustomFabric from "../pages/customSuit/custom/CustomFabric";
+
+import StaffDashboard from "../pages/staff/StaffDashboard";
 import OrderList from "../pages/staff/staffManager/OrderList";
 import BookingList from "../pages/staff/staffManager/BookingList";
 import ShipmentList from "../pages/staff/staffManager/ShipmentList";
-import ProductDetail from "../pages/product/ProductDetail";
 
-=======
 import OrderHistory from "../pages/profile/OrderHistory";
-// import OrderList from "../pages/staff/OrderList";
-// import BookingList from "../pages/staff/BookingList";
-// import ShipmentList from "../pages/staff/ShipmentList";
-// import ProductDetail from "../pages/product/ProductDetail";
 import Measurement from "../pages/profile/Measurement";
->>>>>>> d35a4e364a29014571594bbb54c4b1d0025950c4
+
+import StaffManagement from "../pages/managerdashboard/StaffManagement";
+import ManagerDashboard from "../pages/managerdashboard/ManagerDashboard";
 export const routes = [
   {
     path: "/",
@@ -68,13 +67,13 @@ export const routes = [
     ],
   },
   {
-    path: "/products",
-    element: <ProductPage />,
-  },
-  // {
-  //   path: "/products/:productId", // Thêm đường dẫn cho ProductDetail với ID sản phẩm
-  //   element: <ProductDetail />,
-  // },
+    path: "/product-collection",
+    element: <ProductPage />
+},
+{
+    path: "/product-collection/:id", 
+    element: <ProductDetail />
+},
   {
     path: "/checkout",
     element: <Checkout />,
@@ -91,28 +90,28 @@ export const routes = [
     path: "/signup",
     element: <SignUp />,
   },
-  // {
-  //   path: "/staff",
-  //   element: <StaffDashboard />,
-  //   children: [
-  //     {
-  //       path: "",
-  //       element: <StaffDashboard />,
-  //     },
-  //     {
-  //       path: "order",
-  //       element: <OrderList />,
-  //     },
-  //     {
-  //       path: "booking",
-  //       element: <BookingList />,
-  //     },
-  //     {
-  //       path: "shipment",
-  //       element: <ShipmentList />,
-  //     },
-  //   ],
-  // },
+  {
+    path: "/staff",
+    element: <StaffDashboard />,
+    children: [
+      {
+        path: "",
+        element: <StaffDashboard />,
+      },
+      {
+        path: "order",
+        element: <OrderList />,
+      },
+      {
+        path: "booking",
+        element: <BookingList />,
+      },
+      {
+        path: "shipment",
+        element: <ShipmentList />,
+      },
+    ],
+  },
   {
     path: "/custom-suits",
     element: <CustomSuit />,
