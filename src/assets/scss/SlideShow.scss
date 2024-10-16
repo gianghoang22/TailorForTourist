@@ -4,7 +4,13 @@
   margin: auto;
 
   .mySlides {
-    display: none; // Only display one slide at a time
+    display: none;
+
+    img {
+      width: 100%;
+      height: auto; /* Maintain aspect ratio */
+      max-height: 100%; /* Set your desired max height */
+    }
   }
 
   .prev, .next {
@@ -30,14 +36,6 @@
   .next {
     right: 0;
     border-radius: 0 3px 3px 0;
-  }
-
-  .numbertext {
-    color: #f2f2f2;
-    font-size: 12px;
-    padding: 8px 12px;
-    position: absolute;
-    top: 0;
   }
 
   .text {

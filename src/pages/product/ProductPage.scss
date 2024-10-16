@@ -1,7 +1,4 @@
-*{
-    padding: 0;
-    margin: 0;
-}
+
 
 .header-promotion {
     background: #cfd3cb;
@@ -18,44 +15,22 @@
 }
 
 .header-promotion__slide {
-    display: block !important;
-    margin: 0!important;
+    display: block;
     height: 36px;
     overflow: hidden;
 }
 
 .header-promotion__slide-item {
-    height: 36px !important;
+    height: 36px;
     line-height: 20px;
     padding: 7px 0 9px;
-    border: none;
-    outline: none;
-    box-shadow: none;
-    border: none !important;
-    display: -webkit-flex !important;
-    display: flex !important;
-    -webkit-align-items: center;
+    display: flex;
     align-items: center;
-    -webkit-justify-content: center;
     justify-content: center;
     box-sizing: border-box;
 }
 
-
-//banner
-
-.banner-container .banner-category {
-    position: absolute;
-    display: flex;
-    top: 50%;
-    bottom: 0;
-    transform: translate(-50%, -50%);
-    flex-direction: column;
-    justify-content: center;
-    width: 33.3333%;
-    text-align: center;
-}
-
+// banner
 .banner-container {
     padding: 0 15px;
     position: relative;
@@ -63,22 +38,34 @@
 }
 
 .banner-category {
+    position: absolute;
+    top: 50%;
     left: 20%;
+    transform: translateY(-50%);
+    width: 33.3333%;
+    text-align: center;
 }
 
 .banner-title {
     color: #000000;
     text-align: left;
-    font-size: 2.1vw;
+    font-size: 2.1rem;
     margin-bottom: 0;
 }
 
 .banner-description {
     color: #343434;
     text-align: left;
-    font-size: 1.1vw;
+    font-size: 1.1rem;
 }
 
 
 
+// sidebar
 
+.side-left {
+    width: 20%;
+    float: left;
+    clear: left;
+    padding: 0 30px 30px 0;
+}

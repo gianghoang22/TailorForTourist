@@ -1,0 +1,45 @@
+.sec-product {
+    padding: 50px;
+  
+    .tag-buttons {
+      margin-bottom: 20px;
+      button {
+        margin-right: 10px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        cursor: pointer;
+        &:hover {
+          background-color: #e0e0e0;
+        }
+        &.active {
+          background-color: #d0d0d0;
+          font-weight: bold;
+        }
+      }
+    }
+  
+    ul {
+      list-style: none;
+      padding: 0;
+  
+      li {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 10px;
+  
+        .fabric-id, .fabric-name, .fabric-price, .fabric-description, .fabric-img {
+          margin-bottom: 5px;
+          span {
+            font-weight: bold;
+          }
+        }
+  
+        .fabric-img img {
+          max-width: 100px;
+          height: auto;
+        }
+      }
+    }
+  }
+  

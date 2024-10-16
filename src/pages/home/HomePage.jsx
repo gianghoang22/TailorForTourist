@@ -3,7 +3,7 @@ import { Box, IconButton } from "@mui/material";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import ScrollToTopOnMount from "../../layouts/components/navigation/BackToTop";
 
-// import { Navigation } from "../../layouts/components/navigation/Navigation"
+import { Navigation } from "../../layouts/components/navigation/Navigation"
 import { Footer } from "../../layouts/components/footer/Footer"
 import { HomePageBody } from "./HomePageBody"
 import { HomePageBody1 } from "./HomePageBody1";
@@ -39,7 +39,7 @@ const HomePage = () => {
 
   return (
     <>
-    {/* <Navigation /> */}
+    <Navigation />
     <HomePageBody />
     <HomePageBody1 />
     <HomePageBody2 />
