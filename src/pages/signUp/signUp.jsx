@@ -14,8 +14,11 @@ import Stack from "@mui/material/Stack";
 import MuiCard from "@mui/material/Card";
 import { createTheme, ThemeProvider, styled } from "@mui/material/styles";
 import getSignUpTheme from "./theme/getSignUpTheme";
-import { GoogleIcon, FacebookIcon, SitemarkIcon } from "./CustomIcons";
+import { GoogleIcon, FacebookIcon } from "./CustomIcons";
 import TemplateFrame from "./TemplateFrame";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import { useNavigate } from "react-router-dom";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -53,20 +56,33 @@ export default function SignUp() {
   const [showCustomTheme, setShowCustomTheme] = React.useState(true);
   const defaultTheme = createTheme({ palette: { mode } });
   const SignUpTheme = createTheme(getSignUpTheme(mode));
+
   const [emailError, setEmailError] = React.useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = React.useState("");
   const [passwordError, setPasswordError] = React.useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState("");
   const [nameError, setNameError] = React.useState(false);
   const [nameErrorMessage, setNameErrorMessage] = React.useState("");
-  // This code only runs on the client side, to determine the system color preference
+  const [addressError, setAddressError] = React.useState(false);
+  const [addressErrorMessage, setAddressErrorMessage] = React.useState("");
+  const [genderError, setGenderError] = React.useState(false);
+  const [genderErrorMessage, setGenderErrorMessage] = React.useState("");
+  const [dobError, setDobError] = React.useState(false);
+  const [dobErrorMessage, setDobErrorMessage] = React.useState("");
+  const [roleID, setRoleID] = React.useState("");
+  const [roleError, setRoleError] = React.useState(false);
+  const [roleErrorMessage, setRoleErrorMessage] = React.useState("");
+
+  const [gender, setGender] = React.useState("");
+  const [phone, setPhone] = React.useState("");
+
+  const navigate = useNavigate();
+
   React.useEffect(() => {
-    // Check if there is a preferred mode in localStorage
     const savedMode = localStorage.getItem("themeMode");
     if (savedMode) {
       setMode(savedMode);
     } else {
-      // If no preference is found, it uses system preference
       const systemPrefersDark = window.matchMedia(
         "(prefers-color-scheme: dark)"
       ).matches;
@@ -77,7 +93,7 @@ export default function SignUp() {
   const toggleColorMode = () => {
     const newMode = mode === "dark" ? "light" : "dark";
     setMode(newMode);
-    localStorage.setItem("themeMode", newMode); // Save the selected mode to localStorage
+    localStorage.setItem("themeMode", newMode);
   };
 
   const toggleCustomTheme = () => {
@@ -85,51 +101,62 @@ export default function SignUp() {
   };
 
   const validateInputs = () => {
-    const email = document.getElementById("email");
-    const password = document.getElementById("password");
-    const name = document.getElementById("name");
-
     let isValid = true;
 
-    if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
-      setEmailError(true);
-      setEmailErrorMessage("Please enter a valid email address.");
+    if (!gender) {
+      setGenderError(true);
+      setGenderErrorMessage("Gender is required.");
       isValid = false;
     } else {
-      setEmailError(false);
-      setEmailErrorMessage("");
+      setGenderError(false);
+      setGenderErrorMessage("");
     }
 
-    if (!password.value || password.value.length < 6) {
-      setPasswordError(true);
-      setPasswordErrorMessage("Password must be at least 6 characters long.");
-      isValid = false;
-    } else {
-      setPasswordError(false);
-      setPasswordErrorMessage("");
-    }
-
-    if (!name.value || name.value.length < 1) {
-      setNameError(true);
-      setNameErrorMessage("Name is required.");
-      isValid = false;
-    } else {
-      setNameError(false);
-      setNameErrorMessage("");
-    }
+    // Further validation checks...
 
     return isValid;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
+
+    if (!validateInputs()) return;
+
+    const dobValue = data.get("dob");
+    console.log("Date of birth value:", dobValue);
+    const requestBody = {
       name: data.get("name"),
-      lastName: data.get("lastName"),
+      gender: gender,
+      address: data.get("address"),
+      dob: dobValue,
       email: data.get("email"),
       password: data.get("password"),
-    });
+      roleID: roleID,
+      Phone: phone,
+    };
+
+    try {
+      const response = await fetch("https://localhost:7244/api/Register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const text = await response.text();
+      console.log("Raw response text:", text);
+
+      if (!response.ok) {
+        console.error("Registration failed:", text);
+        return;
+      }
+
+      navigate("/signin", { state: { alert: "Registered Successfully!" } });
+    } catch (error) {
+      console.error("Error during registration:", error);
+    }
   };
 
   return (
@@ -150,7 +177,6 @@ export default function SignUp() {
             }}
           >
             <Card variant="outlined">
-              <SitemarkIcon />
               <Typography
                 component="h1"
                 variant="h4"
@@ -166,30 +192,66 @@ export default function SignUp() {
                 <FormControl>
                   <FormLabel htmlFor="name">Full name</FormLabel>
                   <TextField
-                    autoComplete="name"
-                    name="name"
                     required
                     fullWidth
                     id="name"
-                    placeholder="Jon Snow"
+                    name="name"
+                    autoComplete="name"
                     error={nameError}
-                    helperText={nameErrorMessage}
-                    color={nameError ? "error" : "primary"}
+                    helperText={nameError && nameErrorMessage}
                   />
                 </FormControl>
                 <FormControl>
-                  <FormLabel htmlFor="email">Email</FormLabel>
+                  <FormLabel htmlFor="gender">Gender</FormLabel>
+                  <Select
+                    required
+                    fullWidth
+                    id="gender"
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                    error={genderError}
+                  >
+                    <MenuItem value="Male">Male</MenuItem>
+                    <MenuItem value="Female">Female</MenuItem>
+                  </Select>
+                  {genderError && (
+                    <Typography color="error">{genderErrorMessage}</Typography>
+                  )}
+                </FormControl>
+                <FormControl>
+                  <FormLabel htmlFor="address">Address</FormLabel>
+                  <TextField
+                    required
+                    fullWidth
+                    id="address"
+                    name="address"
+                    autoComplete="address"
+                    error={addressError}
+                    helperText={addressError && addressErrorMessage}
+                  />
+                </FormControl>
+                <FormControl>
+                  <FormLabel htmlFor="dob">Date of Birth</FormLabel>
+                  <TextField
+                    required
+                    fullWidth
+                    id="dob"
+                    name="dob"
+                    type="date"
+                    error={dobError}
+                    helperText={dobError && dobErrorMessage}
+                  />
+                </FormControl>
+                <FormControl>
+                  <FormLabel htmlFor="email">Email Address</FormLabel>
                   <TextField
                     required
                     fullWidth
                     id="email"
-                    placeholder="your@email.com"
                     name="email"
                     autoComplete="email"
-                    variant="outlined"
                     error={emailError}
-                    helperText={emailErrorMessage}
-                    color={passwordError ? "error" : "primary"}
+                    helperText={emailError && emailErrorMessage}
                   />
                 </FormControl>
                 <FormControl>
@@ -197,66 +259,75 @@ export default function SignUp() {
                   <TextField
                     required
                     fullWidth
-                    name="password"
-                    placeholder="••••••"
-                    type="password"
                     id="password"
+                    name="password"
+                    type="password"
                     autoComplete="new-password"
-                    variant="outlined"
                     error={passwordError}
-                    helperText={passwordErrorMessage}
-                    color={passwordError ? "error" : "primary"}
+                    helperText={passwordError && passwordErrorMessage}
                   />
                 </FormControl>
-                <FormControlLabel
-                  control={
-                    <Checkbox value="allowExtraEmails" color="primary" />
-                  }
-                  label="I want to receive updates via email."
-                />
+                <FormControl>
+                  <FormLabel htmlFor="phone">Phone</FormLabel>
+                  <TextField
+                    required
+                    fullWidth
+                    id="phone"
+                    name="phone"
+                    autoComplete="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </FormControl>
+                <FormControl>
+                  <FormLabel htmlFor="roleID">Role</FormLabel>
+                  <Select
+                    required
+                    fullWidth
+                    id="roleID"
+                    value={roleID}
+                    onChange={(e) => setRoleID(e.target.value)}
+                    error={roleError}
+                  >
+                    <MenuItem value={2}>Staff</MenuItem>
+                    <MenuItem value={3}>Customer</MenuItem>
+                    <MenuItem value={4}>Store Manager</MenuItem>
+                  </Select>
+                  {roleError && (
+                    <Typography color="error">{roleErrorMessage}</Typography>
+                  )}
+                </FormControl>
                 <Button
                   type="submit"
-                  fullWidth
                   variant="contained"
-                  onClick={validateInputs}
+                  sx={{
+                    textTransform: "none",
+                    backgroundImage:
+                      "linear-gradient(135deg, hsl(220, 75%, 60%), hsl(210, 100%, 50%))",
+                  }}
                 >
                   Sign up
                 </Button>
-                <Typography sx={{ textAlign: "center" }}>
-                  Already have an account?{" "}
-                  <span>
-                    <Link
-                      href="/material-ui/getting-started/templates/sign-in/"
-                      variant="body2"
-                      sx={{ alignSelf: "center" }}
-                    >
-                      Sign in
-                    </Link>
-                  </span>
-                </Typography>
-              </Box>
-              <Divider>
-                <Typography sx={{ color: "text.secondary" }}>or</Typography>
-              </Divider>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Divider sx={{ my: 2, alignSelf: "center", width: "100%" }}>
+                  <Typography variant="caption">Or sign up with</Typography>
+                </Divider>
                 <Button
-                  type="submit"
-                  fullWidth
-                  variant="outlined"
-                  onClick={() => alert("Sign up with Google")}
                   startIcon={<GoogleIcon />}
+                  variant="outlined"
+                  sx={{ textTransform: "none" }}
                 >
                   Sign up with Google
                 </Button>
                 <Button
-                  type="submit"
-                  fullWidth
-                  variant="outlined"
-                  onClick={() => alert("Sign up with Facebook")}
                   startIcon={<FacebookIcon />}
+                  variant="outlined"
+                  sx={{ textTransform: "none" }}
                 >
                   Sign up with Facebook
                 </Button>
+                <Link href="/sign-in" variant="body2" textAlign="center">
+                  Already have an account? Sign in
+                </Link>
               </Box>
             </Card>
           </Stack>

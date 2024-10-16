@@ -25,8 +25,13 @@ import ShipmentList from "../pages/staff/staffManager/ShipmentList";
 import OrderHistory from "../pages/profile/OrderHistory";
 import Measurement from "../pages/profile/Measurement";
 
+import Cart from "../pages/cart/cart";
+import { element } from "prop-types";
+import BookingThanks from "../pages/booking/BookingThanks";
+
 import StaffManagement from "../pages/managerdashboard/StaffManagement";
 import ManagerDashboard from "../pages/managerdashboard/ManagerDashboard";
+
 export const routes = [
   {
     path: "/",
@@ -46,6 +51,14 @@ export const routes = [
   {
     path: "/booking",
     element: <BookingPage />,
+  },
+  {
+    path: "/booking-thanks",
+    element: <BookingThanks />,
+  },
+  {
+    path: "/cart",
+    element: <Cart />,
   },
   {
     path: "/profile",
@@ -68,12 +81,12 @@ export const routes = [
   },
   {
     path: "/product-collection",
-    element: <ProductPage />
-},
-{
-    path: "/product-collection/:id", 
-    element: <ProductDetail />
-},
+    element: <ProductPage />,
+  },
+  {
+    path: "/product-collection/:id",
+    element: <ProductDetail />,
+  },
   {
     path: "/checkout",
     element: <Checkout />,
@@ -90,6 +103,48 @@ export const routes = [
     path: "/signup",
     element: <SignUp />,
   },
+
+  {
+    path: "/staff",
+    element: <StaffDashboard />,
+    children: [
+      {
+        path: "",
+        element: <StaffDashboard />,
+      },
+      {
+        path: "order",
+        element: <OrderList />,
+      },
+      {
+        path: "booking",
+        element: <BookingList />,
+      },
+      {
+        path: "shipment",
+        element: <ShipmentList />,
+      },
+    ],
+  },
+  {
+    path: "/custom-suits",
+    element: <CustomSuit />,
+    children: [
+      {
+        path: "fabric",
+        element: <CustomFabric />,
+      },
+      {
+        path: "style",
+        element: <CustomStyle />,
+      },
+      {
+        path: "lining",
+        element: <CustomLining />,
+      },
+    ],
+  },
+
   {
     path: "/staff",
     element: <StaffDashboard />,
