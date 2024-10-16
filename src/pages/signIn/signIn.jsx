@@ -10,13 +10,15 @@ import FormControl from "@mui/material/FormControl";
 import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { jwtDecode } from "jwt-decode";
 import Stack from "@mui/material/Stack";
 import MuiCard from "@mui/material/Card";
 import { styled } from "@mui/material/styles";
 import ForgotPassword from "./ForgotPassword";
-import { GoogleIcon, FacebookIcon, SitemarkIcon } from "./CustomIcons";
+import { GoogleIcon, FacebookIcon } from "./CustomIcons";
 import AppTheme from "../shared-theme/AppTheme";
 import ColorModeSelect from "../shared-theme/ColorModeSelect";
+import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate and useLocation
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -63,22 +65,11 @@ export default function SignIn(props) {
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState("");
   const [open, setOpen] = React.useState(false);
 
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
+  const navigate = useNavigate(); // Initialize useNavigate
+  const location = useLocation(); // Initialize useLocation
 
-  const handleClose = () => {
-    setOpen(false);
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get("email"),
-      password: data.get("password"),
-    });
-  };
+  const handleClickOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   const validateInputs = () => {
     const email = document.getElementById("email");
@@ -106,6 +97,60 @@ export default function SignIn(props) {
 
     return isValid;
   };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const email = data.get("email");
+    const password = data.get("password");
+
+    if (!validateInputs()) return; // Validate inputs before making the request
+
+    try {
+      const response = await fetch("https://localhost:7244/api/Login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log("Login successful:", result);
+
+      // Decode the JWT token to extract role
+      const decodedToken = jwtDecode(result.token);
+      console.log("Decoded Token:", decodedToken);
+
+      // Check the role from the decoded token
+      const userRole =
+        decodedToken[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ];
+      if (userRole === "customer") {
+        navigate("/"); // Redirect to the home page for customers
+      } else {
+        console.error("User role is not recognized.");
+      }
+    } catch (error) {
+      console.error("There was an error with the login request:", error);
+      // Handle error (e.g., show an error message to the user)
+    }
+  };
+
+  React.useEffect(() => {
+    // Check for an alert message from the state
+    if (location.state?.alert) {
+      alert(location.state.alert); // Show the alert message
+    }
+  }, [location.state]);
 
   return (
     <AppTheme {...props}>
@@ -171,7 +216,6 @@ export default function SignIn(props) {
                 type="password"
                 id="password"
                 autoComplete="current-password"
-                autoFocus
                 required
                 fullWidth
                 variant="outlined"
@@ -207,7 +251,7 @@ export default function SignIn(props) {
           <Divider>or</Divider>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Button
-              type="submit"
+              type="button"
               fullWidth
               variant="outlined"
               onClick={() => alert("Sign in with Google")}
@@ -216,7 +260,7 @@ export default function SignIn(props) {
               Sign in with Google
             </Button>
             <Button
-              type="submit"
+              type="button"
               fullWidth
               variant="outlined"
               onClick={() => alert("Sign in with Facebook")}

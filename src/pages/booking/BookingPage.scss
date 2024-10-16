@@ -1,98 +1,87 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@400;600&display=swap");
 
 .booking-page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   color: #333;
-  background: url('https://i.pinimg.com/564x/18/af/e7/18afe73d70fb78df53321f2ebbc291f1.jpg') no-repeat center center;
-  background-size: 1600px 1200px;
-  min-height: 100vh;
-  padding-top: 100px!important; /* Increased padding-top to move content below the navigation */
-  margin-left: 1px;
-  padding: 20px;
-
-  h1 {
-    text-align: center;
-    font-size: 2.5rem;
-    color: #800020;
-    margin: 20px 0;
-  }
+  background-color: #fff;
+  padding-top: 60px;
 
   .content-container {
     display: flex;
-    flex: 1;
     justify-content: center;
     gap: 40px;
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
-    margin-top: 40px; /* Added margin-top to push down the columns */
   }
 
   .left-column,
   .right-column {
     flex: 1;
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 20px;
-    border-radius: 8px;
+    max-width: 500px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: "Playfair Display", serif;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 20px;
   }
 
   .left-column {
-    .about-image {
-      width: 100%;
-      height: auto;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-
     .location-info {
       margin-bottom: 20px;
 
       .location-image {
         width: 100%;
-        max-height: 200px;
+        height: auto;
         object-fit: cover;
+        border-radius: 8px;
       }
 
       .address-info {
         margin-top: 10px;
-        text-align: center;
 
         h2 {
-          font-size: 1.5rem;
+          font-size: 1.2rem;
           margin: 5px 0;
         }
       }
 
       .bridal-appointments {
+        width: 100%;
         margin-top: 10px;
         padding: 10px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
+        background-color: transparent;
+        color: #333;
+        border: 1px solid #333;
+        border-radius: 0;
         cursor: pointer;
+        transition:
+          background-color 0.3s,
+          color 0.3s;
+
+        &:hover {
+          background-color: #333;
+          color: #fff;
+        }
       }
     }
 
-    .about-section, 
-    .contact-info, 
-    .hours-section, 
-    .subway-access, 
-    .map-section {
+    .about-section,
+    .contact-info,
+    .hours-section,
+    .subway-access {
       margin-bottom: 20px;
-    }
 
-    .contact-info {
-      a {
-        color: #007bff;
-        text-decoration: none;
-
-        &:hover {
-          text-decoration: underline;
-        }
+      h3 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
       }
     }
 
@@ -134,17 +123,18 @@
       }
     }
 
-    .map {
-      height: 300px;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-bottom: 20px;
+    .map-section {
+      iframe {
+        width: 100%;
+        height: 300px;
+        border: none;
+      }
     }
   }
 
   .right-column {
     h2 {
-      font-size: 1.8rem;
+      font-size: 2rem;
       margin-bottom: 20px;
     }
 
@@ -153,7 +143,8 @@
       padding: 10px;
       margin-bottom: 20px;
       border: 1px solid #ccc;
-      border-radius: 5px;
+      border-radius: 0;
+      background-color: #fff;
     }
 
     .appointment-info {
@@ -161,174 +152,115 @@
 
       h3 {
         font-size: 1.5rem;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
+      }
+
+      p {
+        margin: 5px 0;
       }
     }
 
     .custom-calendar {
-      width: 100%;
       margin-bottom: 20px;
 
-      .react-calendar__tile {
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .react-calendar__tile--active {
-        background-color: #007bff;
-        color: white;
-      }
-    }
-
-    .available-times {
-      margin-bottom: 20px;
-
-      h3 {
-        font-size: 1.3rem;
-        margin-bottom: 10px;
-      }
-
-      .time-slot {
-        margin: 5px;
-        padding: 10px;
-        background-color: #f0f0f0;
+      .react-calendar {
+        width: 100%;
         border: none;
-        cursor: pointer;
-        border-radius: 5px;
+        font-family: "Poppins", sans-serif;
 
-        &:hover {
-          background-color: #f0f0f0;
+        .react-calendar__tile {
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        &.selected {
-          background-color: #007bff;
+        .react-calendar__tile--active {
+          background-color: #333;
           color: white;
         }
       }
     }
 
-    .booking-form {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    .available-times {
+      margin-left: 5px;
+      margin-top: 30px;
+      margin-bottom: 30px;
 
+      h4 {
+        margin-left: 10px;
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+        font-family: "Playfair Display", serif;
+      }
+
+      .time-slot {
+        margin: 5px;
+        padding: 10px 15px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        cursor: pointer;
+        transition:
+          background-color 0.3s,
+          color 0.3s;
+
+        &:hover,
+        &.selected {
+          background-color: #333;
+          color: #fff;
+        }
+      }
+    }
+
+    .booking-form {
       .form-group {
         margin-bottom: 15px;
-      }
 
-      label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-      }
+        label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: 600;
+          margin-left: 5px;
+        }
 
-      input, select, textarea {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-      }
+        input,
+        textarea {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          font-family: "Poppins", sans-serif;
+        }
 
-      textarea {
-        resize: vertical;
-        min-height: 100px;
+        textarea {
+          height: 100px;
+          resize: vertical;
+        }
       }
 
       button[type="submit"] {
-        padding: 10px;
-        background-color: #007bff;
-        color: white;
+        width: 100%;
+        padding: 12px;
+        background-color: #333;
+        color: #fff;
         border: none;
-        border-radius: 5px;
+        border-radius: 4px;
+        font-family: "Poppins", sans-serif;
+        font-weight: 600;
         cursor: pointer;
         transition: background-color 0.3s;
 
         &:hover {
-          background-color: #0056b3;
+          background-color: #555;
         }
       }
     }
   }
+}
 
-  .header-box {
-    display: inline-block;
-    background-color: #f0f0f0;
-    border-radius: 12px;
-    padding: 15px 25px;
-    margin: 10px 0;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s, box-shadow 0.3s;
-    text-align: center;
-  }
-
-  .about-header, .appointment-header {
-    background-color: #cacaca;
-    color: #000000;
-  }
-
-  .header-box:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-  }
-
-  .quote-carousel-section {
-    padding: 20px;
-    background-color: #f9f9f9;
-    width: 100vw;  // Full width of the viewport
-    margin-left: calc(-50vw + 50%);  // Ensure it covers the full page without shifting the layout
-    position: relative;
-  
-    .quote-carousel {
-      text-align: center;
-      font-style: italic;
-      font-size: 1.2rem;
-      margin: 20px 0;
-      padding: 10px;
-      background-color: rgba(255, 255, 255, 0.8);
-      border-radius: 8px;
-    }
-  
-    .carousel-indicators {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-  
-      .indicator {
-        width: 12px;
-        height: 12px;
-        background-color: #333;
-        border-radius: 50%;
-        cursor: pointer;
-      }
-    }
-  }
-  
-
-  .review-section {
-    margin-top: 20px;
-
-    h3 {
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-    }
-
-    .review {
-      background-color: #f9f9f9;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-
-      p {
-        margin: 0;
-      }
-
-      .author {
-        text-align: right;
-        font-style: italic;
-        margin-top: 10px;
-      }
-    }
-  }
+.quote-carousel-section,
+.review-section {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
 }
