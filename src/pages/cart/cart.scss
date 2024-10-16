@@ -325,3 +325,39 @@ header .count {
     font-size: 16px;
   }
 }
+.quantity {
+  display: flex;
+  align-items: center;
+
+  button {
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+
+    &.decrement {
+      color: white;
+      background-color: red; // Red button for decrement
+
+      &:hover {
+        background-color: darkred; // Dark red on hover
+      }
+    }
+
+    &.increment {
+      color: white;
+      background-color: blue; // Blue button for increment
+
+      &:hover {
+        background-color: darkblue; // Dark blue on hover
+      }
+    }
+  }
+
+  input {
+    width: 40px;
+    text-align: center;
+    margin: 0 5px;
+  }
+}

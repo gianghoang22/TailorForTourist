@@ -39,13 +39,33 @@ function ProductList({ products, onChangeProductQuantity, onRemoveProduct }) {
 
               <div className="col right">
                 <div className="quantity">
+                  <button
+                    className="decrement"
+                    onClick={() =>
+                      onChangeProductQuantity(index, {
+                        target: { value: Math.max(1, product.quantity - 1) },
+                      })
+                    }
+                  >
+                    −
+                  </button>
                   <input
                     type="text"
                     className="quantity"
                     step="1"
                     value={product.quantity}
-                    onChange={(event) => onChangeProductQuantity(index, event)}
+                    readOnly
                   />
+                  <button
+                    className="increment"
+                    onClick={() =>
+                      onChangeProductQuantity(index, {
+                        target: { value: product.quantity + 1 },
+                      })
+                    }
+                  >
+                    +
+                  </button>
                 </div>
 
                 <div className="remove">
@@ -126,7 +146,7 @@ const PRODUCTS = [
   {
     image: "https://via.placeholder.com/200x150",
     name: "PRODUCT ITEM NUMBER 2",
-    description: "Description for product item number 1",
+    description: "Description for product item number 2",
     price: 9.99,
     quantity: 1,
   },
@@ -170,10 +190,8 @@ function Cart() {
     const valueInt = parseInt(value);
     const cloneProducts = [...products];
 
-    // Minimum quantity is 1, maximum quantity is 100, can left blank to input easily
-    if (value === "") {
-      cloneProducts[index].quantity = value;
-    } else if (valueInt > 0 && valueInt < 100) {
+    // Ensure the quantity is at least 1 and no more than 100
+    if (valueInt >= 1 && valueInt <= 100) {
       cloneProducts[index].quantity = valueInt;
     }
 
