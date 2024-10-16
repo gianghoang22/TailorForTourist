@@ -18,6 +18,7 @@ const ProductItem = ({ product }) => {
           <p className="card-text">Fabric ID: {product.fabricID}</p>
           <p className="card-text">Lining ID: {product.liningID}</p>
           <p className="card-text">Order ID: {product.orderID}</p>
+          <p className="card-text">Order Image: <img src={product.imgURL} alt="" /></p>
         </div>
       </Link>
     </div>
@@ -33,6 +34,7 @@ ProductItem.propTypes = {
     fabricID: PropTypes.number.isRequired,
     liningID: PropTypes.number.isRequired,
     orderID: PropTypes.number.isRequired,
+    imgURL: PropTypes.string.isRequired,
   }).isRequired,
 };
 
@@ -60,6 +62,7 @@ Product.propTypes = {
       fabricID: PropTypes.number.isRequired,
       liningID: PropTypes.number.isRequired,
       orderID: PropTypes.number.isRequired,
+      imgURL: PropTypes.string.isRequired,
     })
   ).isRequired,
 };

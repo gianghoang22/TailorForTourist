@@ -117,6 +117,10 @@ export const routes = [
     element: <CustomSuit />,
     children: [
       {
+        path: "",
+        element: <CustomFabric />,
+      },
+      {
         path: "fabric",
         element: <CustomFabric />,
       },
