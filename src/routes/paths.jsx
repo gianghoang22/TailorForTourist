@@ -11,7 +11,7 @@ import UserProfile from "../pages/profile/UserProfile";
 import ChangePassword from "../pages/profile/ChangePassword";
 // import StaffDashboard from "../pages/staff/StaffDashboard";
 import CustomSuit from "../pages/customsuit/CustomSuit";
-import CustomFabric from "../pages/customSuit/custom/CustomFabric";
+// import CustomFabric from "../pages/customSuit/custom/CustomFabric";
 import CustomStyle from "../pages/customSuit/custom/CustomStyle";
 import CustomLining from "../pages/customSuit/custom/CustomLining";
 import OrderHistory from "../pages/profile/OrderHistory";
@@ -20,6 +20,9 @@ import OrderHistory from "../pages/profile/OrderHistory";
 // import ShipmentList from "../pages/staff/ShipmentList";
 // import ProductDetail from "../pages/product/ProductDetail";
 import Measurement from "../pages/profile/Measurement";
+import Cart from "../pages/cart/cart";
+import { element } from "prop-types";
+import BookingThanks from "../pages/booking/BookingThanks";
 export const routes = [
   {
     path: "/",
@@ -39,6 +42,14 @@ export const routes = [
   {
     path: "/booking",
     element: <BookingPage />,
+  },
+  {
+    path: "/booking-thanks",
+    element: <BookingThanks />,
+  },
+  {
+    path: "/cart",
+    element: <Cart />,
   },
   {
     path: "/profile",
@@ -105,22 +116,22 @@ export const routes = [
   //     },
   //   ],
   // },
-  {
-    path: "/custom-suits",
-    element: <CustomSuit />,
-    children: [
-      {
-        path: "fabric",
-        element: <CustomFabric />,
-      },
-      {
-        path: "style",
-        element: <CustomStyle />,
-      },
-      {
-        path: "lining",
-        element: <CustomLining />,
-      },
-    ],
-  },
+  // {
+  //   path: "/custom-suits",
+  //   element: <CustomSuit />,
+  //   children: [
+  //     {
+  //       path: "fabric",
+  //       element: <CustomFabric />,
+  //     },
+  //     {
+  //       path: "style",
+  //       element: <CustomStyle />,
+  //     },
+  //     {
+  //       path: "lining",
+  //       element: <CustomLining />,
+  //     },
+  //   ],
+  // },
 ];
