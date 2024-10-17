@@ -1,24 +1,21 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom'; 
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 import './ProductPage.scss';
-
 import Sidebar from '../../layouts/components/sidebar/Sidebar';
-import { Footer } from "../../layouts/components/footer/Footer"
+import { Footer } from "../../layouts/components/footer/Footer";
+import { Navigation } from '../../layouts/components/navigation/Navigation';
 
+// ProductItem Component
 const ProductItem = ({ product }) => {
   return (
     <div className="col-md-4">
       <Link to={`/product-collection/${product.productID}`} className="card">
         <div className="card-body">
           <h5 className="card-title">Product Code: {product.productCode}</h5>
-          <p className="card-text">Measurement ID: {product.measurementID}</p>
-          <p className="card-text">Category ID: {product.categoryID}</p>
-          <p className="card-text">Fabric ID: {product.fabricID}</p>
-          <p className="card-text">Lining ID: {product.liningID}</p>
-          <p className="card-text">Order ID: {product.orderID}</p>
-          <p className="card-text">Order Image: <img src={product.imgURL} alt="" /></p>
+          <p className="card-text">Price from: {product.price} $</p>
+          <img src={product.imgURL} alt="" />
         </div>
       </Link>
     </div>
@@ -29,12 +26,13 @@ ProductItem.propTypes = {
   product: PropTypes.shape({
     productID: PropTypes.number.isRequired,
     productCode: PropTypes.string.isRequired,
-    measurementID: PropTypes.number, 
+    measurementID: PropTypes.number,
     categoryID: PropTypes.number.isRequired,
     fabricID: PropTypes.number.isRequired,
     liningID: PropTypes.number.isRequired,
     orderID: PropTypes.number.isRequired,
     imgURL: PropTypes.string.isRequired,
+    price: PropTypes.number.isRequired, // Assuming price is a number
   }).isRequired,
 };
 
@@ -43,7 +41,7 @@ const Product = ({ products }) => {
   return (
     <div>
       <h1>Product Collection</h1>
-      <div className="row">
+      <div className="row" style={{ paddingBottom: '50px' }}>
         {products.map((product) => (
           <ProductItem key={product.productID} product={product} />
         ))}
@@ -57,41 +55,59 @@ Product.propTypes = {
     PropTypes.shape({
       productID: PropTypes.number.isRequired,
       productCode: PropTypes.string.isRequired,
-      measurementID: PropTypes.number, 
+      measurementID: PropTypes.number,
       categoryID: PropTypes.number.isRequired,
       fabricID: PropTypes.number.isRequired,
       liningID: PropTypes.number.isRequired,
       orderID: PropTypes.number.isRequired,
       imgURL: PropTypes.string.isRequired,
+      price: PropTypes.number.isRequired, // Assuming price is a number
     })
   ).isRequired,
 };
 
+// Sidebar PropTypes (Add if you want to define it here)
+Sidebar.propTypes = {
+  onSelectSubcategory: PropTypes.func.isRequired,
+};
+
 const ProductPage = () => {
-  const [products, setProducts] = useState([]); 
-  const [loading, setLoading] = useState(true); 
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('https://localhost:7244/api/product'); 
-        setProducts(response.data); 
+        const response = await axios.get('https://localhost:7244/api/product');
+        setProducts(response.data);
       } catch (err) {
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProducts();
-  }, []); 
+  }, []);
 
-  if (loading) return <p className="loading-message">Loading...</p>; 
-  if (error) return <p className="error-message">Error: {error}</p>; 
+  const handleSubcategorySelect = async (subcategoryId) => {
+    try {
+      const response = await axios.get(`https://localhost:7244/api/product?subcategoryId=${subcategoryId}`);
+      console.log(response.data);
+      setProducts(response.data);
+      setSelectedSubcategoryId(subcategoryId);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  if (loading) return <p className="loading-message">Loading...</p>;
+  if (error) return <p className="error-message">Error: {error}</p>;
 
   return (
     <>
+      <Navigation />
       <div className="header-promotion">
         <div className="header-promotion__slide slick-initialized slick-slider slick-vertical">
           <div className="slick-list draggable">
@@ -107,7 +123,6 @@ const ProductPage = () => {
           </div>
         </div>
       </div>
-
       <div className="banner-container">
         <img src="https://owen.vn/media/catalog/category/veston_2.jpg" className="banner-image" alt="Áo Vest Nam" />
         <div className="banner-category">
@@ -117,21 +132,19 @@ const ProductPage = () => {
           </div>
         </div>
       </div>
-
       <div className="all">
-  <div className="page-width-sidebar clear">
-    <div className="side-left">
-      <Sidebar />
-    </div>
-    <div>
-      <ul className="product-ul">
-        <Product products={products} />
-      </ul>
-    </div>
-  </div>
-</div>
-
-<Footer />
+        <div className="page-width-sidebar clear">
+          <div className="side-left">
+            <Sidebar onSelectSubcategory={handleSubcategorySelect} />
+          </div>
+          <div>
+            <ul className="product-ul">
+              <Product products={products} />
+            </ul>
+          </div>
+        </div>
+      </div>
+      <Footer />
     </>
   );
 };

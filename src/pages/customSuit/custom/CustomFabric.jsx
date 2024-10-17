@@ -38,6 +38,23 @@ const CustomFabric = () => {
     setSelectedFabric(fabric);
   };
 
+  const handleAddToCart = () => {
+    if (selectedFabric) {
+      let cart = localStorage.getItem('cart');
+      cart = cart ? JSON.parse(cart) : [];
+
+      // Check if the product already exists in the cart
+      const existingItem = cart.find(item => item.fabricId === selectedFabric.fabricId);
+      if (!existingItem) {
+        cart.push(selectedFabric);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        alert('Fabric added to cart!');
+      } else {
+        alert('This fabric is already in your cart.');
+      }
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
@@ -89,6 +106,8 @@ const CustomFabric = () => {
             <div className="fabric-img">
               {selectedFabric.imageUrl ? <img src={selectedFabric.imageUrl} alt={selectedFabric.fabricName} /> : 'No image available'}
             </div>
+            {/* Add to Cart button */}
+            <button className="add-to-cart-btn" onClick={handleAddToCart}>Add to Cart</button>
           </div>
         )}
       </div>

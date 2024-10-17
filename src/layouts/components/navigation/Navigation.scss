@@ -5,79 +5,34 @@
 
 // Header left right padding
 .header-area {
-    .header-bottom {
-        display: flex; /* Flexbox layout */
-        justify-content: flex-start; /* Align items to the left */
-        align-items: center; /* Vertically center all items */
+    .header-bottom{
+        @include flexbox();
+        @include justify-content(space-between);
+        @include flex-wrap(wrap);
+        @include align-items(center);
+
         padding: 0px 90px;
-
-        @media #{$laptop} {
+        padding-right: 0;
+        @media #{$laptop}{
             padding: 0px 80px;
+            padding-right: 0;
         }
-        @media #{$lg} {
+        @media #{$lg}{
             padding: 0px 15px;
+            padding-right: 0;
         }
-
-        @media #{$md} {
+        // mobile menu show
+        @media #{$md}{
             padding: 22px 50px;
-        }
-        @media #{$sm} {
+         }
+        @media #{$sm}{
             padding: 22px 20px;
-        }
-        @media #{$xs} {
+         }
+        @media #{$xs}{
             padding: 22px 11px;
-        }
-    }
-
-    .logo {
-        margin-right: 30px; /* Add some space between the logo and the next item */
-        
-        img {
-            max-width: 100%; /* Ensure the logo fits its container */
-            height: auto;
-        }
-    }
-
-    .header-left {
-        display: flex; /* Flexbox for left-side items */
-        align-items: center; /* Vertically align */
-        justify-content: flex-start; /* Align items to the left side */
-
-        .main-menu {
-            display: flex; /* Keep the menu in a row */
-            ul {
-                display: flex;
-                list-style: none;
-                margin: 0;
-                padding: 0;
-
-                li {
-                    display: inline-block;
-                    margin-right: 20px; /* Adjust spacing between menu items */
-                    position: relative;
-
-                    a {
-                        font-size: 15px;
-                        color: #101A31;
-                        font-weight: 600;
-                        padding: 15px 10px; /* Adjust padding for menu items */
-                        display: block;
-                        text-transform: capitalize;
-                        @include transition(.3s);
-                    }
-                    &:hover > a {
-                        color: $theme-color;
-                    }
-                }
-            }
-        }
-
-        .button-area {
-            margin-left: auto; /* Push the button area to the right */
-        }
+         }
     }
 }
-
 
 
 .header-area {
@@ -127,6 +82,12 @@
         }
     }
 }
+
+
+.f-right {
+    float: right;
+}
+
 // Header Bottom
 .main-header{
     position: relative;
@@ -274,36 +235,19 @@
     }
 }
 
-// Custom Btn
 .header-btn {
-	border: none;
-	padding: 29px 66px;
-	text-transform: uppercase;
-	border-radius: 0;
-	cursor: pointer;
-	color: #ffff;
-	display: inline-block;
-	font-size: 14px;
-	font-weight: 500;
-	background-size: 200%;
-	transition: 0.6s;
-	background:#BE9278;
-	background-position: right;
-}
-.header-btn:hover{
-	background-position: left;
-	color: #ffff !important;
-  }
-
-  .f-right {
-	float: right
-}
-
-.d-flex {
-    display: -ms-flexbox !important;
-    display: flex !important;
-}
-
-.ml-30 {
-    margin-left: 30px;
-}
+    border: none;
+    padding: 29px 66px;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 0;
+    cursor: pointer;
+    color: white;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 500;
+    background-size: 200%;
+    transition: 0.6s;
+    background: #BE9278;
+    background-position: right;
+}  

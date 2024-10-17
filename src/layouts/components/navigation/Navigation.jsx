@@ -1,5 +1,4 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+
 import '../navigation/Navigation.scss';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import logo from '../../../assets/img/logo/logo.png';
@@ -8,13 +7,15 @@ export const Navigation = () => {
   return (
     <header className="header-area header_area">
       <div className="main-header header-sticky">
-        <div className="container d-flex justify-content-between align-items-center">
+        <div className="container-header d-flex justify-content-between align-items-center">
           <div className="logo">
             <a href="#">
               <img src={logo} alt="Logo" />
             </a>
           </div>
           <nav className="main-menu d-none d-lg-block">
+            <div className='main-menu f-right d-none d-lg-block'>
+              
             <ul id="navigation" className="d-flex justify-content-between">
               <li>
                 <a href="#">SUITS</a>
@@ -81,6 +82,7 @@ export const Navigation = () => {
                 <a href="#">Contact</a>
               </li>
             </ul>
+            </div>
           </nav>
           <div className="header-right-btn d-none d-lg-block ml-30">
             <a href="#" className="header-btn">Visit Us</a>
