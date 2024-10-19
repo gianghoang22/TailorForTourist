@@ -12,11 +12,9 @@ const ProductItem = ({ product }) => {
   return (
     <div className="col-md-4">
       <Link to={`/product-collection/${product.productID}`} className="card">
-        <div className="card-body">
-          <h5 className="card-title">Product Code: {product.productCode}</h5>
-          <p className="card-text">Price from: {product.price} $</p>
           <img src={product.imgURL} alt="" />
-        </div>
+          <h5 className="card-title">{product.productCode}</h5>
+          <p className="card-text">Price from: {product.price} $</p>
       </Link>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './CustomLining.scss';
 
-const CustomLining = () => {
+const CustomLining = ({ addToCart }) => {
   const [linings, setLinings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,6 +29,21 @@ const CustomLining = () => {
     const liningId = parseInt(event.target.value);
     const lining = linings.find(l => l.liningId === liningId);
     setSelectedLining(lining);
+  };
+
+  const handleAddToCart = () => {
+    if (selectedLining) {
+      // Call the parent function to add to cart
+      addToCart({
+        id: selectedLining.liningId,
+        name: selectedLining.liningName,
+        imageUrl: selectedLining.imageUrl,
+        type: 'lining'
+      });
+      alert(`Added ${selectedLining.liningName} to cart!`);
+    } else {
+      alert('Please select a lining first.');
+    }
   };
 
   if (loading) {
@@ -67,6 +82,13 @@ const CustomLining = () => {
           </div>
         </div>
       )}
+
+      {/* Add to Cart Button */}
+      <div className="cart-button">
+        <button onClick={handleAddToCart}>
+          Add to Cart
+        </button>
+      </div>
 
       {/* Nút Next */}
       <div className="navigation-button">

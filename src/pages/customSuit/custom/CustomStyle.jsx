@@ -27,6 +27,7 @@ const CustomStyle = () => {
   const [error, setError] = useState(null);
   const [openOptionType, setOpenOptionType] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedStyle, setSelectedStyle] = useState(null); // Track the selected style
 
   useEffect(() => {
     const fetchStylesAndOptions = async () => {
@@ -54,12 +55,31 @@ const CustomStyle = () => {
     );
   };
 
-  const handleOptionValueClick = (optionValue) => {
+  const handleOptionValueClick = (optionValue, style) => {
     setSelectedImage(imageMap[optionValue]);
+    setSelectedStyle({ styleId: style.styleId, styleName: style.styleName, optionValue }); // Set the selected style and option
   };
 
   const getOptionValues = (styleId, optionType) => {
     return styleOptions.filter(option => option.styleId === styleId && option.optionType === optionType);
+  };
+
+  const handleAddToCart = () => {
+    if (selectedStyle) {
+      let cart = localStorage.getItem('cart');
+      cart = cart ? JSON.parse(cart) : [];
+
+      // Check if the selected style is already in the cart
+      const existingItem = cart.find(item => item.styleId === selectedStyle.styleId && item.optionValue === selectedStyle.optionValue);
+
+      if (!existingItem) {
+        cart.push(selectedStyle);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        alert('Style added to cart!');
+      } else {
+        alert('This style is already in your cart.');
+      }
+    }
   };
 
   if (loading) {
@@ -87,7 +107,7 @@ const CustomStyle = () => {
                       {openOptionType.includes(optionType) && (
                         <ul className="option-values">
                           {getOptionValues(style.styleId, optionType).map(option => (
-                            <li key={option.styleOptionId} className="option-value" onClick={(e) => { e.stopPropagation(); handleOptionValueClick(option.optionValue); }}>
+                            <li key={option.styleOptionId} className="option-value" onClick={(e) => { e.stopPropagation(); handleOptionValueClick(option.optionValue, style); }}>
                               {option.optionValue}
                             </li>
                           ))}
@@ -103,6 +123,14 @@ const CustomStyle = () => {
       </div>
       <div className='right-content'>
         {selectedImage && <img src={selectedImage} alt='Selected Option' />}
+        {selectedStyle && (
+          <div className='selected-style-details'>
+            <h3>Selected Style:</h3>
+            <p><strong>Style:</strong> {selectedStyle.styleName}</p>
+            <p><strong>Option:</strong> {selectedStyle.optionValue}</p>
+            <button className="add-to-cart-btn" onClick={handleAddToCart}>Add to Cart</button>
+          </div>
+        )}
       </div>
       <div className='navigation-button'>
         <Link to="/custom-suits/lining">

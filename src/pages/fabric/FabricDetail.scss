@@ -1,0 +1,29 @@
+.fabric-detail-page {
+    padding: 20px;
+  
+    .fabric-name {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+  
+    .fabric-info {
+      display: flex;
+      align-items: center;
+  
+      img {
+        max-width: 300px;
+        margin-right: 20px;
+      }
+  
+      .fabric-description {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+      }
+  
+      .fabric-price,
+      .fabric-composition {
+        font-weight: bold;
+      }
+    }
+  }
+  

@@ -2,12 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './customFabric.scss';
 
+import all_icon from '../../../assets/img/filter/icon-fabricFilter-all.jpg';
+import new_icon from '../../../assets/img/filter/icon-fabricFilter-new.jpg';
+import premium_icon from '../../../assets/img/filter/icon-fabricFilter-premium.jpg';
+import sale_icon from '../../../assets/img/filter/icon-fabricFilter-sale.png';
+import search_icon from '../../../assets/img/icon/search.png';
+
 const CustomFabric = () => {
   const [fabrics, setFabrics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedTag, setSelectedTag] = useState('All');
   const [selectedFabric, setSelectedFabric] = useState(null);
+  const [searchTerm, setSearchTerm] = useState(''); // State for search term
+
+  const tagImage = {
+    'All': all_icon,
+    'New': new_icon,
+    'Premium': premium_icon,
+    'Sale': sale_icon,
+  };
 
   const fetchFabrics = async (tag = '') => {
     try {
@@ -43,7 +57,6 @@ const CustomFabric = () => {
       let cart = localStorage.getItem('cart');
       cart = cart ? JSON.parse(cart) : [];
 
-      // Check if the product already exists in the cart
       const existingItem = cart.find(item => item.fabricId === selectedFabric.fabricId);
       if (!existingItem) {
         cart.push(selectedFabric);
@@ -55,6 +68,11 @@ const CustomFabric = () => {
     }
   };
 
+  // Filter fabrics by search term
+  const filteredFabrics = fabrics.filter((fabric) =>
+    fabric.fabricName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
@@ -63,61 +81,84 @@ const CustomFabric = () => {
       <div className='left-half'>
         <div className='tag-buttons'>
           {['All', 'New', 'Premium', 'Sale'].map(tag => (
-            <button key={tag} className={selectedTag === tag ? 'active' : ''} onClick={() => handleTagClick(tag)}>
+            <li key={tag} className={selectedTag === tag ? 'active' : ''} onClick={() => handleTagClick(tag)}>
+              <a>
+              <img src={tagImage[tag]} alt={`${tag} icon`} className='tag-icon' />
               {tag}
-            </button>
-          ))}
-        </div>
-        <ul>
-          {fabrics.map((fabric) => (
-            <li key={fabric.fabricId} onClick={() => handleFabricClick(fabric)}>
-              <div className="fabric-id">
-                <span>Fabric ID:</span>
-                {fabric.fabricId}
-              </div>
-              <div className="fabric-name">
-                <span>Fabric Name:</span>
-                {fabric.fabricName}
-              </div>
-              <div className="fabric-price">
-                <span>Fabric Price:</span>
-                {fabric.price}
-              </div>
-              <div className="fabric-description">
-                <span>Fabric Description:</span>
-                {fabric.description}
-              </div>
-              <div className="fabric-img">
-                <span>Fabric Image:</span>
-                {fabric.imageUrl ? <img src={fabric.imageUrl} alt={fabric.fabricName} /> : 'No image available'}
-              </div>
+                </a>
             </li>
           ))}
-        </ul>
+        </div>
+
+          {/* right item */}
+        <div className='right-items-fabric'>
+
+          {/* Search Box */}
+        <div className="search-box">
+          <input id='live-search'
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <span className='icon'>
+            <img src={search_icon} alt={search_icon} />
+          </span>
+        </div>
+          
+          <ul className="list-fabric">
+          {filteredFabrics.length > 0 ? (
+            filteredFabrics.map((fabric) => (
+              <li key={fabric.fabricId} onClick={() => handleFabricClick(fabric)}>
+                <div className="fabric-img">
+                  {fabric.imageUrl ? <img src={fabric.imageUrl} alt={fabric.fabricName} /> : 'No image available'}
+                </div>
+                <div className="fabric-price">
+                  {fabric.price} USD
+                </div>
+                <div className="fabric-name">
+                  {fabric.fabricName}
+                </div>
+              </li>
+            ))
+          ) : (
+            <li>No fabrics match your search.</li>
+          )}
+          </ul>
+          
+          
+      
+        </div>
       </div>
+
+        {/* item detail */}
+
       <div className='right-half'>
         {selectedFabric && (
           <div className='fabric-details'>
-            <h3>Details for Fabric ID: {selectedFabric.fabricId}</h3>
-            <div><strong>ID:</strong> {selectedFabric.fabricId}</div>
-            <div><strong>Name:</strong> {selectedFabric.fabricName}</div>
-            <div><strong>Price:</strong> {selectedFabric.price}</div>
-            <div><strong>Description:</strong> {selectedFabric.description}</div>
+            <div className="product-info" id='pd_info'>
+            <h1 className="pd-name">
+              CUSTOM 
+              <span>SUIT</span>
+            </h1>
+            <p className='composition set'>{selectedFabric.description}</p>
+            <p className='price'>{selectedFabric.price} USD</p>
             <div className="fabric-img">
               {selectedFabric.imageUrl ? <img src={selectedFabric.imageUrl} alt={selectedFabric.fabricName} /> : 'No image available'}
             </div>
-            {/* Add to Cart button */}
+            </div>
+            {/* add to cart */}
             <button className="add-to-cart-btn" onClick={handleAddToCart}>Add to Cart</button>
           </div>
         )}
-      </div>
-      <div className='navigation-button'>
+
+<div className='next-btn'>
         <Link to="/custom-suits/style">
-          <button>Go to Style</button>
+          <button className='navigation-button'>Go to Style</button>
         </Link>
+      </div>
       </div>
     </div>
   );
-}
+};
 
 export default CustomFabric;
