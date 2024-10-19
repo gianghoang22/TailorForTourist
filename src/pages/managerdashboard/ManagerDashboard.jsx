@@ -44,10 +44,22 @@ const ManagerDashboard = () => {
                 </Link>
               </li>
               <li>
-                <a href="#">
-                  <i className="fas fa-user"></i> User
-                </a>
+                <Link
+                  className={`${location.pathname === "/manager/statistics" ? "active" : ""}`}
+                  to="/manager/statistics"
+                >
+                  <i className="fas fa-users"></i> Statistics
+                </Link>
               </li>
+              <li>
+                <Link
+                  className={`${location.pathname === "/manager/shipment" ? "active" : ""}`}
+                  to="/manager/shipment"
+                >
+                  <i className="fas fa-users"></i> Shipment
+                </Link>
+              </li>
+
               <li>
                 <a href="#">
                   <i className="fas fa-box"></i> Product
@@ -137,70 +149,72 @@ const ManagerDashboard = () => {
             </div>
           </div>
           {/* Conditional Rendering of Stats and Graphs */}
-          {location.pathname !== "/manager/staff-management" && (
-            <>
-              <div className="stats">
-                <div className="stat-item blue">
-                  <i className="fab fa-android"></i>
-                  <p className="stat-value">714k</p>
-                  <p className="stat-label">Weekly Sales</p>
-                </div>
-                <div className="stat-item blue-light">
-                  <i className="fab fa-apple"></i>
-                  <p className="stat-value">1.35m</p>
-                  <p className="stat-label">New Users</p>
-                </div>
-                <div className="stat-item yellow">
-                  <i className="fab fa-windows"></i>
-                  <p className="stat-value">1.72m</p>
-                  <p className="stat-label">Item Orders</p>
-                </div>
-                <div className="stat-item red">
-                  <i className="fas fa-bug"></i>
-                  <p className="stat-value">234</p>
-                  <p className="stat-label">Bug Reports</p>
-                </div>
-              </div>
-              <div className="content">
-                <div className="visits">
-                  <h2>Website Visits</h2>
-                  <p>(+43%) than last year</p>
-                  <img
-                    className="graph"
-                    alt="Graph showing website visits"
-                    src="https://storage.googleapis.com/a1aa/image/YSljUhYQmp6PNhCir0KXcn4sKmXS6rf3dAPmBfCfeEwdEcUOB.jpg"
-                  />
-                </div>
-                <div className="current-visits">
-                  <h2>Current Visits</h2>
-                  <div className="pie-chart">
-                    <div className="label label-1">27.7%</div>
-                    <div className="label label-2">34.7%</div>
-                    <div className="label label-3">28.4%</div>
-                    <div className="label label-4">9.2%</div>
+          {location.pathname !== "/manager/staff-management" &&
+            location.pathname !== "/manager/statistics" &&
+            location.pathname !== "/manager/shipment" && (
+              <>
+                <div className="stats">
+                  <div className="stat-item blue">
+                    <i className="fab fa-android"></i>
+                    <p className="stat-value">714k</p>
+                    <p className="stat-label">Weekly Sales</p>
                   </div>
-                  <div className="legend">
-                    <div className="legend-item">
-                      <div className="color blue"></div>
-                      <p>America</p>
-                    </div>
-                    <div className="legend-item">
-                      <div className="color yellow"></div>
-                      <p>Asia</p>
-                    </div>
-                    <div className="legend-item">
-                      <div className="color red"></div>
-                      <p>Europe</p>
-                    </div>
-                    <div className="legend-item">
-                      <div className="color green"></div>
-                      <p>Africa</p>
-                    </div>
+                  <div className="stat-item blue-light">
+                    <i className="fab fa-apple"></i>
+                    <p className="stat-value">1.35m</p>
+                    <p className="stat-label">New Users</p>
+                  </div>
+                  <div className="stat-item yellow">
+                    <i className="fab fa-windows"></i>
+                    <p className="stat-value">1.72m</p>
+                    <p className="stat-label">Item Orders</p>
+                  </div>
+                  <div className="stat-item red">
+                    <i className="fas fa-bug"></i>
+                    <p className="stat-value">234</p>
+                    <p className="stat-label">Bug Reports</p>
                   </div>
                 </div>
-              </div>
-            </>
-          )}
+                <div className="content">
+                  <div className="visits">
+                    <h2>Website Visits</h2>
+                    <p>(+43%) than last year</p>
+                    <img
+                      className="graph"
+                      alt="Graph showing website visits"
+                      src="https://storage.googleapis.com/a1aa/image/YSljUhYQmp6PNhCir0KXcn4sKmXS6rf3dAPmBfCfeEwdEcUOB.jpg"
+                    />
+                  </div>
+                  <div className="current-visits">
+                    <h2>Current Visits</h2>
+                    <div className="pie-chart">
+                      <div className="label label-1">27.7%</div>
+                      <div className="label label-2">34.7%</div>
+                      <div className="label label-3">28.4%</div>
+                      <div className="label label-4">9.2%</div>
+                    </div>
+                    <div className="legend">
+                      <div className="legend-item">
+                        <div className="color blue"></div>
+                        <p>America</p>
+                      </div>
+                      <div className="legend-item">
+                        <div className="color yellow"></div>
+                        <p>Asia</p>
+                      </div>
+                      <div className="legend-item">
+                        <div className="color red"></div>
+                        <p>Europe</p>
+                      </div>
+                      <div className="legend-item">
+                        <div className="color green"></div>
+                        <p>Africa</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           {/* Outlet for child routes */}
           <Outlet />{" "}
           {/* This will render the StaffManagement component when the route matches */}

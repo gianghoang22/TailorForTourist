@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TextField,
   Button,
@@ -11,70 +11,168 @@ import {
   TableRow,
   Paper,
   InputAdornment,
+  Alert,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search"; // Import the Search icon
+import SearchIcon from "@mui/icons-material/Search";
 import "./StaffManagement.scss";
 
-const initialStaff = [
-  { id: 1, name: "John Doe", email: "john@example.com", status: "Active" },
-  { id: 2, name: "Jane Smith", email: "jane@example.com", status: "Active" },
-  {
-    id: 3,
-    name: "Alice Johnson",
-    email: "alice@example.com",
-    status: "Inactive",
-  },
-];
-
 const StaffManagement = () => {
-  const [staff, setStaff] = useState(initialStaff);
+  const [staffData, setStaffData] = useState([]);
   const [newStaff, setNewStaff] = useState({
     name: "",
     email: "",
+    gender: "Male",
+    address: "nowhere",
+    dob: "2003-12-12",
+    isConfirmed: true,
+    phone: "0915230240",
+    password: "123456",
+    roleId: 2,
     status: "Active",
   });
   const [editIndex, setEditIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [error, setError] = useState(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  useEffect(() => {
+    const fetchStaffData = async () => {
+      try {
+        const response = await fetch("https://localhost:7244/api/User");
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        const data = await response.json();
+        const filteredData = data.filter((user) => user.roleId === 2);
+        setStaffData(filteredData);
+      } catch (error) {
+        console.error("Error fetching staff data:", error);
+        setError("Error fetching staff data. Please try again later.");
+      }
+    };
+    fetchStaffData();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setNewStaff({ ...newStaff, [name]: value });
   };
 
-  const handleAdd = () => {
-    setStaff([...staff, { ...newStaff, id: staff.length + 1 }]);
-    setNewStaff({ name: "", email: "", status: "Active" });
+  const handleAdd = async () => {
+    try {
+      const response = await fetch("https://localhost:7244/api/User", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newStaff),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("API Error:", error);
+        throw new Error(error.message || "Error adding new staff");
+      }
+
+      await response.json(); // Wait for the response to be parsed
+
+      // Re-fetch staff data instead of refreshing the page
+      // fetchStaffData(); // Call the function to fetch data again
+
+      // setNewStaff({
+      //   name: "",
+      //   email: "",
+      //   gender: "Male",
+      //   address: "nowhere",
+      //   dob: "2003-12-12",
+      //   isConfirmed: true,
+      //   phone: "0915230240",
+      //   password: "123456",
+      //   roleId: 2,
+      //   status: "Active",
+      // });
+
+      setError(null); // Clear any previous errors
+      setShowSuccessMessage(true); // Show success message
+    } catch (error) {
+      console.error("Error adding new staff:", error);
+      setError(error.message); // Set the error message
+    }
   };
 
-  const handleEdit = (index) => {
-    setNewStaff(staff[index]);
-    setEditIndex(index);
+  const handleEdit = (staffData) => {
+    setNewStaff(staffData);
+    setEditIndex(staffData.userId);
   };
 
-  const handleUpdate = () => {
-    const updatedStaff = staff.map((s, index) =>
-      index === editIndex ? newStaff : s
-    );
-    setStaff(updatedStaff);
-    setNewStaff({ name: "", email: "", status: "Active" });
-    setEditIndex(null);
+  const handleUpdate = async () => {
+    try {
+      const response = await fetch(
+        `https://localhost:7244/api/User/${editIndex}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newStaff),
+        }
+      );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Error updating staff");
+      }
+      const updatedUser = await response.json();
+      const updatedStaff = staffData.map((s) =>
+        s.userId === editIndex ? updatedUser : s
+      );
+      setStaffData(updatedStaff);
+      setNewStaff({
+        name: "",
+        email: "",
+        password: "123456",
+        roleId: 2,
+        status: "Active",
+      });
+      setEditIndex(null);
+      setError(null);
+    } catch (error) {
+      console.error("Error updating staff:", error);
+      setError(error.message);
+    }
   };
 
-  const handleDelete = (id) => {
-    setStaff(staff.filter((s) => s.id !== id));
+  const handleDelete = async (userId) => {
+    try {
+      const response = await fetch(
+        `https://localhost:7244/api/User/${userId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Error deleting staff");
+      }
+      setStaffData(staffData.filter((s) => s.userId !== userId));
+      setError(null);
+    } catch (error) {
+      console.error("Error deleting staff:", error);
+      setError(error.message);
+    }
   };
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
 
-  const filteredStaff = staff.filter((s) =>
+  const filteredStaff = staffData.filter((s) =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="staff-management">
       <h2>Staff Management</h2>
+      {error && <Alert severity="error">{error}</Alert>}
       <div className="header">
         <div className="form">
           <TextField
@@ -93,28 +191,9 @@ const StaffManagement = () => {
             variant="outlined"
             style={{ marginRight: "1rem" }}
           />
-          <TextField
-            select
-            label="Status"
-            name="status"
-            value={newStaff.status}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          >
-            <MenuItem value="Active">Active</MenuItem>
-            <MenuItem value="Inactive">Inactive</MenuItem>
-          </TextField>
-
-          {editIndex !== null ? (
-            <Button variant="contained" color="primary" onClick={handleUpdate}>
-              Update
-            </Button>
-          ) : (
-            <Button variant="contained" color="secondary" onClick={handleAdd}>
-              Add Staff
-            </Button>
-          )}
+          <Button variant="contained" color="secondary" onClick={handleAdd}>
+            Add Staff
+          </Button>
         </div>
 
         <TextField
@@ -122,7 +201,7 @@ const StaffManagement = () => {
           variant="outlined"
           value={searchTerm}
           onChange={handleSearchChange}
-          style={{ margin: "1rem 0", marginLeft: "auto" }} // Align to the right
+          style={{ margin: "1rem 0", marginLeft: "auto" }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -144,8 +223,8 @@ const StaffManagement = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredStaff.map((s, index) => (
-              <TableRow key={s.id}>
+            {filteredStaff.map((s) => (
+              <TableRow key={s.userId}>
                 <TableCell>{s.name}</TableCell>
                 <TableCell>{s.email}</TableCell>
                 <TableCell>{s.status}</TableCell>
@@ -153,7 +232,7 @@ const StaffManagement = () => {
                   <Button
                     variant="outlined"
                     color="primary"
-                    onClick={() => handleEdit(index)}
+                    onClick={() => handleEdit(s)}
                     style={{ marginRight: "0.5rem" }}
                   >
                     Edit
@@ -161,7 +240,7 @@ const StaffManagement = () => {
                   <Button
                     variant="outlined"
                     color="secondary"
-                    onClick={() => handleDelete(s.id)}
+                    onClick={() => handleDelete(s.userId)}
                   >
                     Delete
                   </Button>
@@ -171,6 +250,13 @@ const StaffManagement = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {showSuccessMessage && (
+        <div className="success-message">
+          <p>Added successfully!</p>
+          <button onClick={() => window.location.reload()}>Refresh</button>
+        </div>
+      )}
     </div>
   );
 };

@@ -32,19 +32,68 @@ import BookingThanks from "../pages/booking/BookingThanks";
 import StaffManagement from "../pages/managerdashboard/StaffManagement";
 import ManagerDashboard from "../pages/managerdashboard/ManagerDashboard";
 
+import ErrorBoundary from "../pages/ErrorBoundary/ErrorBoundary";
+import ProfitCalculation from "../pages/managerdashboard/ProfitCalculation";
+import ShipmentTracker from "../pages/managerdashboard/ShipmentTracker";
+
+import AdminDashboard from "../pages/admin/AdminDashboard";
+import UserManagement from "../pages/admin/UserManagement";
+import FabricManagement from "../pages/admin/FabricManagement";
+import StoreManagement from "../pages/admin/StoreManagement";
+import LiningManagement from "../pages/admin/LiningManagement";
+import VoucherManagement from "../pages/admin/VoucherManagement";
 export const routes = [
   {
     path: "/",
     element: <HomePage />,
   },
   {
+    path: "/admin",
+    element: <AdminDashboard />,
+    children: [
+      {
+        path: "user-management",
+        element: <UserManagement />,
+      },
+      {
+        path: "fabric-management",
+        element: <FabricManagement />,
+      },
+      {
+        path: "lining-management",
+        element: <LiningManagement />,
+      },
+      {
+        path: "store-management",
+        element: <StoreManagement />,
+      },
+      {
+        path: "voucher-management",
+        element: <VoucherManagement />,
+      },
+    ],
+  },
+  {
     path: "/manager",
-    element: <ManagerDashboard />,
+    element: (
+      <ErrorBoundary>
+        <ManagerDashboard />
+      </ErrorBoundary>
+    ),
     children: [
       {
         path: "staff-management", // This will be /manager/staff-management
         element: <StaffManagement />,
       },
+      {
+        path: "statistics",
+        element: <ProfitCalculation />,
+      },
+      {
+        path: "shipment",
+        element: <ShipmentTracker />,
+      },
+
       // Add other children routes here if needed
     ],
   },
