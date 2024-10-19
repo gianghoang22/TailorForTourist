@@ -54,26 +54,6 @@ function TemplateFrame({
               p: "8px 12px",
             }}
           >
-            <Button
-              variant="text"
-              size="small"
-              aria-label="Back to templates"
-              startIcon={<ArrowBackRoundedIcon />}
-              component="a"
-              href="/material-ui/getting-started/templates/"
-              sx={{ display: { xs: "none", sm: "flex" } }}
-            >
-              Back to templates
-            </Button>
-            <IconButton
-              size="small"
-              aria-label="Back to templates"
-              component="a"
-              href="/material-ui/getting-started/templates/"
-              sx={{ display: { xs: "auto", sm: "none" } }}
-            >
-              <ArrowBackRoundedIcon />
-            </IconButton>
             <Box sx={{ display: "flex", gap: 1 }}>
               <FormControl variant="outlined" sx={{ minWidth: 180 }}>
                 <Select
