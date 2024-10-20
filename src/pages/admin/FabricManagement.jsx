@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   TextField,
   Button,
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -14,21 +13,17 @@ import {
   Alert,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import "./StaffManagement.scss";
+import "./FabricManagement.scss";
 
-const StaffManagement = () => {
-  const [staffData, setStaffData] = useState([]);
-  const [newStaff, setNewStaff] = useState({
-    name: "",
-    email: "",
-    gender: "Male",
-    address: "nowhere",
-    dob: "2003-12-12",
-    isConfirmed: true,
-    phone: "0915230240",
-    password: "123456",
-    roleId: 2,
-    status: "Active",
+const FabricManagement = () => {
+  const [fabricData, setFabricData] = useState([]);
+  const [newFabric, setNewFabric] = useState({
+    fabricId: null,
+    fabricName: "",
+    price: 0,
+    description: "",
+    imageUrl: null,
+    tag: "",
   });
   const [editIndex, setEditIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,127 +31,110 @@ const StaffManagement = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
-    const fetchStaffData = async () => {
+    const fetchFabricData = async () => {
       try {
-        const response = await fetch("https://localhost:7244/api/User");
+        const response = await fetch("https://localhost:7244/api/Fabrics");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        const filteredData = data.filter((user) => user.roleId === 2);
-        setStaffData(filteredData);
+        setFabricData(data); // No filtering required
       } catch (error) {
-        console.error("Error fetching staff data:", error);
-        setError("Error fetching staff data. Please try again later.");
+        console.error("Error fetching fabric data:", error);
+        setError("Error fetching fabric data. Please try again later.");
       }
     };
-    fetchStaffData();
+    fetchFabricData();
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setNewStaff({ ...newStaff, [name]: value });
+    setNewFabric({ ...newFabric, [name]: value });
   };
 
   const handleAdd = async () => {
     try {
-      const response = await fetch("https://localhost:7244/api/User", {
+      const response = await fetch("https://localhost:7244/api/Fabrics", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newStaff),
+        body: JSON.stringify(newFabric),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        console.error("API Error:", error);
-        throw new Error(error.message || "Error adding new staff");
+        throw new Error(error.message || "Error adding new fabric");
       }
 
-      await response.json(); // Wait for the response to be parsed
-
-      // Re-fetch staff data instead of refreshing the page
-      // fetchStaffData(); // Call the function to fetch data again
-
-      // setNewStaff({
-      //   name: "",
-      //   email: "",
-      //   gender: "Male",
-      //   address: "nowhere",
-      //   dob: "2003-12-12",
-      //   isConfirmed: true,
-      //   phone: "0915230240",
-      //   password: "123456",
-      //   roleId: 2,
-      //   status: "Active",
-      // });
-
-      setError(null); // Clear any previous errors
-      setShowSuccessMessage(true); // Show success message
+      const addedFabric = await response.json();
+      setFabricData([...fabricData, addedFabric]); // Update fabric data without needing to refetch
+      setError(null);
+      setShowSuccessMessage(true);
     } catch (error) {
-      console.error("Error adding new staff:", error);
-      setError(error.message); // Set the error message
+      console.error("Error adding new fabric:", error);
+      setError(error.message);
     }
   };
 
-  const handleEdit = (staffData) => {
-    setNewStaff(staffData);
-    setEditIndex(staffData.userId);
+  const handleEdit = (fabric) => {
+    setNewFabric(fabric);
+    setEditIndex(fabric.fabricId);
   };
 
   const handleUpdate = async () => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/User/${editIndex}`,
+        `https://localhost:7244/api/Fabrics/${editIndex}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(newStaff),
+          body: JSON.stringify(newFabric),
         }
       );
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Error updating staff");
+        throw new Error(error.message || "Error updating fabric");
       }
-      const updatedUser = await response.json();
-      const updatedStaff = staffData.map((s) =>
-        s.userId === editIndex ? updatedUser : s
+      const updatedFabric = await response.json();
+      const updatedFabrics = fabricData.map((f) =>
+        f.fabricId === editIndex ? updatedFabric : f
       );
-      setStaffData(updatedStaff);
-      setNewStaff({
-        name: "",
-        email: "",
-        password: "123456",
-        roleId: 2,
-        status: "Active",
+      setFabricData(updatedFabrics);
+      setNewFabric({
+        fabricId: null,
+        fabricName: "",
+        price: 0,
+        description: "",
+        imageUrl: null,
+        tag: "",
       });
       setEditIndex(null);
       setError(null);
     } catch (error) {
-      console.error("Error updating staff:", error);
+      console.error("Error updating fabric:", error);
       setError(error.message);
     }
   };
 
-  const handleDelete = async (userId) => {
+  const handleDelete = async (fabricId) => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/User/${userId}`,
+        `https://localhost:7244/api/Fabrics/${fabricId}`,
         {
           method: "DELETE",
         }
       );
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Error deleting staff");
+        throw new Error(error.message || "Error deleting fabric");
       }
-      setStaffData(staffData.filter((s) => s.userId !== userId));
+      setFabricData(fabricData.filter((f) => f.fabricId !== fabricId));
       setError(null);
     } catch (error) {
-      console.error("Error deleting staff:", error);
+      console.error("Error deleting fabric:", error);
       setError(error.message);
     }
   };
@@ -165,39 +143,56 @@ const StaffManagement = () => {
     setSearchTerm(e.target.value);
   };
 
-  const filteredStaff = staffData.filter((s) =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredFabrics = fabricData.filter((f) =>
+    f.fabricName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="staff-management">
-      <h2>Staff Management</h2>
+    <div className="fabric-management">
+      <h2>Fabric Management</h2>
       {error && <Alert severity="error">{error}</Alert>}
       <div className="header">
         <div className="form">
           <TextField
-            label="Name"
-            name="name"
-            value={newStaff.name}
+            label="Fabric Name"
+            name="fabricName"
+            value={newFabric.fabricName}
             onChange={handleChange}
             variant="outlined"
             style={{ marginRight: "1rem" }}
           />
           <TextField
-            label="Email"
-            name="email"
-            value={newStaff.email}
+            label="Price"
+            name="price"
+            type="number"
+            value={newFabric.price}
+            onChange={handleChange}
+            variant="outlined"
+            style={{ marginRight: "1rem" }}
+          />
+          <TextField
+            label="Description"
+            name="description"
+            value={newFabric.description}
+            onChange={handleChange}
+            variant="outlined"
+            style={{ marginRight: "1rem" }}
+          />
+          <TextField
+            label="Tag"
+            name="tag"
+            value={newFabric.tag}
             onChange={handleChange}
             variant="outlined"
             style={{ marginRight: "1rem" }}
           />
           <Button variant="contained" color="secondary" onClick={handleAdd}>
-            Add Staff
+            Add Fabric
           </Button>
         </div>
 
         <TextField
-          label="Search by Name"
+          label="Search by Fabric Name"
           variant="outlined"
           value={searchTerm}
           onChange={handleSearchChange}
@@ -216,23 +211,25 @@ const StaffManagement = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Status</TableCell>
+              <TableCell>Fabric Name</TableCell>
+              <TableCell>Price</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell>Tag</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredStaff.map((s) => (
-              <TableRow key={s.userId}>
-                <TableCell>{s.name}</TableCell>
-                <TableCell>{s.email}</TableCell>
-                <TableCell>{s.status}</TableCell>
+            {filteredFabrics.map((f) => (
+              <TableRow key={f.fabricId}>
+                <TableCell>{f.fabricName}</TableCell>
+                <TableCell>{f.price}</TableCell>
+                <TableCell>{f.description}</TableCell>
+                <TableCell>{f.tag}</TableCell>
                 <TableCell>
                   <Button
                     variant="outlined"
                     color="primary"
-                    onClick={() => handleEdit(s)}
+                    onClick={() => handleEdit(f)}
                     style={{ marginRight: "0.5rem" }}
                   >
                     Edit
@@ -240,7 +237,7 @@ const StaffManagement = () => {
                   <Button
                     variant="outlined"
                     color="secondary"
-                    onClick={() => handleDelete(s.userId)}
+                    onClick={() => handleDelete(f.fabricId)}
                   >
                     Delete
                   </Button>
@@ -261,4 +258,4 @@ const StaffManagement = () => {
   );
 };
 
-export default StaffManagement;
+export default FabricManagement;

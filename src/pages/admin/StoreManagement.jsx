@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   TextField,
   Button,
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -14,21 +13,16 @@ import {
   Alert,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import "./StaffManagement.scss";
+import "./StoreManagement.scss";
 
-const StaffManagement = () => {
-  const [staffData, setStaffData] = useState([]);
-  const [newStaff, setNewStaff] = useState({
+const StoreManagement = () => {
+  const [storeData, setStoreData] = useState([]);
+  const [newStore, setNewStore] = useState({
+    storeId: null,
+    userId: 0,
     name: "",
-    email: "",
-    gender: "Male",
-    address: "nowhere",
-    dob: "2003-12-12",
-    isConfirmed: true,
-    phone: "0915230240",
-    password: "123456",
-    roleId: 2,
-    status: "Active",
+    address: "",
+    contactNumber: "",
   });
   const [editIndex, setEditIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,127 +30,109 @@ const StaffManagement = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
-    const fetchStaffData = async () => {
+    const fetchStoreData = async () => {
       try {
-        const response = await fetch("https://localhost:7244/api/User");
+        const response = await fetch("https://localhost:7244/api/Store");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        const filteredData = data.filter((user) => user.roleId === 2);
-        setStaffData(filteredData);
+        setStoreData(data); // No filtering required
       } catch (error) {
-        console.error("Error fetching staff data:", error);
-        setError("Error fetching staff data. Please try again later.");
+        console.error("Error fetching store data:", error);
+        setError("Error fetching store data. Please try again later.");
       }
     };
-    fetchStaffData();
+    fetchStoreData();
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setNewStaff({ ...newStaff, [name]: value });
+    setNewStore({ ...newStore, [name]: value });
   };
 
   const handleAdd = async () => {
     try {
-      const response = await fetch("https://localhost:7244/api/User", {
+      const response = await fetch("https://localhost:7244/api/Store", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newStaff),
+        body: JSON.stringify(newStore),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        console.error("API Error:", error);
-        throw new Error(error.message || "Error adding new staff");
+        throw new Error(error.message || "Error adding new store");
       }
 
-      await response.json(); // Wait for the response to be parsed
-
-      // Re-fetch staff data instead of refreshing the page
-      // fetchStaffData(); // Call the function to fetch data again
-
-      // setNewStaff({
-      //   name: "",
-      //   email: "",
-      //   gender: "Male",
-      //   address: "nowhere",
-      //   dob: "2003-12-12",
-      //   isConfirmed: true,
-      //   phone: "0915230240",
-      //   password: "123456",
-      //   roleId: 2,
-      //   status: "Active",
-      // });
-
-      setError(null); // Clear any previous errors
-      setShowSuccessMessage(true); // Show success message
+      const addedStore = await response.json();
+      setStoreData([...storeData, addedStore]); // Update store data without needing to refetch
+      setError(null);
+      setShowSuccessMessage(true);
     } catch (error) {
-      console.error("Error adding new staff:", error);
-      setError(error.message); // Set the error message
+      console.error("Error adding new store:", error);
+      setError(error.message);
     }
   };
 
-  const handleEdit = (staffData) => {
-    setNewStaff(staffData);
-    setEditIndex(staffData.userId);
+  const handleEdit = (store) => {
+    setNewStore(store);
+    setEditIndex(store.storeId);
   };
 
   const handleUpdate = async () => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/User/${editIndex}`,
+        `https://localhost:7244/api/Store/${editIndex}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(newStaff),
+          body: JSON.stringify(newStore),
         }
       );
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Error updating staff");
+        throw new Error(error.message || "Error updating store");
       }
-      const updatedUser = await response.json();
-      const updatedStaff = staffData.map((s) =>
-        s.userId === editIndex ? updatedUser : s
+      const updatedStore = await response.json();
+      const updatedStores = storeData.map((s) =>
+        s.storeId === editIndex ? updatedStore : s
       );
-      setStaffData(updatedStaff);
-      setNewStaff({
+      setStoreData(updatedStores);
+      setNewStore({
+        storeId: null,
+        userId: 0,
         name: "",
-        email: "",
-        password: "123456",
-        roleId: 2,
-        status: "Active",
+        address: "",
+        contactNumber: "",
       });
       setEditIndex(null);
       setError(null);
     } catch (error) {
-      console.error("Error updating staff:", error);
+      console.error("Error updating store:", error);
       setError(error.message);
     }
   };
 
-  const handleDelete = async (userId) => {
+  const handleDelete = async (storeId) => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/User/${userId}`,
+        `https://localhost:7244/api/Store/${storeId}`,
         {
           method: "DELETE",
         }
       );
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Error deleting staff");
+        throw new Error(error.message || "Error deleting store");
       }
-      setStaffData(staffData.filter((s) => s.userId !== userId));
+      setStoreData(storeData.filter((s) => s.storeId !== storeId));
       setError(null);
     } catch (error) {
-      console.error("Error deleting staff:", error);
+      console.error("Error deleting store:", error);
       setError(error.message);
     }
   };
@@ -165,39 +141,47 @@ const StaffManagement = () => {
     setSearchTerm(e.target.value);
   };
 
-  const filteredStaff = staffData.filter((s) =>
+  const filteredStores = storeData.filter((s) =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="staff-management">
-      <h2>Staff Management</h2>
+    <div className="store-management">
+      <h2>Store Management</h2>
       {error && <Alert severity="error">{error}</Alert>}
       <div className="header">
         <div className="form">
           <TextField
-            label="Name"
+            label="Store Name"
             name="name"
-            value={newStaff.name}
+            value={newStore.name}
             onChange={handleChange}
             variant="outlined"
             style={{ marginRight: "1rem" }}
           />
           <TextField
-            label="Email"
-            name="email"
-            value={newStaff.email}
+            label="Address"
+            name="address"
+            value={newStore.address}
+            onChange={handleChange}
+            variant="outlined"
+            style={{ marginRight: "1rem" }}
+          />
+          <TextField
+            label="Contact Number"
+            name="contactNumber"
+            value={newStore.contactNumber}
             onChange={handleChange}
             variant="outlined"
             style={{ marginRight: "1rem" }}
           />
           <Button variant="contained" color="secondary" onClick={handleAdd}>
-            Add Staff
+            Add Store
           </Button>
         </div>
 
         <TextField
-          label="Search by Name"
+          label="Search by Store Name"
           variant="outlined"
           value={searchTerm}
           onChange={handleSearchChange}
@@ -216,18 +200,18 @@ const StaffManagement = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Status</TableCell>
+              <TableCell>Store Name</TableCell>
+              <TableCell>Address</TableCell>
+              <TableCell>Contact Number</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredStaff.map((s) => (
-              <TableRow key={s.userId}>
+            {filteredStores.map((s) => (
+              <TableRow key={s.storeId}>
                 <TableCell>{s.name}</TableCell>
-                <TableCell>{s.email}</TableCell>
-                <TableCell>{s.status}</TableCell>
+                <TableCell>{s.address}</TableCell>
+                <TableCell>{s.contactNumber}</TableCell>
                 <TableCell>
                   <Button
                     variant="outlined"
@@ -240,7 +224,7 @@ const StaffManagement = () => {
                   <Button
                     variant="outlined"
                     color="secondary"
-                    onClick={() => handleDelete(s.userId)}
+                    onClick={() => handleDelete(s.storeId)}
                   >
                     Delete
                   </Button>
@@ -261,4 +245,4 @@ const StaffManagement = () => {
   );
 };
 
-export default StaffManagement;
+export default StoreManagement;

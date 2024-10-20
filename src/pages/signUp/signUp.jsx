@@ -1,10 +1,8 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Checkbox from "@mui/material/Checkbox";
 import CssBaseline from "@mui/material/CssBaseline";
 import Divider from "@mui/material/Divider";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
 import FormControl from "@mui/material/FormControl";
 import Link from "@mui/material/Link";
@@ -57,24 +55,17 @@ export default function SignUp() {
   const defaultTheme = createTheme({ palette: { mode } });
   const SignUpTheme = createTheme(getSignUpTheme(mode));
 
-  const [emailError, setEmailError] = React.useState(false);
-  const [emailErrorMessage, setEmailErrorMessage] = React.useState("");
-  const [passwordError, setPasswordError] = React.useState(false);
-  const [passwordErrorMessage, setPasswordErrorMessage] = React.useState("");
-  const [nameError, setNameError] = React.useState(false);
-  const [nameErrorMessage, setNameErrorMessage] = React.useState("");
-  const [addressError, setAddressError] = React.useState(false);
-  const [addressErrorMessage, setAddressErrorMessage] = React.useState("");
-  const [genderError, setGenderError] = React.useState(false);
-  const [genderErrorMessage, setGenderErrorMessage] = React.useState("");
-  const [dobError, setDobError] = React.useState(false);
-  const [dobErrorMessage, setDobErrorMessage] = React.useState("");
-  const [roleID, setRoleID] = React.useState("");
-  const [roleError, setRoleError] = React.useState(false);
-  const [roleErrorMessage, setRoleErrorMessage] = React.useState("");
+  const [emailError, setEmailError] = React.useState("");
+  const [passwordError, setPasswordError] = React.useState("");
+  const [nameError, setNameError] = React.useState("");
+  const [genderError, setGenderError] = React.useState("");
+  const [phoneError, setPhoneError] = React.useState("");
 
   const [gender, setGender] = React.useState("");
   const [phone, setPhone] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [name, setName] = React.useState("");
 
   const navigate = useNavigate();
 
@@ -103,16 +94,47 @@ export default function SignUp() {
   const validateInputs = () => {
     let isValid = true;
 
-    if (!gender) {
-      setGenderError(true);
-      setGenderErrorMessage("Gender is required.");
+    // Validate email
+    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError("Please enter a valid email address.");
       isValid = false;
     } else {
-      setGenderError(false);
-      setGenderErrorMessage("");
+      setEmailError("");
     }
 
-    // Further validation checks...
+    // Validate password
+    if (password.length < 6 || password.length > 18) {
+      setPasswordError("Password must be between 6 and 18 characters.");
+      isValid = false;
+    } else {
+      setPasswordError("");
+    }
+
+    // Validate name
+    if (name.length < 5 || name.length > 25) {
+      setNameError("Name must be between 5 and 25 characters.");
+      isValid = false;
+    } else {
+      setNameError("");
+    }
+
+    // Validate gender
+    if (gender !== "Male" && gender !== "Female") {
+      setGenderError("Please select a valid gender.");
+      isValid = false;
+    } else {
+      setGenderError("");
+    }
+
+    // Validate phone
+    const phoneRegex = /^(0|\+84)(\d{9,10})$/;
+    if (!phoneRegex.test(phone)) {
+      setPhoneError("Please enter a valid phone number.");
+      isValid = false;
+    } else {
+      setPhoneError("");
+    }
 
     return isValid;
   };
@@ -126,13 +148,13 @@ export default function SignUp() {
     const dobValue = data.get("dob");
     console.log("Date of birth value:", dobValue);
     const requestBody = {
-      name: data.get("name"),
+      name: name,
       gender: gender,
       address: data.get("address"),
       dob: dobValue,
-      email: data.get("email"),
-      password: data.get("password"),
-      roleID: roleID,
+      email: email,
+      password: password,
+      roleID: 3, // Directly set roleID to 3
       Phone: phone,
     };
 
@@ -197,8 +219,10 @@ export default function SignUp() {
                     id="name"
                     name="name"
                     autoComplete="name"
-                    error={nameError}
-                    helperText={nameError && nameErrorMessage}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    error={!!nameError}
+                    helperText={nameError}
                   />
                 </FormControl>
                 <FormControl>
@@ -209,13 +233,13 @@ export default function SignUp() {
                     id="gender"
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
-                    error={genderError}
+                    error={!!genderError}
                   >
                     <MenuItem value="Male">Male</MenuItem>
                     <MenuItem value="Female">Female</MenuItem>
                   </Select>
                   {genderError && (
-                    <Typography color="error">{genderErrorMessage}</Typography>
+                    <Typography color="error">{genderError}</Typography>
                   )}
                 </FormControl>
                 <FormControl>
@@ -226,8 +250,6 @@ export default function SignUp() {
                     id="address"
                     name="address"
                     autoComplete="address"
-                    error={addressError}
-                    helperText={addressError && addressErrorMessage}
                   />
                 </FormControl>
                 <FormControl>
@@ -238,8 +260,6 @@ export default function SignUp() {
                     id="dob"
                     name="dob"
                     type="date"
-                    error={dobError}
-                    helperText={dobError && dobErrorMessage}
                   />
                 </FormControl>
                 <FormControl>
@@ -250,8 +270,10 @@ export default function SignUp() {
                     id="email"
                     name="email"
                     autoComplete="email"
-                    error={emailError}
-                    helperText={emailError && emailErrorMessage}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    error={!!emailError}
+                    helperText={emailError}
                   />
                 </FormControl>
                 <FormControl>
@@ -263,8 +285,10 @@ export default function SignUp() {
                     name="password"
                     type="password"
                     autoComplete="new-password"
-                    error={passwordError}
-                    helperText={passwordError && passwordErrorMessage}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    error={!!passwordError}
+                    helperText={passwordError}
                   />
                 </FormControl>
                 <FormControl>
@@ -277,25 +301,9 @@ export default function SignUp() {
                     autoComplete="phone"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
+                    error={!!phoneError}
+                    helperText={phoneError}
                   />
-                </FormControl>
-                <FormControl>
-                  <FormLabel htmlFor="roleID">Role</FormLabel>
-                  <Select
-                    required
-                    fullWidth
-                    id="roleID"
-                    value={roleID}
-                    onChange={(e) => setRoleID(e.target.value)}
-                    error={roleError}
-                  >
-                    <MenuItem value={2}>Staff</MenuItem>
-                    <MenuItem value={3}>Customer</MenuItem>
-                    <MenuItem value={4}>Store Manager</MenuItem>
-                  </Select>
-                  {roleError && (
-                    <Typography color="error">{roleErrorMessage}</Typography>
-                  )}
                 </FormControl>
                 <Button
                   type="submit"
@@ -325,7 +333,7 @@ export default function SignUp() {
                 >
                   Sign up with Facebook
                 </Button>
-                <Link href="/sign-in" variant="body2" textAlign="center">
+                <Link href="/signin" variant="body2" textAlign="center">
                   Already have an account? Sign in
                 </Link>
               </Box>

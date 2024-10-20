@@ -1,13 +1,13 @@
 import React from "react";
 import { Link, Outlet, useLocation } from "react-router-dom"; // Import Outlet for nested routes
-import "./ManagerDashboard.scss";
+import "./AdminDashboard.scss";
 
-const ManagerDashboard = () => {
+const AdminDashboard = () => {
   const location = useLocation();
   const notificationCount = 5; // Example notification count
 
   return (
-    <div className="manager-dashboard">
+    <div className="admin-dashboard">
       <div className="flex">
         {/* Sidebar */}
         <div className="sidebar">
@@ -16,7 +16,7 @@ const ManagerDashboard = () => {
               alt="Logo"
               src="https://storage.googleapis.com/a1aa/image/gimjwrHlSw4UP9hcEjhGo9Z6muOrLa7CNlrjRKBB9eDhgjyJA.jpg"
             />
-            <span className="title">M.</span>
+            <span className="title">A.</span>
           </div>
           <div className="user-info">
             <div className="user-avatar">
@@ -29,34 +29,50 @@ const ManagerDashboard = () => {
             <ul className="menu">
               <li>
                 <Link
-                  className={`${location.pathname === "/manager" ? "active" : ""}`}
-                  to="/manager"
+                  className={`${location.pathname === "/admin" ? "active" : ""}`}
+                  to="/admin"
                 >
                   <i className="fas fa-tachometer-alt"></i> Dashboard
                 </Link>
               </li>
               <li>
                 <Link
-                  className={`${location.pathname === "/manager/staff-management" ? "active" : ""}`}
-                  to="/manager/staff-management"
+                  className={`${location.pathname === "/admin/user-management" ? "active" : ""}`}
+                  to="/admin/user-management"
                 >
-                  <i className="fas fa-users"></i> Staff Management
+                  <i className="fas fa-users"></i> User Management
                 </Link>
               </li>
               <li>
                 <Link
-                  className={`${location.pathname === "/manager/statistics" ? "active" : ""}`}
-                  to="/manager/statistics"
+                  className={`${location.pathname === "/admin/fabric" ? "active" : ""}`}
+                  to="/admin/fabric-management"
                 >
-                  <i className="fas fa-users"></i> Statistics
+                  <i className="fas fa-chart-line"></i> Fabric
                 </Link>
               </li>
               <li>
                 <Link
-                  className={`${location.pathname === "/manager/shipment" ? "active" : ""}`}
-                  to="/manager/shipment"
+                  className={`${location.pathname === "/admin/lining" ? "active" : ""}`}
+                  to="/admin/lining-management"
                 >
-                  <i className="fas fa-users"></i> Shipment
+                  <i className="fas fa-truck"></i> Lining
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className={`${location.pathname === "/admin/store" ? "active" : ""}`}
+                  to="/admin/store-management"
+                >
+                  <i className="fas fa-truck"></i> Store
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className={`${location.pathname === "/admin/voucher" ? "active" : ""}`}
+                  to="/admin/voucher-management"
+                >
+                  <i className="fas fa-truck"></i> Voucher
                 </Link>
               </li>
 
@@ -149,9 +165,11 @@ const ManagerDashboard = () => {
             </div>
           </div>
           {/* Conditional Rendering of Stats and Graphs */}
-          {location.pathname !== "/manager/staff-management" &&
-            location.pathname !== "/manager/statistics" &&
-            location.pathname !== "/manager/shipment" && (
+          {location.pathname !== "/admin/user-management" &&
+            location.pathname !== "/admin/fabric-management" &&
+            location.pathname !== "/admin/lining-management" &&
+            location.pathname !== "/admin/store-management" &&
+            location.pathname !== "/admin/voucher-management" && (
               <>
                 <div className="stats">
                   <div className="stat-item blue">
@@ -224,4 +242,4 @@ const ManagerDashboard = () => {
   );
 };
 
-export default ManagerDashboard;
+export default AdminDashboard;
