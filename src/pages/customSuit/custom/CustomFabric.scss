@@ -1,45 +1,220 @@
-.sec-product {
-    padding: 50px;
-  
-    .tag-buttons {
-      margin-bottom: 20px;
-      button {
-        margin-right: 10px;
-        padding: 10px;
-        background-color: #f0f0f0;
-        border: 1px solid #ccc;
-        cursor: pointer;
-        &:hover {
-          background-color: #e0e0e0;
-        }
-        &.active {
-          background-color: #d0d0d0;
-          font-weight: bold;
-        }
-      }
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+.custom-fabric-container {
+  float: left;
+  width: 100%;
+  padding-top: 80px;
+  padding-right: 15px;
+  padding-left: 15px;
+  overflow: hidden;
+}
+
+.custom-fabric-container {
+  display: grid; 
+  grid-template-columns: 7fr 5fr;
+  width: 100%;
+}
+
+.tag-buttons {
+  float: left;
+    width: 60px;
+    height: 100%;
+    overflow: auto;
+}
+
+.tag-buttons>li {
+  list-style: none;
+}
+
+.tag-buttons>li.active{
+  color: #a4712a;
+    opacity: 1;
+}
+
+.tag-buttons>li>a{
+  display: block;
+    text-align: center;
+    font-size: 11px;
+    padding: 5px;
+    font-weight: bold;
+}
+
+.custom-fabric-container a {
+  text-decoration: none;
+  color: #a4712a;
+}
+
+a::selection {
+  background: #e0bb87;
+}
+
+.tag-buttons>li>a>img {
+  opacity: 1;
+  display: block;
+  width: 35px;
+  margin: auto;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.right-items-fabric {
+  padding-right: 80px;
+  height: 100%;
+  overflow: hidden;
+  float: left;
+  width: calc(100% - 60px);
+}
+
+//search-box
+.custom-fabric-container .search-box {
+  margin-left: 5px;
+  margin-bottom: 5px;
+  position: relative;
+}
+
+.custom-fabric-container #live-search {
+  background-color: #f8f8f8;
+    border: 1px solid #e1e1e1;
+    height: 40px;
+    padding: 10px 15px;
+    font-size: 14px;
+    font-weight: 600;
+    width: 100%;
+}
+
+.search-box .icon {
+  width: 20px;
+    height: 20px;
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);  
+    img{
+      width: 100%;
+    height: 100%;
     }
-  
-    ul {
-      list-style: none;
-      padding: 0;
-  
-      li {
-        padding: 10px;
-        border-bottom: 1px solid #ddd;
-        margin-bottom: 10px;
-  
-        .fabric-id, .fabric-name, .fabric-price, .fabric-description, .fabric-img {
-          margin-bottom: 5px;
-          span {
-            font-weight: bold;
-          }
-        }
-  
-        .fabric-img img {
-          max-width: 100px;
-          height: auto;
-        }
-      }
-    }
-  }
-  
+}
+
+.search-box input {
+  padding-left: 40px !important;
+}
+
+//right-item
+
+.right-items-fabric {
+  padding-right: 80px;
+    height: 100%;
+    overflow: hidden;
+    float: left;
+    width: calc(100% - 60px);
+}
+
+.list-fabric {
+  overflow-y: auto;
+    height: calc(100vh - 110px);
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+    align-content: flex-start;
+    -webkit-align-content: flex-start;
+}
+
+.fabric-img {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding-bottom: 35%;
+  background-color: #ccc;
+  margin-bottom: 5px;
+  overflow: hidden;
+}
+
+.fabric-img>img {
+  position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+}
+
+.fabric-price {
+  float: right;
+  margin-left: 10px;
+}
+
+.fabric-name {
+  display: block;
+    color: #000;
+}
+
+.product-info {
+  padding: 10px 0;
+  text-align: right;
+}
+
+.product-info .pd-name {
+  font-size: 48px;
+    color: #000;
+    line-height: 1;
+    font-weight: normal;
+    margin-bottom: 15px;
+}
+
+.product-info .pd-name span {
+  display: block;
+  font-weight: bold;
+}
+
+.product-info .composition {
+  font-size: 18px;
+    max-width: 100%;
+    text-transform: none;
+    text-align: right;
+    line-height: 1;
+}
+
+.product-info .price {
+  font-size: 32px;
+  font-weight: 300;
+  margin-top: 10px;
+}
+
+.product-info .fabric-img {
+  float: right;
+  width: 100%;
+  height: auto;
+}
+
+.product-info .add-to-cart-btn {
+  display: flex;
+}
+
+//button
+
+.right-half .add-to-cart-btn {
+  display: block;
+  padding: 10px 20px;
+  background-color: #a4712a;
+  color: #fff;
+  border: none;
+  font-size: 18px;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.next-btn .navigation-button {
+  display: block;
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #a4712a;
+  color: #fff;
+  border: none;
+  font-size: 18px;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}

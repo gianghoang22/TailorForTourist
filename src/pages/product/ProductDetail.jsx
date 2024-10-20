@@ -210,7 +210,7 @@ const ProductDetailPage = () => {
             <input type="hidden" name="_wpcf7_container_post" value="0" />
           </div>
           <div className="form-design-info">
-            <p className="title bold">Design your own suits</p>
+            {/* <p className="title bold">Design your own suits</p>
             <div className="fgroup">
               <div className="lb"><span className="num">1</span> Info</div>
               <div className="controls-wrap">
@@ -288,7 +288,7 @@ const ProductDetailPage = () => {
                         <span className="txt"><span className="hl-txt">+</span> Add photo</span>
                       </label>
                     </p> */}
-                  </div>
+                  {/* </div>
                   <p></p>
                 </div>
                 <div className="frow">
@@ -326,7 +326,7 @@ const ProductDetailPage = () => {
             <p>
               <input type="submit" value="Confirm" className="wpcf7-form-control wpcf7-submit primary-btn btn fw-btn" />
               <span className="ajax-loader"></span>
-            </p>
+            </p>  */}
           </div>
         </form>
       </div>

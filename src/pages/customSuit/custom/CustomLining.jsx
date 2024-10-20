@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import './CustomLining.scss';
 
-const CustomLining = () => {
+const CustomLining = ({ addToCart }) => {
   const [linings, setLinings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedLining, setSelectedLining] = useState(null); // State to track selected lining
+  const [selectedLining, setSelectedLining] = useState(null);
 
   useEffect(() => {
     const fetchLinings = async () => {
@@ -26,47 +26,49 @@ const CustomLining = () => {
   }, []);
 
   const handleLiningChange = (event) => {
-    const liningId = parseInt(event.target.value); // Ensure liningId is an integer
+    const liningId = parseInt(event.target.value);
     const lining = linings.find(l => l.liningId === liningId);
-    setSelectedLining(lining); // Set selected lining based on dropdown selection
+    setSelectedLining(lining);
   };
 
-  const handleLiningClick = (lining) => {
-    setSelectedLining(lining); // Set selected lining based on list item click
+  const handleAddToCart = () => {
+    if (selectedLining) {
+      // Call the parent function to add to cart
+      addToCart({
+        id: selectedLining.liningId,
+        name: selectedLining.liningName,
+        imageUrl: selectedLining.imageUrl,
+        type: 'lining'
+      });
+      alert(`Added ${selectedLining.liningName} to cart!`);
+    } else {
+      alert('Please select a lining first.');
+    }
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="loading">Loading...</div>;
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <div className="error">Error: {error}</div>;
   }
 
   return (
-    <div className='sec-product'>
-      <h2>Lining</h2>
+    <div className='custom-lining-container'>
+      <h2>Lining Selection</h2>
+      <div className='lining-selection'>
+        <select onChange={handleLiningChange} defaultValue="">
+          <option value="" disabled>Select a lining</option>
+          {linings.map((lining) => (
+            <option key={lining.liningId} value={lining.liningId}>
+              {lining.liningName}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      {/* Dropdown to select lining */}
-      <select onChange={handleLiningChange} defaultValue="">
-        <option value="" disabled>Select a lining</option>
-        {linings.map((lining) => (
-          <option key={lining.liningId} value={lining.liningId}>
-            {lining.liningName}
-          </option>
-        ))}
-      </select>
-
-      {/* List of linings */}
-      {/* <ul>
-        {linings.map((lining) => (
-          <li key={lining.liningId} onClick={() => handleLiningClick(lining)}>
-            {lining.liningName}
-          </li>
-        ))}
-      </ul> */}
-
-      {selectedLining && ( // Conditionally render the selected lining details
+      {selectedLining && (
         <div className="lining-details">
           <h3>Details for {selectedLining.liningName}</h3>
           <div>
@@ -80,6 +82,20 @@ const CustomLining = () => {
           </div>
         </div>
       )}
+
+      {/* Add to Cart Button */}
+      <div className="cart-button">
+        <button onClick={handleAddToCart}>
+          Add to Cart
+        </button>
+      </div>
+
+      {/* Nút Next */}
+      <div className="navigation-button">
+        <button onClick={() => { /* Gắn link vào đây */ }}>
+          Next
+        </button>
+      </div>
     </div>
   );
 };

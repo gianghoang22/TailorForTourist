@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import './CustomStyle.scss';
 import jk_style1B1B from '../../../assets/img/iconCustom/jk-style-1B1B.jpg';
 import jk_style1B2B from '../../../assets/img/iconCustom/jk-style-1B2B.jpg';
@@ -26,6 +27,7 @@ const CustomStyle = () => {
   const [error, setError] = useState(null);
   const [openOptionType, setOpenOptionType] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedStyle, setSelectedStyle] = useState(null); // Track the selected style
 
   useEffect(() => {
     const fetchStylesAndOptions = async () => {
@@ -47,21 +49,37 @@ const CustomStyle = () => {
     fetchStylesAndOptions();
   }, []);
 
-  // Toggle option type dropdown open/close
   const handleOptionTypeClick = (optionType) => {
-    setOpenOptionType((prev) => 
+    setOpenOptionType((prev) =>
       prev.includes(optionType) ? prev.filter(type => type !== optionType) : [...prev, optionType]
     );
   };
 
-  // Handle option value click to select an image
-  const handleOptionValueClick = (optionValue) => {
+  const handleOptionValueClick = (optionValue, style) => {
     setSelectedImage(imageMap[optionValue]);
+    setSelectedStyle({ styleId: style.styleId, styleName: style.styleName, optionValue }); // Set the selected style and option
   };
 
-  // Get option values for a specific style and option type
   const getOptionValues = (styleId, optionType) => {
     return styleOptions.filter(option => option.styleId === styleId && option.optionType === optionType);
+  };
+
+  const handleAddToCart = () => {
+    if (selectedStyle) {
+      let cart = localStorage.getItem('cart');
+      cart = cart ? JSON.parse(cart) : [];
+
+      // Check if the selected style is already in the cart
+      const existingItem = cart.find(item => item.styleId === selectedStyle.styleId && item.optionValue === selectedStyle.optionValue);
+
+      if (!existingItem) {
+        cart.push(selectedStyle);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        alert('Style added to cart!');
+      } else {
+        alert('This style is already in your cart.');
+      }
+    }
   };
 
   if (loading) {
@@ -80,17 +98,16 @@ const CustomStyle = () => {
             <li key={style.styleId}>
               <div className="style-item">
                 <div className="style-name">{style.styleName}</div>
-                {/* <div className="style-description">{style.description}</div> */}
               </div>
               <ul className="submenu">
                 {Array.from(new Set(styleOptions.filter(option => option.styleId === style.styleId).map(option => option.optionType))).map(optionType => (
                   <li key={optionType}>
                     <div className="option-type" onClick={(e) => { e.stopPropagation(); handleOptionTypeClick(optionType); }}>
                       {optionType}
-                      {openOptionType.includes(optionType) && (  // Check if option type is open
+                      {openOptionType.includes(optionType) && (
                         <ul className="option-values">
                           {getOptionValues(style.styleId, optionType).map(option => (
-                            <li key={option.styleOptionId} className="option-value" onClick={(e) => { e.stopPropagation(); handleOptionValueClick(option.optionValue); }}>
+                            <li key={option.styleOptionId} className="option-value" onClick={(e) => { e.stopPropagation(); handleOptionValueClick(option.optionValue, style); }}>
                               {option.optionValue}
                             </li>
                           ))}
@@ -106,6 +123,19 @@ const CustomStyle = () => {
       </div>
       <div className='right-content'>
         {selectedImage && <img src={selectedImage} alt='Selected Option' />}
+        {selectedStyle && (
+          <div className='selected-style-details'>
+            <h3>Selected Style:</h3>
+            <p><strong>Style:</strong> {selectedStyle.styleName}</p>
+            <p><strong>Option:</strong> {selectedStyle.optionValue}</p>
+            <button className="add-to-cart-btn" onClick={handleAddToCart}>Add to Cart</button>
+          </div>
+        )}
+      </div>
+      <div className='navigation-button'>
+        <Link to="/custom-suits/lining">
+          <button>Go to Lining</button>
+        </Link>
       </div>
     </div>
   );
