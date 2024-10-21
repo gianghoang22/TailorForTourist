@@ -142,9 +142,9 @@
       width: 100%;
       padding: 10px;
       margin-bottom: 20px;
-      border: 1px solid #ccc;
+      border: 1px solid #1b1b1b;
       border-radius: 0;
-      background-color: #fff;
+      background-color: #808080;
     }
 
     .appointment-info {
@@ -165,8 +165,9 @@
 
       .react-calendar {
         width: 100%;
-        border: none;
+
         font-family: "Poppins", sans-serif;
+        background-color: #868686;
 
         .react-calendar__tile {
           height: 40px;
@@ -176,8 +177,8 @@
         }
 
         .react-calendar__tile--active {
-          background-color: #333;
-          color: white;
+          background-color: #51dcff;
+          color: rgb(255, 255, 255);
         }
       }
     }
@@ -197,7 +198,7 @@
       .time-slot {
         margin: 5px;
         padding: 10px 15px;
-        background-color: #fff;
+        background-color: #292929;
         border: 1px solid #ccc;
         cursor: pointer;
         transition:
@@ -206,7 +207,7 @@
 
         &:hover,
         &.selected {
-          background-color: #333;
+          background-color: #00b7ff;
           color: #fff;
         }
       }

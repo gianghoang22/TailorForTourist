@@ -18,7 +18,7 @@ import ForgotPassword from "./ForgotPassword";
 import { GoogleIcon, FacebookIcon } from "./CustomIcons";
 import AppTheme from "../shared-theme/AppTheme";
 import ColorModeSelect from "../shared-theme/ColorModeSelect";
-import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate and useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -59,40 +59,36 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export default function SignIn(props) {
-  const [emailError, setEmailError] = React.useState(false);
-  const [emailErrorMessage, setEmailErrorMessage] = React.useState("");
-  const [passwordError, setPasswordError] = React.useState(false);
-  const [passwordErrorMessage, setPasswordErrorMessage] = React.useState("");
+  const [emailError, setEmailError] = React.useState("");
+  const [passwordError, setPasswordError] = React.useState("");
   const [open, setOpen] = React.useState(false);
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
 
-  const navigate = useNavigate(); // Initialize useNavigate
-  const location = useLocation(); // Initialize useLocation
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleClickOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
   const validateInputs = () => {
-    const email = document.getElementById("email");
-    const password = document.getElementById("password");
-
     let isValid = true;
 
-    if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
-      setEmailError(true);
-      setEmailErrorMessage("Please enter a valid email address.");
+    // Validate email
+    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError("Please enter a valid email address.");
       isValid = false;
     } else {
-      setEmailError(false);
-      setEmailErrorMessage("");
+      setEmailError("");
     }
 
-    if (!password.value || password.value.length < 6) {
-      setPasswordError(true);
-      setPasswordErrorMessage("Password must be at least 6 characters long.");
+    // Validate password
+    if (password.length < 6 || password.length > 18) {
+      setPasswordError("Password must be between 6 and 18 characters.");
       isValid = false;
     } else {
-      setPasswordError(false);
-      setPasswordErrorMessage("");
+      setPasswordError("");
     }
 
     return isValid;
@@ -100,11 +96,8 @@ export default function SignIn(props) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const email = data.get("email");
-    const password = data.get("password");
 
-    if (!validateInputs()) return; // Validate inputs before making the request
+    if (!validateInputs()) return;
 
     try {
       const response = await fetch("https://localhost:7244/api/Login", {
@@ -125,19 +118,31 @@ export default function SignIn(props) {
       const result = await response.json();
       console.log("Login successful:", result);
 
-      // Decode the JWT token to extract role
       const decodedToken = jwtDecode(result.token);
       console.log("Decoded Token:", decodedToken);
 
-      // Check the role from the decoded token
       const userRole =
         decodedToken[
           "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
         ];
-      if (userRole === "customer") {
-        navigate("/"); // Redirect to the home page for customers
-      } else {
-        console.error("User role is not recognized.");
+
+      // Redirect based on user role
+      switch (userRole) {
+        case "customer":
+          navigate("/");
+          break;
+        case "staff":
+          navigate("/staff");
+          break;
+        case "store manager":
+          navigate("/manager");
+          break;
+        case "admin":
+          navigate("/admin");
+          break;
+        default:
+          console.error("User role is not recognized.");
+          break;
       }
     } catch (error) {
       console.error("There was an error with the login request:", error);
@@ -146,9 +151,8 @@ export default function SignIn(props) {
   };
 
   React.useEffect(() => {
-    // Check for an alert message from the state
     if (location.state?.alert) {
-      alert(location.state.alert); // Show the alert message
+      alert(location.state.alert);
     }
   }, [location.state]);
 
@@ -181,8 +185,8 @@ export default function SignIn(props) {
             <FormControl>
               <FormLabel htmlFor="email">Email</FormLabel>
               <TextField
-                error={emailError}
-                helperText={emailErrorMessage}
+                error={!!emailError}
+                helperText={emailError}
                 id="email"
                 type="email"
                 name="email"
@@ -192,8 +196,8 @@ export default function SignIn(props) {
                 required
                 fullWidth
                 variant="outlined"
-                color={emailError ? "error" : "primary"}
-                sx={{ ariaLabel: "email" }}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </FormControl>
             <FormControl>
@@ -209,8 +213,8 @@ export default function SignIn(props) {
                 </Link>
               </Box>
               <TextField
-                error={passwordError}
-                helperText={passwordErrorMessage}
+                error={!!passwordError}
+                helperText={passwordError}
                 name="password"
                 placeholder="••••••"
                 type="password"
@@ -219,7 +223,8 @@ export default function SignIn(props) {
                 required
                 fullWidth
                 variant="outlined"
-                color={passwordError ? "error" : "primary"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </FormControl>
             <FormControlLabel
@@ -227,19 +232,14 @@ export default function SignIn(props) {
               label="Remember me"
             />
             <ForgotPassword open={open} handleClose={handleClose} />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              onClick={validateInputs}
-            >
+            <Button type="submit" fullWidth variant="contained">
               Sign in
             </Button>
             <Typography sx={{ textAlign: "center" }}>
               Don&apos;t have an account?{" "}
               <span>
                 <Link
-                  href="/material-ui/getting-started/templates/sign-in/"
+                  href="/signup"
                   variant="body2"
                   sx={{ alignSelf: "center" }}
                 >

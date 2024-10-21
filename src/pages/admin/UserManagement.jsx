@@ -14,11 +14,11 @@ import {
   Alert,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import "./StaffManagement.scss";
+import "./UserManagement.scss";
 
-const StaffManagement = () => {
-  const [staffData, setStaffData] = useState([]);
-  const [newStaff, setNewStaff] = useState({
+const UserManagement = () => {
+  const [userData, setUserData] = useState([]);
+  const [newUser, setNewUser] = useState({
     name: "",
     email: "",
     gender: "Male",
@@ -36,26 +36,25 @@ const StaffManagement = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
-    const fetchStaffData = async () => {
+    const fetchUserData = async () => {
       try {
         const response = await fetch("https://localhost:7244/api/User");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        const filteredData = data.filter((user) => user.roleId === 2);
-        setStaffData(filteredData);
+        setUserData(data); // No filtering by roleId
       } catch (error) {
-        console.error("Error fetching staff data:", error);
-        setError("Error fetching staff data. Please try again later.");
+        console.error("Error fetching user data:", error);
+        setError("Error fetching user data. Please try again later.");
       }
     };
-    fetchStaffData();
+    fetchUserData();
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setNewStaff({ ...newStaff, [name]: value });
+    setNewUser({ ...newUser, [name]: value });
   };
 
   const handleAdd = async () => {
@@ -65,44 +64,27 @@ const StaffManagement = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newStaff),
+        body: JSON.stringify(newUser),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        console.error("API Error:", error);
-        throw new Error(error.message || "Error adding new staff");
+        throw new Error(error.message || "Error adding new user");
       }
 
       await response.json(); // Wait for the response to be parsed
-
-      // Re-fetch staff data instead of refreshing the page
-      // fetchStaffData(); // Call the function to fetch data again
-
-      // setNewStaff({
-      //   name: "",
-      //   email: "",
-      //   gender: "Male",
-      //   address: "nowhere",
-      //   dob: "2003-12-12",
-      //   isConfirmed: true,
-      //   phone: "0915230240",
-      //   password: "123456",
-      //   roleId: 2,
-      //   status: "Active",
-      // });
-
-      setError(null); // Clear any previous errors
-      setShowSuccessMessage(true); // Show success message
+      setUserData([...userData, newUser]); // Update user data without needing to refetch
+      setError(null);
+      setShowSuccessMessage(true);
     } catch (error) {
-      console.error("Error adding new staff:", error);
-      setError(error.message); // Set the error message
+      console.error("Error adding new user:", error);
+      setError(error.message);
     }
   };
 
-  const handleEdit = (staffData) => {
-    setNewStaff(staffData);
-    setEditIndex(staffData.userId);
+  const handleEdit = (user) => {
+    setNewUser(user);
+    setEditIndex(user.userId);
   };
 
   const handleUpdate = async () => {
@@ -114,21 +96,26 @@ const StaffManagement = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(newStaff),
+          body: JSON.stringify(newUser),
         }
       );
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Error updating staff");
+        throw new Error(error.message || "Error updating user");
       }
       const updatedUser = await response.json();
-      const updatedStaff = staffData.map((s) =>
-        s.userId === editIndex ? updatedUser : s
+      const updatedUsers = userData.map((u) =>
+        u.userId === editIndex ? updatedUser : u
       );
-      setStaffData(updatedStaff);
-      setNewStaff({
+      setUserData(updatedUsers);
+      setNewUser({
         name: "",
         email: "",
+        gender: "Male",
+        address: "nowhere",
+        dob: "2003-12-12",
+        isConfirmed: true,
+        phone: "0915230240",
         password: "123456",
         roleId: 2,
         status: "Active",
@@ -136,7 +123,7 @@ const StaffManagement = () => {
       setEditIndex(null);
       setError(null);
     } catch (error) {
-      console.error("Error updating staff:", error);
+      console.error("Error updating user:", error);
       setError(error.message);
     }
   };
@@ -151,12 +138,12 @@ const StaffManagement = () => {
       );
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Error deleting staff");
+        throw new Error(error.message || "Error deleting user");
       }
-      setStaffData(staffData.filter((s) => s.userId !== userId));
+      setUserData(userData.filter((u) => u.userId !== userId));
       setError(null);
     } catch (error) {
-      console.error("Error deleting staff:", error);
+      console.error("Error deleting user:", error);
       setError(error.message);
     }
   };
@@ -165,20 +152,20 @@ const StaffManagement = () => {
     setSearchTerm(e.target.value);
   };
 
-  const filteredStaff = staffData.filter((s) =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = userData.filter((u) =>
+    u.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="staff-management">
-      <h2>Staff Management</h2>
+    <div className="user-management">
+      <h2>User Management</h2>
       {error && <Alert severity="error">{error}</Alert>}
       <div className="header">
         <div className="form">
           <TextField
             label="Name"
             name="name"
-            value={newStaff.name}
+            value={newUser.name}
             onChange={handleChange}
             variant="outlined"
             style={{ marginRight: "1rem" }}
@@ -186,13 +173,42 @@ const StaffManagement = () => {
           <TextField
             label="Email"
             name="email"
-            value={newStaff.email}
+            value={newUser.email}
             onChange={handleChange}
             variant="outlined"
             style={{ marginRight: "1rem" }}
           />
+          <TextField
+            label="Phone"
+            name="phone"
+            value={newUser.phone}
+            onChange={handleChange}
+            variant="outlined"
+            style={{ marginRight: "1rem" }}
+          />
+          <TextField
+            label="Address"
+            name="address"
+            value={newUser.address}
+            onChange={handleChange}
+            variant="outlined"
+            style={{ marginRight: "1rem" }}
+          />
+          <TextField
+            label="Gender"
+            name="gender"
+            select
+            value={newUser.gender}
+            onChange={handleChange}
+            variant="outlined"
+            style={{ marginRight: "1rem" }}
+          >
+            <MenuItem value="Male">Male</MenuItem>
+            <MenuItem value="Female">Female</MenuItem>
+            <MenuItem value="Other">Other</MenuItem>
+          </TextField>
           <Button variant="contained" color="secondary" onClick={handleAdd}>
-            Add Staff
+            Add User
           </Button>
         </div>
 
@@ -218,21 +234,27 @@ const StaffManagement = () => {
             <TableRow>
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
+              <TableCell>Phone</TableCell>
+              <TableCell>Address</TableCell>
+              <TableCell>Gender</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredStaff.map((s) => (
-              <TableRow key={s.userId}>
-                <TableCell>{s.name}</TableCell>
-                <TableCell>{s.email}</TableCell>
-                <TableCell>{s.status}</TableCell>
+            {filteredUsers.map((u) => (
+              <TableRow key={u.userId}>
+                <TableCell>{u.name}</TableCell>
+                <TableCell>{u.email}</TableCell>
+                <TableCell>{u.phone}</TableCell>
+                <TableCell>{u.address}</TableCell>
+                <TableCell>{u.gender}</TableCell>
+                <TableCell>{u.status}</TableCell>
                 <TableCell>
                   <Button
                     variant="outlined"
                     color="primary"
-                    onClick={() => handleEdit(s)}
+                    onClick={() => handleEdit(u)}
                     style={{ marginRight: "0.5rem" }}
                   >
                     Edit
@@ -240,7 +262,7 @@ const StaffManagement = () => {
                   <Button
                     variant="outlined"
                     color="secondary"
-                    onClick={() => handleDelete(s.userId)}
+                    onClick={() => handleDelete(u.userId)}
                   >
                     Delete
                   </Button>
@@ -261,4 +283,4 @@ const StaffManagement = () => {
   );
 };
 
-export default StaffManagement;
+export default UserManagement;
