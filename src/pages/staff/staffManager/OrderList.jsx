@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { List, ListItem, ListItemText, Button, TextField, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 
-const BASE_URL = 'https://localhost:7244/api';
+const BASE_URL = 'https://localhost:7194/api';
 
 const fetchAllOrders = async () => {
   const response = await fetch(`${BASE_URL}/Orders`);

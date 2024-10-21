@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { addToCart } from '../../../utils/cartUtil';
 import './customFabric.scss';
 
 import all_icon from '../../../assets/img/filter/icon-fabricFilter-all.jpg';
@@ -25,7 +26,7 @@ const CustomFabric = () => {
 
   const fetchFabrics = async (tag = '') => {
     try {
-      const response = await fetch(`https://localhost:7244/api/Fabrics${tag ? `/tag/${tag}` : ''}`);
+      const response = await fetch(`https://localhost:7194/api/Fabrics${tag ? `/tag/${tag}` : ''}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -54,17 +55,16 @@ const CustomFabric = () => {
 
   const handleAddToCart = () => {
     if (selectedFabric) {
-      let cart = localStorage.getItem('cart');
-      cart = cart ? JSON.parse(cart) : [];
-
-      const existingItem = cart.find(item => item.fabricId === selectedFabric.fabricId);
-      if (!existingItem) {
-        cart.push(selectedFabric);
-        localStorage.setItem('cart', JSON.stringify(cart));
-        alert('Fabric added to cart!');
-      } else {
-        alert('This fabric is already in your cart.');
-      }
+      addToCart({
+        id: selectedFabric.fabricId,
+        name: selectedFabric.fabricName,
+        price: selectedFabric.price,
+        imageUrl: selectedFabric.imageUrl,
+        type: 'fabric',
+      });
+      alert(`${selectedFabric.fabricName} has been added to the cart!`);
+    } else {
+      alert('Please select a fabric first.');
     }
   };
 
