@@ -5,8 +5,8 @@ import { Footer } from "../../layouts/components/footer/Footer";
 import { useLocation } from 'react-router-dom'; // Import useLocation for navigation state
 
 const Checkout = () => {
-  const { state } = useLocation();
-  const { cartItems = [], totalPrice = 0 } = state || {}; // Retrieve cart items and total price from location state
+  const location = useLocation();
+  const { cartItems = [], totalPrice = 0 } = location.state || {}; // Default to empty array and 0
 
   const [loginOpen, setLoginOpen] = useState(false);
   const [couponOpen, setCouponOpen] = useState(false);
@@ -265,45 +265,43 @@ const Checkout = () => {
               </label>
             </div>
 
-            {paymentMethod === 'card' && (
-              <div className="card-details">
-                <h4>Card Details</h4>
-                <input
-                  type="text"
-                  name="cardNumber"
-                  value={formData.cardNumber}
-                  onChange={handleInputChange}
-                  placeholder="Card number *"
-                  required
-                />
-                <input
-                  type="text"
-                  name="cardName"
-                  value={formData.cardName}
-                  onChange={handleInputChange}
-                  placeholder="Cardholder name *"
-                  required
-                />
-                <input
-                  type="text"
-                  name="expiryDate"
-                  value={formData.expiryDate}
-                  onChange={handleInputChange}
-                  placeholder="Expiry date *"
-                  required
-                />
-                <input
-                  type="text"
-                  name="cvv"
-                  value={formData.cvv}
-                  onChange={handleInputChange}
-                  placeholder="CVV *"
-                  required
-                />
-              </div>
-            )}
+            <div className="card-details" style={paymentMethod === 'card' ? {} : { display: 'none' }}>
+              <h4>Card Details</h4>
+              <input
+                type="text"
+                name="cardNumber"
+                value={formData.cardNumber}
+                onChange={handleInputChange}
+                placeholder="Card Number *"
+                required
+              />
+              <input
+                type="text"
+                name="cardName"
+                value={formData.cardName}
+                onChange={handleInputChange}
+                placeholder="Card Name *"
+                required
+              />
+              <input
+                type="text"
+                name="expiryDate"
+                value={formData.expiryDate}
+                onChange={handleInputChange}
+                placeholder="Expiry Date (MM/YY) *"
+                required
+              />
+              <input
+                type="text"
+                name="cvv"
+                value={formData.cvv}
+                onChange={handleInputChange}
+                placeholder="CVV *"
+                required
+              />
+            </div>
 
-            <button type="submit">Place Order</button>
+            <button type="submit" className="submit-button">Place Order</button>
           </form>
         </div>
       </div>

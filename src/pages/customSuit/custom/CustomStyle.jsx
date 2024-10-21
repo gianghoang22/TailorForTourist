@@ -69,8 +69,13 @@ const CustomStyle = () => {
 
   const handleAddToCart = () => {
     if (selectedStyle) {
-      addToCart(selectedStyle);  // Use the utility function to add the selected style to the cart
-    } else {
+      addToCart({
+        name: selectedStyle.styleName,
+        imageUrl: selectedStyle.imageUrl,
+      })
+      alert(`${selectedStyle.styleName} has been added to the cart!`);
+    }
+     else {
       alert('Please select a style first.');
     }
   };

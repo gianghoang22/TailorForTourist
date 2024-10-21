@@ -26,7 +26,6 @@ import OrderHistory from "../pages/profile/OrderHistory";
 import Measurement from "../pages/profile/Measurement";
 
 import Cart from "../pages/cart/cart";
-import { element } from "prop-types";
 import BookingThanks from "../pages/booking/BookingThanks";
 
 import StaffManagement from "../pages/managerdashboard/StaffManagement";

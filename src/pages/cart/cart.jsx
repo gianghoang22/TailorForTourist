@@ -10,6 +10,7 @@ const Cart = () => {
 
   useEffect(() => {
     const items = getCart();
+    console.log("Lấy giỏ hàng khi render:", items);
     setCartItems(items);
     calculateTotal(items);
   }, []);
@@ -39,7 +40,7 @@ const Cart = () => {
   };
 
   const handleReturnToCustomization = () => {
-    navigate('/customization'); // Navigate to the customization page
+    navigate('/custom-suits/'); // Navigate to the customization page
   };
 
   const handleCheckout = () => {
