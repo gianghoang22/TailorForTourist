@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import "./BookingPage.scss";
@@ -9,7 +9,7 @@ import { Navigation } from "../../layouts/components/navigation/Navigation";
 import { Footer } from "../../layouts/components/footer/Footer";
 
 const BookingPage = () => {
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
   const [date, setDate] = useState(new Date());
   const [availableTimes, setAvailableTimes] = useState([]);
   const [selectedTime, setSelectedTime] = useState("");
@@ -21,6 +21,10 @@ const BookingPage = () => {
     description: "",
   });
   const [availableStores, setAvailableStores] = useState([]);
+  const [selectedStoreId, setSelectedStoreId] = useState(1);
+  const [phoneError, setPhoneError] = useState("");
+  const [dateError, setDateError] = useState("");
+  const [timeError, setTimeError] = useState("");
 
   useEffect(() => {
     if (date) {
@@ -52,9 +56,12 @@ const BookingPage = () => {
 
   const fetchStores = async () => {
     try {
-      const response = await fetch("https://localhost:7244/api/Store");
+      const response = await fetch("https://localhost:7194/api/Store");
       const data = await response.json();
       setAvailableStores(data);
+      if (data.length > 0) {
+        setSelectedStoreId(data[0].storeId);
+      }
     } catch (error) {
       console.error("Error fetching store data:", error);
     }
@@ -68,43 +75,90 @@ const BookingPage = () => {
     }));
   };
 
+  const handleStoreChange = (e) => {
+    const storeId = e.target.value;
+    setSelectedStoreId(storeId);
+  };
+
+  const validatePhone = (phone) => {
+    const phoneRegex = /^(0|\+84)(\d{9,10})$/;
+    if (!phoneRegex.test(phone)) {
+      setPhoneError("Please enter a valid phone number.");
+      return false;
+    } else {
+      setPhoneError("");
+      return true;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const bookingDate = date.toISOString().split("T")[0]; // Format date as YYYY-MM-DD
+    const bookingDate = date.toISOString().split("T")[0];
     const time =
       selectedTime.includes("AM") || selectedTime.includes("PM")
-        ? convertTimeTo24Hour(selectedTime) // Convert AM/PM time to 24-hour format
+        ? convertTimeTo24Hour(selectedTime)
         : selectedTime;
+
+    // Validation checks
+    let isValid = true;
+
+    // Check future date
+    if (date <= new Date()) {
+      setDateError("Please select a future date.");
+      isValid = false;
+    } else {
+      setDateError("");
+    }
+
+    // Check time selection
+    if (!selectedTime) {
+      setTimeError("Please select an available time.");
+      isValid = false;
+    } else {
+      setTimeError("");
+    }
+
+    // Validate phone
+    const isPhoneValid = validatePhone(formData.phone);
+    if (!isPhoneValid) {
+      isValid = false;
+    }
+
+    // If any validation fails, exit early
+    if (!isValid) {
+      return;
+    }
 
     const bookingData = {
       bookingDate,
-      time: `${time}:00`, // Add seconds to match the required format
+      time: `${time}:00`,
       note: formData.description,
-      status: "on-going", // Assuming the status is always "on-going" for new bookings
-      storeId: 1, // Update with the selected store ID if available
+      status: "on-going",
+      storeId: selectedStoreId,
       guestName: `${formData.firstName} ${formData.lastName}`,
       guestEmail: formData.email,
       guestPhone: formData.phone,
     };
 
     try {
-      const response = await fetch("https://localhost:7244/api/Bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(bookingData),
-      });
+      const response = await fetch(
+        "https://localhost:7194/api/Booking/guest-booking",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(bookingData),
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
         console.log("Booking successful:", result);
-        // Navigate to BookingThanks page
-        navigate("/booking-thanks"); // Change this if you flatten the route
+        navigate("/booking-thanks");
       } else {
         console.error("Error creating booking:", response.statusText);
-        // Handle error (e.g., show an error message)
       }
     } catch (error) {
       console.error("Error submitting booking:", error);
@@ -211,10 +265,10 @@ const BookingPage = () => {
         <div className="right-column">
           <h2>Book an Appointment</h2>
           <div className="studio-select">
-            <select>
+            <select onChange={handleStoreChange} value={selectedStoreId}>
               <option value="">Change Studio</option>
               {availableStores.map((store) => (
-                <option key={store.storeId} value={store.name}>
+                <option key={store.storeId} value={store.storeId}>
                   {store.name}
                 </option>
               ))}
@@ -226,8 +280,13 @@ const BookingPage = () => {
             <p>Click on any time to make a booking.</p>
           </div>
           <div className="custom-calendar">
-            <Calendar onChange={setDate} value={date} />
+            <Calendar
+              onChange={setDate}
+              value={date}
+              minDate={new Date()} // Prevent selecting past dates
+            />
           </div>
+          {dateError && <p className="error">{dateError}</p>}
           <div className="available-times">
             <h4>Available Times</h4>
             {availableTimes.map((time, index) => (
@@ -240,6 +299,7 @@ const BookingPage = () => {
               </button>
             ))}
           </div>
+          {timeError && <p className="error">{timeError}</p>}
           {selectedTime && (
             <div className="selected-time-info">
               <p>
@@ -281,6 +341,7 @@ const BookingPage = () => {
                 onChange={handleInputChange}
                 required
               />
+              {phoneError && <p className="error">{phoneError}</p>}
             </div>
             <div className="form-group">
               <label htmlFor="description">Description:</label>

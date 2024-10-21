@@ -38,7 +38,7 @@ const StaffManagement = () => {
   useEffect(() => {
     const fetchStaffData = async () => {
       try {
-        const response = await fetch("https://localhost:7244/api/User");
+        const response = await fetch("https://localhost:7194/api/User");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
@@ -60,7 +60,7 @@ const StaffManagement = () => {
 
   const handleAdd = async () => {
     try {
-      const response = await fetch("https://localhost:7244/api/User", {
+      const response = await fetch("https://localhost:7194/api/User", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -104,11 +104,25 @@ const StaffManagement = () => {
     setNewStaff(staffData);
     setEditIndex(staffData.userId);
   };
-
+  const handleCancel = () => {
+    setNewStaff({
+      name: "",
+      email: "",
+      gender: "Male",
+      address: "nowhere",
+      dob: "2003-12-12",
+      isConfirmed: true,
+      phone: "0915230240",
+      password: "123456",
+      roleId: 2,
+      status: "Active",
+    });
+    setEditIndex(null);
+  };
   const handleUpdate = async () => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/User/${editIndex}`,
+        `https://localhost:7194/api/User/${editIndex}`,
         {
           method: "PUT",
           headers: {
@@ -144,7 +158,7 @@ const StaffManagement = () => {
   const handleDelete = async (userId) => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/User/${userId}`,
+        `https://localhost:7194/api/User/${userId}`,
         {
           method: "DELETE",
         }
@@ -191,9 +205,39 @@ const StaffManagement = () => {
             variant="outlined"
             style={{ marginRight: "1rem" }}
           />
-          <Button variant="contained" color="secondary" onClick={handleAdd}>
-            Add Staff
+          <TextField
+            label="Phone"
+            name="phone"
+            value={newStaff.phone}
+            onChange={handleChange}
+            variant="outlined"
+            style={{ marginRight: "1rem" }}
+          />
+          <TextField
+            label="Address"
+            name="address"
+            value={newStaff.address}
+            onChange={handleChange}
+            variant="outlined"
+            style={{ marginRight: "1rem" }}
+          />
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={editIndex ? handleUpdate : handleAdd}
+          >
+            {editIndex ? "Update Staff" : "Add Staff"}
           </Button>
+          {editIndex && (
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={handleCancel}
+              style={{ marginLeft: "0.5rem" }}
+            >
+              Cancel
+            </Button>
+          )}
         </div>
 
         <TextField

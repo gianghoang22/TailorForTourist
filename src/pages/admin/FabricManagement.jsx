@@ -33,7 +33,7 @@ const FabricManagement = () => {
   useEffect(() => {
     const fetchFabricData = async () => {
       try {
-        const response = await fetch("https://localhost:7244/api/Fabrics");
+        const response = await fetch("https://localhost:7194/api/Fabrics");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
@@ -54,7 +54,7 @@ const FabricManagement = () => {
 
   const handleAdd = async () => {
     try {
-      const response = await fetch("https://localhost:7244/api/Fabrics", {
+      const response = await fetch("https://localhost:7194/api/Fabrics", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,7 +85,7 @@ const FabricManagement = () => {
   const handleUpdate = async () => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/Fabrics/${editIndex}`,
+        `https://localhost:7194/api/Fabrics/${editIndex}`,
         {
           method: "PUT",
           headers: {
@@ -122,7 +122,7 @@ const FabricManagement = () => {
   const handleDelete = async (fabricId) => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/Fabrics/${fabricId}`,
+        `https://localhost:7194/api/Fabrics/${fabricId}`,
         {
           method: "DELETE",
         }

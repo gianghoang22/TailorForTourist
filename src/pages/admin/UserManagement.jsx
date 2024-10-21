@@ -38,7 +38,7 @@ const UserManagement = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch("https://localhost:7244/api/User");
+        const response = await fetch("https://localhost:7194/api/User");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
@@ -59,7 +59,7 @@ const UserManagement = () => {
 
   const handleAdd = async () => {
     try {
-      const response = await fetch("https://localhost:7244/api/User", {
+      const response = await fetch("https://localhost:7194/api/User", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -90,7 +90,7 @@ const UserManagement = () => {
   const handleUpdate = async () => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/User/${editIndex}`,
+        `https://localhost:7194/api/User/${editIndex}`,
         {
           method: "PUT",
           headers: {
@@ -131,7 +131,7 @@ const UserManagement = () => {
   const handleDelete = async (userId) => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/User/${userId}`,
+        `https://localhost:7194/api/User/${userId}`,
         {
           method: "DELETE",
         }
