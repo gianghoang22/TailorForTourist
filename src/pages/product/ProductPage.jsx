@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import axios from 'axios';
 import './ProductPage.scss';
 import Sidebar from '../../layouts/components/sidebar/Sidebar';
-import { Footer } from "../../layouts/components/footer/Footer";
+import { Footer } from '../../layouts/components/footer/Footer';
 import { Navigation } from '../../layouts/components/navigation/Navigation';
 
 // ProductItem Component
@@ -12,9 +12,9 @@ const ProductItem = ({ product }) => {
   return (
     <div className="col-md-4">
       <Link to={`/product-collection/${product.productID}`} className="card">
-          <img src={product.imgURL} alt="" />
-          <h5 className="card-title">{product.productCode}</h5>
-          <p className="card-text">Price from: {product.price} $</p>
+        <img src={product.imgURL} alt={product.productCode} />
+        <h5 className="card-title">{product.productCode}</h5>
+        <p className="card-text">Price from: {product.price} $</p>
       </Link>
     </div>
   );
@@ -28,9 +28,9 @@ ProductItem.propTypes = {
     categoryID: PropTypes.number.isRequired,
     fabricID: PropTypes.number.isRequired,
     liningID: PropTypes.number.isRequired,
-    orderID: PropTypes.number.isRequired,
+    orderID: PropTypes.number,
     imgURL: PropTypes.string.isRequired,
-    price: PropTypes.number.isRequired, // Assuming price is a number
+    price: PropTypes.number.isRequired,
   }).isRequired,
 };
 
@@ -57,70 +57,36 @@ Product.propTypes = {
       categoryID: PropTypes.number.isRequired,
       fabricID: PropTypes.number.isRequired,
       liningID: PropTypes.number.isRequired,
-      orderID: PropTypes.number.isRequired,
+      orderID: PropTypes.number,
       imgURL: PropTypes.string.isRequired,
-      price: PropTypes.number.isRequired, // Assuming price is a number
+      price: PropTypes.number.isRequired,
     })
   ).isRequired,
 };
 
-// Sidebar PropTypes (Add if you want to define it here)
-Sidebar.propTypes = {
-  onSelectSubcategory: PropTypes.func.isRequired,
-};
-
 const ProductPage = () => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState([]);  // Holds the filtered products
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState(null);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get('https://localhost:7244/api/product');
-        setProducts(response.data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
-
+  // Fetch products based on the selected subcategory
   const handleSubcategorySelect = async (subcategoryId) => {
+    setLoading(true);
     try {
-      const response = await axios.get(`https://localhost:7244/api/product?subcategoryId=${subcategoryId}`);
-      console.log(response.data);
+      const response = await axios.get(`https://localhost:7194/api/product?subcategoryId=${subcategoryId}`);
       setProducts(response.data);
-      setSelectedSubcategoryId(subcategoryId);
+      setLoading(false);
     } catch (err) {
       setError(err.message);
+      setLoading(false);
     }
   };
-
-  if (loading) return <p className="loading-message">Loading...</p>;
-  if (error) return <p className="error-message">Error: {error}</p>;
 
   return (
     <>
       <Navigation />
-      <div className="header-promotion">
-        <div className="header-promotion__slide slick-initialized slick-slider slick-vertical">
-          <div className="slick-list draggable">
-            <div className="slick-track">
-              <div className="slick-slide slick-current slick-active" data-slick-index="0" aria-hidden="false">
-                <div>
-                  <div className="header-promotion__slide-item">
-                    <p>COLLECTION</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+
+      {/* Banner Section */}
       <div className="banner-container">
         <img src="https://owen.vn/media/catalog/category/veston_2.jpg" className="banner-image" alt="Áo Vest Nam" />
         <div className="banner-category">
@@ -130,18 +96,29 @@ const ProductPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Main Content Section */}
       <div className="all">
         <div className="page-width-sidebar clear">
+          {/* Sidebar on the left */}
           <div className="side-left">
             <Sidebar onSelectSubcategory={handleSubcategorySelect} />
           </div>
-          <div>
-            <ul className="product-ul">
+
+          {/* Product Grid on the right */}
+          <div className="side-right">
+            {loading && <p>Loading products...</p>}
+            {error && <p>Error loading products: {error}</p>}
+            {!loading && !error && products.length > 0 && (
               <Product products={products} />
-            </ul>
+            )}
+            {!loading && !error && products.length === 0 && (
+              <p>No products found for the selected category.</p>
+            )}
           </div>
         </div>
       </div>
+
       <Footer />
     </>
   );

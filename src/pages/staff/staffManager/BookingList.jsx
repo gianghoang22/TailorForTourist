@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { List, ListItem, ListItemText, Button } from '@mui/material';
 
-const BASE_URL = 'https://localhost:7244/api';
+const BASE_URL = 'https://localhost:7194/api';
 
 const fetchAllBookings = async () => {
-  const response = await fetch(`${BASE_URL}/Bookings`);
+  const response = await fetch(`${BASE_URL}/Booking`);
   if (!response.ok) {
     throw new Error('Failed to fetch bookings');
   }
@@ -12,7 +12,7 @@ const fetchAllBookings = async () => {
 };
 
 const deleteBooking = async (id) => {
-  const response = await fetch(`${BASE_URL}/Bookings/${id}`, {
+  const response = await fetch(`${BASE_URL}/Booking/${id}`, {
     method: 'DELETE',
   });
   if (!response.ok) {

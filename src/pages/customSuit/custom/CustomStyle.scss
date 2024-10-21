@@ -1,152 +1,59 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
 .custom-style-container {
-  display: flex;
-  flex-wrap: wrap;
-  max-width: 1200px;
-  margin: 50px auto;
-  padding: 20px;
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  border-radius: 15px;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-
-  .left-content {
-    flex: 1;
-    min-width: 300px;
-    padding: 20px;
-
-    ul {
-      list-style-type: none;
-      padding: 0;
-
-      li {
-        background-color: rgba(255, 255, 255, 0.8);
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-
-        &:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .style-item {
-          .style-name {
-            font-weight: 600;
-            color: #4158D0;
-          }
-        }
-
-        .submenu {
-          ul {
-            margin-top: 10px;
-
-            .option-type {
-              cursor: pointer;
-              transition: all 0.3s ease;
-
-              &:hover {
-                color: #C850C0;
-              }
-
-              .option-values {
-                display: none;
-                margin-top: 10px;
-
-                &.active {
-                  display: block;
-                }
-
-                .option-value {
-                  padding: 5px;
-                  background-color: rgba(255, 255, 255, 0.7);
-                  border-radius: 5px;
-                  margin: 5px 0;
-                  transition: all 0.3s ease;
-
-                  &:hover {
-                    background-color: rgba(0, 0, 0, 0.1);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  .right-content {
-    flex: 1;
-    min-width: 300px;
-    padding: 20px;
-
-    img {
-      max-width: 100%;
-      border-radius: 10px;
-      transition: transform 0.3s ease;
-
-      &:hover {
-        transform: scale(1.05);
-      }
-    }
-  }
-
-  .navigation-button {
-    width: 100%;
-    text-align: center;
-    margin-top: 30px;
-
-    button {
-      background-image: linear-gradient(43deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%);
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      font-size: 18px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border-radius: 50px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-
-      &:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-      }
-
-      &:active {
-        transform: translateY(-1px);
-      }
-    }
-  }
+  float: left;
+  width: 100%;
+  padding-top: 80px;
+  padding-right: 15px;
+  padding-left: 15px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  width: 100%;
 }
 
-@media (max-width: 768px) {
-  .custom-style-container {
-    flex-direction: column;
-
-    .left-content, .right-content {
-      width: 100%;
-    }
-  }
+.style-name {
+  font-size: 18px;
+    text-transform: uppercase;
+    line-height: 26px;
+    padding: 12px 0;
+    cursor: pointer;
 }
 
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
+.option-type>a {
+  line-height: 20px;
+    padding: 10px 8px;
+    display: block;
+    text-transform: uppercase;
 }
 
-.pulse {
-  animation: pulse 2s infinite;
+.option-type .option-values>li {
+  line-height: 20px;
+    padding: 10px 30px;
+    display: block;
+    text-transform: uppercase;
+}
+
+.left-content {
+  padding-left: 50px;
+}
+
+.option-value-image {
+  width: 40px;
+    height: 40px;
+    display: inline-block;
+    vertical-align: middle;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    margin-right: 2px;
+    opacity: .5;
+}
+
+.right-content .pd-name{
+  font-size: 48px;
+  color: #000;
+  line-height: 1;
+  font-weight: normal;
+  margin-bottom: 15px;
 }

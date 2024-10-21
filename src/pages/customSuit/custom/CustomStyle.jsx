@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { addToCart } from '../../../utils/cartUtil';
 import './CustomStyle.scss';
+
 import jk_style1B1B from '../../../assets/img/iconCustom/jk-style-1B1B.jpg';
 import jk_style1B2B from '../../../assets/img/iconCustom/jk-style-1B2B.jpg';
 import jk_style1B3B from '../../../assets/img/iconCustom/jk-style-1B3B.jpg';
@@ -10,7 +12,8 @@ import jk_style2B4B from '../../../assets/img/iconCustom/jk-style-2B4B.jpg';
 import jk_style2B6B from '../../../assets/img/iconCustom/jk-style-2B6B.jpg';
 import jk_styleM from '../../../assets/img/iconCustom/jk-style-M.jpg';
 
-const imageMap = {
+// Map optionType to their corresponding images
+const optionTypeImages = {
   'single-breasted 1 button': jk_style1B1B,
   'single-breasted 2 button': jk_style1B2B,
   'single-breasted 3 button': jk_style1B3B,
@@ -33,8 +36,8 @@ const CustomStyle = () => {
     const fetchStylesAndOptions = async () => {
       try {
         const [stylesResponse, optionsResponse] = await Promise.all([
-          axios.get('https://localhost:7244/api/Style'),
-          axios.get('https://localhost:7244/api/StyleOption')
+          axios.get('https://localhost:7194/api/Style'),
+          axios.get('https://localhost:7194/api/StyleOption')
         ]);
 
         setStyles(stylesResponse.data);
@@ -56,8 +59,8 @@ const CustomStyle = () => {
   };
 
   const handleOptionValueClick = (optionValue, style) => {
-    setSelectedImage(imageMap[optionValue]);
-    setSelectedStyle({ styleId: style.styleId, styleName: style.styleName, optionValue }); // Set the selected style and option
+    setSelectedImage(optionTypeImages[optionValue]); // Display image for selected option value
+    setSelectedStyle({ styleId: style.styleId, styleName: style.styleName, optionValue });
   };
 
   const getOptionValues = (styleId, optionType) => {
@@ -66,19 +69,14 @@ const CustomStyle = () => {
 
   const handleAddToCart = () => {
     if (selectedStyle) {
-      let cart = localStorage.getItem('cart');
-      cart = cart ? JSON.parse(cart) : [];
-
-      // Check if the selected style is already in the cart
-      const existingItem = cart.find(item => item.styleId === selectedStyle.styleId && item.optionValue === selectedStyle.optionValue);
-
-      if (!existingItem) {
-        cart.push(selectedStyle);
-        localStorage.setItem('cart', JSON.stringify(cart));
-        alert('Style added to cart!');
-      } else {
-        alert('This style is already in your cart.');
-      }
+      addToCart({
+        name: selectedStyle.styleName,
+        imageUrl: selectedStyle.imageUrl,
+      })
+      alert(`${selectedStyle.styleName} has been added to the cart!`);
+    }
+     else {
+      alert('Please select a style first.');
     }
   };
 
@@ -92,26 +90,47 @@ const CustomStyle = () => {
 
   return (
     <div className='custom-style-container'>
+      {/* left content */}
       <div className='sec-product left-content'>
-        <ul>
+        <ul className='side-menu'>
           {styles.map((style) => (
             <li key={style.styleId}>
               <div className="style-item">
-                <div className="style-name">{style.styleName}</div>
+                <div className="style-name">
+                  {style.styleName}
+                </div>
               </div>
               <ul className="submenu">
                 {Array.from(new Set(styleOptions.filter(option => option.styleId === style.styleId).map(option => option.optionType))).map(optionType => (
                   <li key={optionType}>
                     <div className="option-type" onClick={(e) => { e.stopPropagation(); handleOptionTypeClick(optionType); }}>
-                      {optionType}
+                      <a className="toggle-opts" data-direction="font">
+                        <span className="suitIcon">
+                        <img 
+                            src={optionTypeImages[optionType]} 
+                            alt={optionType} 
+                            className="option-type-image" 
+                          />
+                          {optionType}
+                        </span>
+                      </a>
                       {openOptionType.includes(optionType) && (
                         <ul className="option-values">
-                          {getOptionValues(style.styleId, optionType).map(option => (
-                            <li key={option.styleOptionId} className="option-value" onClick={(e) => { e.stopPropagation(); handleOptionValueClick(option.optionValue, style); }}>
-                              {option.optionValue}
-                            </li>
-                          ))}
-                        </ul>
+                        {getOptionValues(style.styleId, optionType).map(option => (
+                          <li 
+                            key={option.styleOptionId} 
+                            className="option-value" 
+                            onClick={(e) => { e.stopPropagation(); handleOptionValueClick(option.optionValue, style); }}
+                          >
+                            <img 
+                              src={optionTypeImages[option.optionValue]} 
+                              alt={option.optionValue} 
+                              className="option-value-image"
+                            />
+                            {option.optionValue}
+                          </li>
+                        ))}
+                      </ul>
                       )}
                     </div>
                   </li>
@@ -121,21 +140,32 @@ const CustomStyle = () => {
           ))}
         </ul>
       </div>
+      
+      {/* right content */}
       <div className='right-content'>
-        {selectedImage && <img src={selectedImage} alt='Selected Option' />}
         {selectedStyle && (
           <div className='selected-style-details'>
+            <div className="product-info" id="pd_info">
+            <h1 className="pd-name">
+                CUSTOM 
+                <span>SUIT</span>
+              </h1>
             <h3>Selected Style:</h3>
+            {selectedImage && <img src={selectedImage} alt={selectedImage} />}
             <p><strong>Style:</strong> {selectedStyle.styleName}</p>
             <p><strong>Option:</strong> {selectedStyle.optionValue}</p>
             <button className="add-to-cart-btn" onClick={handleAddToCart}>Add to Cart</button>
+            </div>
           </div>
         )}
-      </div>
-      <div className='navigation-button'>
+
+        
+      {/* Next button */}
+      <div className='next-btn'>
         <Link to="/custom-suits/lining">
-          <button>Go to Lining</button>
+          <button className='navigation-button'>Go to Lining</button>
         </Link>
+      </div>
       </div>
     </div>
   );
