@@ -1,52 +1,51 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import { Navigation } from '../../layouts/components/navigation/Navigation.jsx';
-import { Footer } from '../../layouts/components/footer/Footer';
+import { useParams, useNavigate } from 'react-router-dom';
 import './FabricDetail.scss';
 
-const FabricDetailPage = () => {
-  const { id } = useParams(); // Get id from URL
+const FabricDetail = () => {
+  const { id } = useParams();
   const [fabric, setFabric] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchFabric = async () => {
       try {
-        const response = await axios.get(`https://localhost:7244/api/Fabric/details/${id}`);
-        setFabric(response.data);
-      } catch (err) {
-        setError(err.message);
+        const response = await fetch(`https://localhost:7194/api/Fabrics/${id}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setFabric(data);
+      } catch (error) {
+        setError(error.message);
       } finally {
         setLoading(false);
       }
     };
-
     fetchFabric();
   }, [id]);
 
-  if (loading) return <p className="loading">Loading...</p>;
-  if (error) return <p className="error">Error: {error}</p>;
-  if (!fabric) return <p>No fabric found.</p>;
+  const handleBackClick = () => {
+    navigate(-1); // Navigate back to the previous page
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!fabric) return <div>Fabric not found</div>;
 
   return (
-    <>
-      <Navigation />
-      <main id='main-wrap'>
-        <div className="fabric-detail-page">
-          <h1 className='fabric-name'>{fabric.name}</h1>
-          <div className="fabric-info">
-            <img src={fabric.imageUrl} alt={fabric.name} />
-            <p className="fabric-description">{fabric.description}</p>
-            <p className="fabric-price">Price: {fabric.price} USD</p>
-            <p className="fabric-composition">Composition: {fabric.composition}</p>
-          </div>
-        </div>
-      </main>
-      <Footer />
-    </>
+    <div className="fabric-detail">
+      <h1>{fabric.fabricName}</h1>
+      <img src={fabric.imageUrl} alt={fabric.fabricName} />
+      <p className="price">{fabric.price}</p>
+      <p className="description">{fabric.description}</p>
+      <button className="back-btn" onClick={handleBackClick}>
+        Go Back
+      </button>
+    </div>
   );
 };
 
-export default FabricDetailPage;
+export default FabricDetail;

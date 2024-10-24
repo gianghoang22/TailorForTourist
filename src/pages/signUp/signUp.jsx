@@ -159,7 +159,7 @@ export default function SignUp() {
     };
 
     try {
-      const response = await fetch("https://localhost:7244/api/Register", {
+      const response = await fetch("https://localhost:7194/api/Register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

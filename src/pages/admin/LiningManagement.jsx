@@ -30,7 +30,7 @@ const LiningManagement = () => {
   useEffect(() => {
     const fetchLiningData = async () => {
       try {
-        const response = await fetch("https://localhost:7244/api/Linings");
+        const response = await fetch("https://localhost:7194/api/Linings");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
@@ -51,7 +51,7 @@ const LiningManagement = () => {
 
   const handleAdd = async () => {
     try {
-      const response = await fetch("https://localhost:7244/api/Linings", {
+      const response = await fetch("https://localhost:7194/api/Linings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -82,7 +82,7 @@ const LiningManagement = () => {
   const handleUpdate = async () => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/Linings/${editIndex}`,
+        `https://localhost:7194/api/Linings/${editIndex}`,
         {
           method: "PUT",
           headers: {
@@ -116,7 +116,7 @@ const LiningManagement = () => {
   const handleDelete = async (liningId) => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/Linings/${liningId}`,
+        `https://localhost:7194/api/Linings/${liningId}`,
         {
           method: "DELETE",
         }

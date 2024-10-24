@@ -52,7 +52,7 @@ const BookingPage = () => {
 
   const fetchStores = async () => {
     try {
-      const response = await fetch("https://localhost:7244/api/Store");
+      const response = await fetch("https://localhost:7194/api/Store");
       const data = await response.json();
       setAvailableStores(data);
     } catch (error) {
@@ -89,7 +89,7 @@ const BookingPage = () => {
     };
 
     try {
-      const response = await fetch("https://localhost:7244/api/Bookings", {
+      const response = await fetch("https://localhost:7194/api/Booking", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

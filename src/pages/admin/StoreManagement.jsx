@@ -32,7 +32,7 @@ const StoreManagement = () => {
   useEffect(() => {
     const fetchStoreData = async () => {
       try {
-        const response = await fetch("https://localhost:7244/api/Store");
+        const response = await fetch("https://localhost:7194/api/Store");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
@@ -53,7 +53,7 @@ const StoreManagement = () => {
 
   const handleAdd = async () => {
     try {
-      const response = await fetch("https://localhost:7244/api/Store", {
+      const response = await fetch("https://localhost:7194/api/Store", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -84,7 +84,7 @@ const StoreManagement = () => {
   const handleUpdate = async () => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/Store/${editIndex}`,
+        `https://localhost:7194/api/Store/${editIndex}`,
         {
           method: "PUT",
           headers: {
@@ -120,7 +120,7 @@ const StoreManagement = () => {
   const handleDelete = async (storeId) => {
     try {
       const response = await fetch(
-        `https://localhost:7244/api/Store/${storeId}`,
+        `https://localhost:7194/api/Store/${storeId}`,
         {
           method: "DELETE",
         }

@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import OrderList from './staffManager/OrderList';
 import BookingList from './staffManager/BookingList';
 import ShipmentList from './staffManager/ShipmentList'; 
+import MeasureList from './staffManager/MeasureList';
 import './StaffDashboard.scss';
 
 // Sample data for the charts
@@ -47,6 +48,8 @@ const StaffDashboard = () => {
         return <BookingList />;
       case 'shipments':
         return <ShipmentList />;
+      case 'measure':
+        return <MeasureList />;
       default:
         return <OrderList />;
     }
@@ -91,6 +94,13 @@ const StaffDashboard = () => {
                 onClick={() => setActiveSection('shipments')}
               >
                 Shipments
+              </Button>
+              <Button
+                fullWidth
+                variant={activeSection === 'measure' ? 'contained' : 'outlined'}
+                onClick={() => setActiveSection('measure')}
+              >
+                Measurement
               </Button>
             </div>
           </Paper>

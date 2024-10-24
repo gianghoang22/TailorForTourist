@@ -21,6 +21,7 @@ import StaffDashboard from "../pages/staff/StaffDashboard";
 import OrderList from "../pages/staff/staffManager/OrderList";
 import BookingList from "../pages/staff/staffManager/BookingList";
 import ShipmentList from "../pages/staff/staffManager/ShipmentList";
+import MeasureList from "../pages/staff/staffManager/MeasureList";
 
 import OrderHistory from "../pages/profile/OrderHistory";
 import Measurement from "../pages/profile/Measurement";
@@ -42,6 +43,7 @@ import FabricManagement from "../pages/admin/FabricManagement";
 import StoreManagement from "../pages/admin/StoreManagement";
 import LiningManagement from "../pages/admin/LiningManagement";
 import VoucherManagement from "../pages/admin/VoucherManagement";
+import { element } from "prop-types";
 export const routes = [
   {
     path: "/",
@@ -141,11 +143,11 @@ export const routes = [
     element: <Checkout />,
   },
   {
-    path: "/fabric",
+    path: "/fabrics",
     element: <Fabric />,
   },
   {
-    path: "fabricdetails",
+    path: "/fabrics/:id",
     element: <FabricDetailPage/>
   },
   {
@@ -177,6 +179,10 @@ export const routes = [
         path: "shipment",
         element: <ShipmentList />,
       },
+      {
+        path: "measurement",
+        element: <MeasureList />,
+      }
     ],
   },
   {

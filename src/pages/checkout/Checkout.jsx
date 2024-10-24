@@ -1,12 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import './Checkout.scss';
 import { Navigation } from "../../layouts/components/navigation/Navigation";
 import { Footer } from "../../layouts/components/footer/Footer";
-import { useLocation } from 'react-router-dom'; // Import useLocation for navigation state
 
 const Checkout = () => {
-  const location = useLocation();
-  const { cartItems = [], totalPrice = 0 } = location.state || {}; // Default to empty array and 0
+  const [checkoutCart, setCheckoutCart] = useState([]); // Initialize with an empty array
+
+  useEffect(() => {
+    const cartData = JSON.parse(localStorage.getItem('checkoutCart'));
+    setCheckoutCart(cartData || []);
+  }, []);
+
+  // Tính tổng giá từ giỏ hàng
+  const totalPrice = checkoutCart.reduce((total, item) => total + (item.price || 0), 0);
+
+  const handlePayment = () => {
+    // Implement payment logic here
+    toast.success('Proceeding to payment!');
+  };
 
   const [loginOpen, setLoginOpen] = useState(false);
   const [couponOpen, setCouponOpen] = useState(false);
@@ -206,34 +218,30 @@ const Checkout = () => {
             <table>
               <thead>
                 <tr>
-                  <th>Product</th>
+                  <th>Product (Fabric)</th>
                   <th>Subtotal</th>
                 </tr>
               </thead>
               <tbody>
-                {cartItems.length > 0 ? (
-                  cartItems.map((item, index) => (
-                    <tr key={index}>
-                      <td>{item.name} × {item.quantity}</td>
-                      <td>${(item.price * item.quantity).toFixed(2)}</td>
-                    </tr>
-                  ))
-                ) : (
+                {checkoutCart.length === 0 ? (
                   <tr>
                     <td colSpan="2">No items in cart</td>
                   </tr>
+                ) : (
+                  checkoutCart.map((item, index) => (
+                    <tr key={index}>
+                      <td>{item.name}</td> {/* Hiển thị tên sản phẩm */}
+                      <td>${(item.price || 0).toFixed(2)}</td> {/* Hiển thị giá sản phẩm */}
+                    </tr>
+                  ))
+                )}
+                {checkoutCart.length > 0 && (
+                  <tr>
+                    <td><strong>Total Price</strong></td>
+                    <td><strong>${totalPrice.toFixed(2)}</strong></td> {/* Hiển thị tổng giá */}
+                  </tr>
                 )}
               </tbody>
-              <tfoot>
-                <tr>
-                  <td>Subtotal</td>
-                  <td>${totalPrice.toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td>Total</td>
-                  <td>${totalPrice.toFixed(2)}</td>
-                </tr>
-              </tfoot>
             </table>
 
             <div className="payment-options">
@@ -259,49 +267,49 @@ const Checkout = () => {
                 />
                 <img src="https://purepng.com/public/uploads/large/purepng.com-visa-logologobrand-logoiconslogos-251519938794uqvcz.png" alt="Visa" width="30" />
                 <img src="https://logo-marque.com/wp-content/uploads/2020/09/Mastercard-Logo.png" alt="MasterCard" width="30" />
-                <img src="https://cdn3.iconfinder.com/data/icons/payment-method-1/64/_JCB-512.png" alt="JCB" width="30" />
-                <img src="https://th.bing.com/th/id/OIP.hw7HS1TxpBrniYctWzlP4gHaEo?rs=1&pid=ImgDetMain" alt="American Express" width="30" />
-                Credit Card
+                <img src="https://cdn3.iconfinder.com/data/icons/social-messaging-productivity-1/128/card-512.png" alt="Credit Card" width="30" />
+                Credit / Debit Card
               </label>
+
+              {paymentMethod === 'card' && (
+                <div className="card-details">
+                  <input
+                    type="text"
+                    name="cardNumber"
+                    value={formData.cardNumber}
+                    onChange={handleInputChange}
+                    placeholder="Card Number *"
+                    required
+                  />
+                  <input
+                    type="text"
+                    name="cardName"
+                    value={formData.cardName}
+                    onChange={handleInputChange}
+                    placeholder="Card Holder Name *"
+                    required
+                  />
+                  <input
+                    type="text"
+                    name="expiryDate"
+                    value={formData.expiryDate}
+                    onChange={handleInputChange}
+                    placeholder="MM/YY *"
+                    required
+                  />
+                  <input
+                    type="text"
+                    name="cvv"
+                    value={formData.cvv}
+                    onChange={handleInputChange}
+                    placeholder="CVV *"
+                    required
+                  />
+                </div>
+              )}
             </div>
 
-            <div className="card-details" style={paymentMethod === 'card' ? {} : { display: 'none' }}>
-              <h4>Card Details</h4>
-              <input
-                type="text"
-                name="cardNumber"
-                value={formData.cardNumber}
-                onChange={handleInputChange}
-                placeholder="Card Number *"
-                required
-              />
-              <input
-                type="text"
-                name="cardName"
-                value={formData.cardName}
-                onChange={handleInputChange}
-                placeholder="Card Name *"
-                required
-              />
-              <input
-                type="text"
-                name="expiryDate"
-                value={formData.expiryDate}
-                onChange={handleInputChange}
-                placeholder="Expiry Date (MM/YY) *"
-                required
-              />
-              <input
-                type="text"
-                name="cvv"
-                value={formData.cvv}
-                onChange={handleInputChange}
-                placeholder="CVV *"
-                required
-              />
-            </div>
-
-            <button type="submit" className="submit-button">Place Order</button>
+            <button type="submit" onClick={handlePayment}>Place Order</button>
           </form>
         </div>
       </div>
