@@ -104,7 +104,21 @@ const StaffManagement = () => {
     setNewStaff(staffData);
     setEditIndex(staffData.userId);
   };
-
+  const handleCancel = () => {
+    setNewStaff({
+      name: "",
+      email: "",
+      gender: "Male",
+      address: "nowhere",
+      dob: "2003-12-12",
+      isConfirmed: true,
+      phone: "0915230240",
+      password: "123456",
+      roleId: 2,
+      status: "Active",
+    });
+    setEditIndex(null);
+  };
   const handleUpdate = async () => {
     try {
       const response = await fetch(
@@ -191,9 +205,39 @@ const StaffManagement = () => {
             variant="outlined"
             style={{ marginRight: "1rem" }}
           />
-          <Button variant="contained" color="secondary" onClick={handleAdd}>
-            Add Staff
+          <TextField
+            label="Phone"
+            name="phone"
+            value={newStaff.phone}
+            onChange={handleChange}
+            variant="outlined"
+            style={{ marginRight: "1rem" }}
+          />
+          <TextField
+            label="Address"
+            name="address"
+            value={newStaff.address}
+            onChange={handleChange}
+            variant="outlined"
+            style={{ marginRight: "1rem" }}
+          />
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={editIndex ? handleUpdate : handleAdd}
+          >
+            {editIndex ? "Update Staff" : "Add Staff"}
           </Button>
+          {editIndex && (
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={handleCancel}
+              style={{ marginLeft: "0.5rem" }}
+            >
+              Cancel
+            </Button>
+          )}
         </div>
 
         <TextField

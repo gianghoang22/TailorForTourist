@@ -5,7 +5,11 @@
   color: #333;
   background-color: #fff;
   padding-top: 60px;
-
+  .error {
+    color: red; /* Set error message color to red */
+    font-size: 0.9em; /* Optionally adjust the font size */
+    margin-top: 0.5em; /* Add some space above the error message */
+  }
   .content-container {
     display: flex;
     justify-content: center;
@@ -165,20 +169,63 @@
 
       .react-calendar {
         width: 100%;
-
         font-family: "Poppins", sans-serif;
-        background-color: #868686;
+        background-color: #fff;
+        border: none;
+        box-shadow: 0 2px 5px rgba(170, 160, 160, 0.1);
+
+        .react-calendar__navigation {
+          background-color: #fff;
+          border-bottom: 1px solid #e0e0e0;
+
+          button {
+            color: #a79a9a;
+            font-weight: bold;
+          }
+        }
+
+        .react-calendar__month-view__weekdays {
+          text-transform: uppercase;
+          font-weight: bold;
+          font-size: 0.8em;
+          color: #757575;
+        }
 
         .react-calendar__tile {
           height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
+          font-size: 1em;
+          color: #333;
+
+          &:hover {
+            background-color: #f0f0f0;
+          }
+
+          &--now {
+            background-color: #ff6a6a;
+            font-weight: bold;
+          }
+
+          &--active {
+            background-color: #000;
+            color: #fff;
+            border-radius: 50%;
+          }
         }
 
-        .react-calendar__tile--active {
-          background-color: #51dcff;
-          color: rgb(255, 255, 255);
+        .react-calendar__tile--active:enabled:hover,
+        .react-calendar__tile--active:enabled:focus {
+          background-color: #000;
+        }
+
+        .react-calendar__month-view__days__day--weekend {
+          color: #333;
+        }
+
+        .react-calendar__month-view__days__day--neighboringMonth {
+          color: #bdbdbd;
         }
       }
     }
@@ -198,6 +245,7 @@
       .time-slot {
         margin: 5px;
         padding: 10px 15px;
+        color: #ffffff;
         background-color: #292929;
         border: 1px solid #ccc;
         cursor: pointer;
@@ -208,7 +256,7 @@
         &:hover,
         &.selected {
           background-color: #00b7ff;
-          color: #fff;
+          color: #ffffff;
         }
       }
     }
