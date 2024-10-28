@@ -4,6 +4,7 @@ import SignUp from "../pages/signUp/signUp";
 import HomePage from "../pages/home/HomePage";
 import BookingPage from "../pages/booking/BookingPage";
 import Checkout from "../pages/checkout/Checkout";
+import MeasurementGuide from "../pages/measurementGuide/MeasurementGuide";
 
 import ProductPage from "../pages/product/ProductPage";
 import ProductDetail from "../pages/product/ProductDetail";
@@ -16,6 +17,7 @@ import CustomSuit from "../pages/customsuit/CustomSuit";
 import CustomStyle from "../pages/customSuit/custom/CustomStyle";
 import CustomLining from "../pages/customSuit/custom/CustomLining";
 import CustomFabric from "../pages/customSuit/custom/CustomFabric";
+import MeasureGuest from '../pages/customSuit/measure/MeasureGuest';
 
 import StaffDashboard from "../pages/staff/StaffDashboard";
 import OrderList from "../pages/staff/staffManager/OrderList";
@@ -43,7 +45,6 @@ import FabricManagement from "../pages/admin/FabricManagement";
 import StoreManagement from "../pages/admin/StoreManagement";
 import LiningManagement from "../pages/admin/LiningManagement";
 import VoucherManagement from "../pages/admin/VoucherManagement";
-import { element } from "prop-types";
 export const routes = [
   {
     path: "/",
@@ -185,24 +186,24 @@ export const routes = [
       }
     ],
   },
-  {
-    path: "/custom-suits",
-    element: <CustomSuit />,
-    children: [
-      {
-        path: "fabric",
-        element: <CustomFabric />,
-      },
-      {
-        path: "style",
-        element: <CustomStyle />,
-      },
-      {
-        path: "lining",
-        element: <CustomLining />,
-      },
-    ],
-  },
+  // {
+  //   path: "/custom-suits",
+  //   element: <CustomSuit />,
+  //   children: [
+  //     {
+  //       path: "fabric",
+  //       element: <CustomFabric />,
+  //     },
+  //     {
+  //       path: "style",
+  //       element: <CustomStyle />,
+  //     },
+  //     {
+  //       path: "lining",
+  //       element: <CustomLining />,
+  //     },
+  //   ],
+  // },
 
   {
     path: "/staff",
@@ -248,4 +249,12 @@ export const routes = [
       },
     ],
   },
+  {
+    path: "/measure",
+    element: <MeasureGuest />
+  },
+  {
+    path: "/how-to-measure",
+    element: <MeasurementGuide />
+  }
 ];

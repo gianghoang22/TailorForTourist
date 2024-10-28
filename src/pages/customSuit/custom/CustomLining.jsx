@@ -96,9 +96,8 @@ const CustomLining = () => {
           </div>
         )}
 
-        {/* Nút chuyển tới giỏ hàng */}
         <div className='next-btn'>
-          <Link to="/cart">
+          <Link to="/measure">
             <button className='navigation-button'>Next</button>
           </Link>
         </div>

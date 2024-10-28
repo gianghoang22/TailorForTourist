@@ -5,18 +5,25 @@ import { Navigation } from "../../layouts/components/navigation/Navigation";
 import { Footer } from "../../layouts/components/footer/Footer";
 
 const Checkout = () => {
-  const [checkoutCart, setCheckoutCart] = useState([]); // Initialize with an empty array
+  const [checkoutCart, setCheckoutCart] = useState([]);
 
   useEffect(() => {
-    const cartData = JSON.parse(localStorage.getItem('checkoutCart'));
-    setCheckoutCart(cartData || []);
+    const cartData = JSON.parse(localStorage.getItem('checkoutCart')) || [];
+    
+    // Assuming each item now has a productName property along with productId, type, and price
+    const allCartData = cartData.map(item => ({
+      productId: item.productId,
+      productName: item.productName, // Include productName here
+      productType: item.type,
+      productPrice: item.price || 0,
+    }));
+
+    setCheckoutCart(allCartData);
   }, []);
 
-  // Tính tổng giá từ giỏ hàng
-  const totalPrice = checkoutCart.reduce((total, item) => total + (item.price || 0), 0);
+  const totalPrice = checkoutCart.reduce((total, item) => total + item.productPrice, 0);
 
   const handlePayment = () => {
-    // Implement payment logic here
     toast.success('Proceeding to payment!');
   };
 
@@ -47,7 +54,7 @@ const Checkout = () => {
     const { name, value, type, checked } = e.target;
     setFormData(prevState => ({
       ...prevState,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -57,9 +64,7 @@ const Checkout = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Process order logic goes here (e.g., API call to create an order)
     console.log("Order submitted", formData);
-    // Optionally reset form or navigate to a confirmation page
   };
 
   return (
@@ -218,27 +223,29 @@ const Checkout = () => {
             <table>
               <thead>
                 <tr>
-                  <th>Product (Fabric)</th>
-                  <th>Subtotal</th>
+                  <th>Product Name</th>
+                  <th>Product Type</th>
+                  <th>Price</th>
                 </tr>
               </thead>
               <tbody>
                 {checkoutCart.length === 0 ? (
                   <tr>
-                    <td colSpan="2">No items in cart</td>
+                    <td colSpan="3">No items in cart</td>
                   </tr>
                 ) : (
                   checkoutCart.map((item, index) => (
                     <tr key={index}>
-                      <td>{item.name}</td> {/* Hiển thị tên sản phẩm */}
-                      <td>${(item.price || 0).toFixed(2)}</td> {/* Hiển thị giá sản phẩm */}
+                      <td>{item.productName}</td> {/* Display Product Name */}
+                      <td>{item.productType}</td> {/* Display Product Type */}
+                      <td>${item.productPrice.toFixed(2)}</td> {/* Display Product Price */}
                     </tr>
                   ))
                 )}
                 {checkoutCart.length > 0 && (
                   <tr>
-                    <td><strong>Total Price</strong></td>
-                    <td><strong>${totalPrice.toFixed(2)}</strong></td> {/* Hiển thị tổng giá */}
+                    <td colSpan="2"><strong>Total Price</strong></td>
+                    <td><strong>${totalPrice.toFixed(2)}</strong></td>
                   </tr>
                 )}
               </tbody>
@@ -267,49 +274,48 @@ const Checkout = () => {
                 />
                 <img src="https://purepng.com/public/uploads/large/purepng.com-visa-logologobrand-logoiconslogos-251519938794uqvcz.png" alt="Visa" width="30" />
                 <img src="https://logo-marque.com/wp-content/uploads/2020/09/Mastercard-Logo.png" alt="MasterCard" width="30" />
-                <img src="https://cdn3.iconfinder.com/data/icons/social-messaging-productivity-1/128/card-512.png" alt="Credit Card" width="30" />
-                Credit / Debit Card
+                Credit Card
               </label>
-
-              {paymentMethod === 'card' && (
-                <div className="card-details">
-                  <input
-                    type="text"
-                    name="cardNumber"
-                    value={formData.cardNumber}
-                    onChange={handleInputChange}
-                    placeholder="Card Number *"
-                    required
-                  />
-                  <input
-                    type="text"
-                    name="cardName"
-                    value={formData.cardName}
-                    onChange={handleInputChange}
-                    placeholder="Card Holder Name *"
-                    required
-                  />
-                  <input
-                    type="text"
-                    name="expiryDate"
-                    value={formData.expiryDate}
-                    onChange={handleInputChange}
-                    placeholder="MM/YY *"
-                    required
-                  />
-                  <input
-                    type="text"
-                    name="cvv"
-                    value={formData.cvv}
-                    onChange={handleInputChange}
-                    placeholder="CVV *"
-                    required
-                  />
-                </div>
-              )}
             </div>
 
-            <button type="submit" onClick={handlePayment}>Place Order</button>
+            {paymentMethod === 'card' && (
+              <div className="payment-details">
+                <input
+                  type="text"
+                  name="cardNumber"
+                  value={formData.cardNumber}
+                  onChange={handleInputChange}
+                  placeholder="Card Number *"
+                  required
+                />
+                <input
+                  type="text"
+                  name="cardName"
+                  value={formData.cardName}
+                  onChange={handleInputChange}
+                  placeholder="Name on Card *"
+                  required
+                />
+                <input
+                  type="text"
+                  name="expiryDate"
+                  value={formData.expiryDate}
+                  onChange={handleInputChange}
+                  placeholder="Expiry Date (MM/YY) *"
+                  required
+                />
+                <input
+                  type="text"
+                  name="cvv"
+                  value={formData.cvv}
+                  onChange={handleInputChange}
+                  placeholder="CVV *"
+                  required
+                />
+              </div>
+            )}
+
+            <button type="button" onClick={handlePayment}>Proceed to Payment</button>
           </form>
         </div>
       </div>

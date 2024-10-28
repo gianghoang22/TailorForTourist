@@ -1,35 +1,37 @@
+// src/components/MeasureList.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
 const MeasureList = () => {
+  const [users, setUsers] = useState([]);
   const [measurements, setMeasurements] = useState([]);
-  const [user, setUser] = useState(null); // To store the logged-in user
-  const [editMeasurementId, setEditMeasurementId] = useState(null); // To track the measurement being edited
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [editMeasurementId, setEditMeasurementId] = useState(null);  // To track editing state
+
   const API_URL = 'https://localhost:7194/api/Measurement';
-  const USER_API_URL = 'https://localhost:7194/api/User'; // User API
+  const USER_API_URL = 'https://localhost:7194/api/User';
 
+  // Fetch all users, filter by roleId === 3
   useEffect(() => {
-    const fetchLoggedInUser = async () => {
+    const fetchUsers = async () => {
       try {
-        const response = await axios.get(`${USER_API_URL}/loggedInUser`);
-        const userData = response.data;
+        const response = await axios.get(`${USER_API_URL}`);
+        const allUsers = response.data;
 
-        if (userData.roleId === 3) {
-          setUser(userData);
-          fetchMeasurements(userData.userId);
-        } else {
-          console.error('Only customers can manage measurements.');
-        }
+        // Filter users where roleId === 3
+        const customers = allUsers.filter(user => user.roleId === 3);
+        setUsers(customers);
       } catch (error) {
-        console.error('Error fetching logged-in user:', error);
+        console.error('Error fetching users:', error);
       }
     };
 
-    fetchLoggedInUser();
+    fetchUsers();
   }, []);
 
+  // Fetch measurements by userId
   const fetchMeasurements = async (userId) => {
     try {
       const response = await axios.get(`${API_URL}/byUser/${userId}`);
@@ -39,7 +41,20 @@ const MeasureList = () => {
     }
   };
 
-  // Schema validation using Yup
+  // Function to update a measurement by userId
+  const updateMeasurementByUserId = async (userId, measurementId, values) => {
+    try {
+      const response = await axios.put(`${API_URL}/${measurementId}`, {
+        ...values,
+        userId: userId // Attach the userId in the request body
+      });
+      setMeasurements(measurements.map(m => (m.measurementId === measurementId ? response.data : m)));
+      setEditMeasurementId(null);  // Reset edit mode after update
+    } catch (error) {
+      console.error('Error updating measurement:', error);
+    }
+  };
+
   const validationSchema = Yup.object().shape({
     weight: Yup.number().required('Weight is required').min(30, 'Weight should be at least 30kg').max(200, 'Weight cannot exceed 200kg'),
     height: Yup.number().required('Height is required').min(100, 'Height should be at least 100cm').max(250, 'Height cannot exceed 250cm'),
@@ -71,30 +86,28 @@ const MeasureList = () => {
     validationSchema,
     onSubmit: async (values) => {
       try {
-        if (user) {
+        if (selectedUser) {
           if (editMeasurementId) {
             // Update existing measurement
-            const response = await axios.put(`${API_URL}/${editMeasurementId}`, { ...values, userId: user.userId });
-            setMeasurements(measurements.map(m => (m.measurementId === editMeasurementId ? response.data : m)));
-            setEditMeasurementId(null);
+            updateMeasurementByUserId(selectedUser.userId, editMeasurementId, values);
           } else {
-            // Add new measurement
-            const response = await axios.post(API_URL, { ...values, userId: user.userId });
+            // Otherwise create a new measurement
+            const response = await axios.post(API_URL, { ...values, userId: selectedUser.userId });
             setMeasurements([...measurements, response.data]);
           }
           formik.resetForm();
         } else {
-          console.error('No user found');
+          console.error('No user selected');
         }
       } catch (error) {
         console.error('Error adding/updating measurement:', error);
       }
     },
-    enableReinitialize: true, // This allows the form to reset when the form values change (for editing)
+    enableReinitialize: true,
   });
 
-  // Set form values when editing a measurement
   const handleEdit = (measurement) => {
+    // Set form values for editing
     formik.setValues({
       weight: measurement.weight,
       height: measurement.height,
@@ -108,7 +121,7 @@ const MeasureList = () => {
       thigh: measurement.thigh,
       pantsLength: measurement.pantsLength,
     });
-    setEditMeasurementId(measurement.measurementId);
+    setEditMeasurementId(measurement.measurementId);  // Set to editing mode
   };
 
   const handleDelete = async (measurementId) => {
@@ -120,36 +133,99 @@ const MeasureList = () => {
     }
   };
 
+  const handleShowMeasurements = (user) => {
+    setSelectedUser(user);
+    fetchMeasurements(user.userId);
+  };
+
   return (
     <div>
-      <h1>Measurement List</h1>
-      <form onSubmit={formik.handleSubmit}>
-        {/* Form fields */}
-        <div>
-          <label>Weight:</label>
-          <input
-            type="number"
-            name="weight"
-            value={formik.values.weight}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-          />
-          {formik.touched.weight && formik.errors.weight ? <div>{formik.errors.weight}</div> : null}
-        </div>
+      <h2>Customer List</h2>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user) => (
+            <tr key={user.userId}>
+              <td>{user.name}</td>
+              <td>{user.email}</td>
+              <td>{user.phone}</td>
+              <td>
+                <button onClick={() => handleShowMeasurements(user)}>Show Measurements</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-        {/* Additional form fields for height, neck, hip, etc. */}
-        <button type="submit">{editMeasurementId ? 'Update Measurement' : 'Add Measurement'}</button>
-      </form>
+      {selectedUser && (
+        <>
+          <h3>Measurements for {selectedUser.name}</h3>
+          <table border="1">
+            <thead>
+              <tr>
+                <th>Weight</th>
+                <th>Height</th>
+                <th>Neck</th>
+                <th>Hip</th>
+                <th>Waist</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {measurements.map((measurement) => (
+                <tr key={measurement.measurementId}>
+                  <td>{measurement.weight}</td>
+                  <td>{measurement.height}</td>
+                  <td>{measurement.neck}</td>
+                  <td>{measurement.hip}</td>
+                  <td>{measurement.waist}</td>
+                  <td>
+                    <button onClick={() => handleEdit(measurement)}>Edit</button>
+                    <button onClick={() => handleDelete(measurement.measurementId)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-      <ul>
-        {measurements.map((measurement) => (
-          <li key={measurement.measurementId}>
-            {`Weight: ${measurement.weight}, Height: ${measurement.height}, Neck: ${measurement.neck}, Hip: ${measurement.hip}`}
-            <button onClick={() => handleEdit(measurement)}>Edit</button>
-            <button onClick={() => handleDelete(measurement.measurementId)}>Delete</button>
-          </li>
-        ))}
-      </ul>
+          <h3>{editMeasurementId ? 'Edit Measurement' : 'Add Measurement'}</h3>
+          <form onSubmit={formik.handleSubmit}>
+            <div>
+              <label>Weight:</label>
+              <input type="number" name="weight" value={formik.values.weight} onChange={formik.handleChange} />
+              {formik.errors.weight && <div>{formik.errors.weight}</div>}
+            </div>
+            <div>
+              <label>Height:</label>
+              <input type="number" name="height" value={formik.values.height} onChange={formik.handleChange} />
+              {formik.errors.height && <div>{formik.errors.height}</div>}
+            </div>
+            <div>
+              <label>Neck:</label>
+              <input type="number" name="neck" value={formik.values.neck} onChange={formik.handleChange} />
+              {formik.errors.neck && <div>{formik.errors.neck}</div>}
+            </div>
+            <div>
+              <label>Hip:</label>
+              <input type="number" name="hip" value={formik.values.hip} onChange={formik.handleChange} />
+              {formik.errors.hip && <div>{formik.errors.hip}</div>}
+            </div>
+            <div>
+              <label>Waist:</label>
+              <input type="number" name="waist" value={formik.values.waist} onChange={formik.handleChange} />
+              {formik.errors.waist && <div>{formik.errors.waist}</div>}
+            </div>
+            <button type="submit">{editMeasurementId ? 'Update' : 'Add'}</button>
+          </form>
+        </>
+      )}
     </div>
   );
 };
