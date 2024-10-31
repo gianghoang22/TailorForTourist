@@ -1,8 +1,24 @@
+import React from "react";
 import "../navigation/Navigation.scss";
 import "bootstrap/dist/css/bootstrap.min.css";
 import logo from "../../../assets/img/logo/logo.png";
+import { useNavigate } from "react-router-dom";
 
 export const Navigation = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Clear user-related data from localStorage
+    localStorage.removeItem("userID");
+    localStorage.removeItem("roleID");
+    localStorage.removeItem("token");
+
+    // Redirect to the login page
+    navigate("/signin");
+  };
+
+  const isLoggedIn = !!localStorage.getItem("userID"); // Check if userID exists in localStorage
+
   return (
     <header className="header-area header_area">
       <div className="main-header header-sticky">
@@ -125,10 +141,24 @@ export const Navigation = () => {
                 <li>
                   <a href="#">Contact</a>
                 </li>
+                {isLoggedIn && (
+                  <li>
+                    <a href="/profile">Profile</a>
+                  </li>
+                )}
               </ul>
             </div>
           </nav>
           <div className="header-right-btn d-none d-lg-block ml-30">
+            {isLoggedIn ? (
+              <button className="header-btn" onClick={handleLogout}>
+                Logout
+              </button>
+            ) : (
+              <a href="/signin" className="header-btn">
+                Login
+              </a>
+            )}
             <a href="/booking" className="header-btn">
               Booking
             </a>

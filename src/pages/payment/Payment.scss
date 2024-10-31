@@ -1,0 +1,224 @@
+// Payment.scss
+.payment-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+.payment-wrapper {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+.payment-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 1.5rem;
+}
+
+.payment-methods {
+  display: flex;
+  justify-content: space-around; // Adjust as needed
+  margin-bottom: 20px;
+
+  .method-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px; // Set a fixed width
+    height: 40px; // Set a fixed height
+    border: none;
+    background: transparent;
+    cursor: pointer;
+
+    &.active {
+      border: 2px solid #007bff; // Highlight active button
+    }
+
+    img {
+      max-width: 100%; // Ensure the image fits within the button
+      max-height: 100%;
+      object-fit: contain; // Maintain aspect ratio
+    }
+  }
+}
+
+.payment-form {
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    &.three-columns {
+      grid-template-columns: 1fr 1fr 1fr;
+
+      @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #4b5563;
+    }
+
+    input,
+    select {
+      padding: 0.75rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.2s ease;
+
+      &:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+      }
+
+      &::placeholder {
+        color: #9ca3af;
+      }
+    }
+  }
+
+  .card-input-wrapper {
+    position: relative;
+
+    input {
+      padding-right: 3rem;
+    }
+
+    .card-icon {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+}
+
+.billing-section {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+
+  button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+
+    &.btn-cancel {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      color: #4b5563;
+
+      &:hover {
+        background: #f9fafb;
+      }
+    }
+
+    &.btn-continue {
+      background: #000000;
+      color: #ffffff;
+
+      &:hover {
+        background: #1a1a1a;
+      }
+    }
+  }
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-details,
+.paypal-details {
+  animation: fadeIn 0.3s ease-out;
+}
+
+// Focus and hover states
+input:hover,
+select:hover {
+  border-color: #d1d5db;
+}
+
+// Error states
+.error {
+  input,
+  select {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+  }
+
+  .error-message {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+}
+
+// Loading states
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+// Success states
+.success {
+  input,
+  select {
+    border-color: #10b981;
+  }
+}

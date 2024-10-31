@@ -3,141 +3,137 @@ import "./OrderHistory.scss";
 import ProfileNav from "./ProfileNav";
 
 const OrderHistory = () => {
+  const [orders, setOrders] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(true);
-    }, 100); // Delay to allow for the fade-in effect
+    }, 100);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const userID = localStorage.getItem("userID");
+    console.log("Retrieved userID:", userID);
+
+    if (userID) {
+      fetch(`https://localhost:7194/api/Orders/user/${userID}`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Fetched orders:", data);
+          setOrders(data);
+        })
+        .catch((error) => {
+          console.error("Error fetching orders:", error);
+          setError(error.message);
+        });
+    } else {
+      console.log("No userID found in localStorage.");
+      setError("No userID found in localStorage.");
+    }
   }, []);
 
   return (
     <div className={`container ${isVisible ? "fade-in" : ""}`}>
-      <ProfileNav /> {/* Include ProfileNav at the top */}
+      <ProfileNav />
       <h1 className="order-history-title">Order History</h1>
-      <div className="order-history-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>Product</th>
-              <th>Date</th>
-              <th>Total Amount</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>TBT15454841</td>
-              <td>
-                <img
-                  alt="World's Most Expensive T Shirt"
-                  height="40"
-                  width="40"
-                  src="https://storage.googleapis.com/a1aa/image/5vgxvCs9zboXJVKBQxKAQce9fiPzj6WkfkYdKJR8iXaha0LnA.jpg"
-                  className="product-image"
-                />
-                <div className="product-info">
-                  <div>World's Most Expensive T Shirt</div>
-                  <div className="product-category">Women's Clothes</div>
-                </div>
-              </td>
-              <td>01 Jul, 2022</td>
-              <td>$287.53</td>
-              <td>
-                <span className="status delivered">Delivered</span>
-              </td>
-            </tr>
-            <tr>
-              <td>TBT15425012</td>
-              <td>
-                <img
-                  alt="Onyx SmartGRID Chair Red"
-                  height="40"
-                  width="40"
-                  src="https://storage.googleapis.com/a1aa/image/KYLmBfJfizoHOE8iJBhpvUkvVgahNgh1yjmkBY6mW03VN6lTA.jpg"
-                  className="product-image"
-                />
-                <div className="product-info">
-                  <div>Onyx SmartGRID Chair Red</div>
-                  <div className="product-category">Furniture &amp; Decor</div>
-                </div>
-              </td>
-              <td>01 Feb, 2023</td>
-              <td>$39.99</td>
-              <td>
-                <span className="status shipping">Shipping</span>
-              </td>
-            </tr>
-            <tr>
-              <td>TBT1524563</td>
-              <td>
-                <img
-                  alt="Slippers Open Toe"
-                  height="40"
-                  width="40"
-                  src="https://storage.googleapis.com/a1aa/image/xQro2xJEeSWVF6MJ31lhRELmdqI5DahHZNPb1CYpRoFrG9yJA.jpg"
-                  className="product-image"
-                />
-                <div className="product-info">
-                  <div>Slippers Open Toe</div>
-                  <div className="product-category">Footwear</div>
-                </div>
-              </td>
-              <td>09 Dec, 2022</td>
-              <td>$874.00</td>
-              <td>
-                <span className="status out-of-delivery">Out of Delivery</span>
-              </td>
-            </tr>
-            <tr>
-              <td>TBT1524530</td>
-              <td>
-                <img
-                  alt="Hp Trendsetter Backpack"
-                  height="40"
-                  width="40"
-                  src="https://storage.googleapis.com/a1aa/image/f5anmhpEtmQvZqX0Im5HyIjBM7WzhnER6D6TWITuhyPpG9yJA.jpg"
-                  className="product-image"
-                />
-                <div className="product-info">
-                  <div>Hp Trendsetter Backpack</div>
-                  <div className="product-category">
-                    Handbags &amp; Clutches
-                  </div>
-                </div>
-              </td>
-              <td>02 Jan, 2023</td>
-              <td>$32.00</td>
-              <td>
-                <span className="status delivered">Delivered</span>
-              </td>
-            </tr>
-            <tr>
-              <td>TBT13642870</td>
-              <td>
-                <img
-                  alt="Innovative education book"
-                  height="40"
-                  width="40"
-                  src="https://storage.googleapis.com/a1aa/image/BuDt4sY9QWbIIVnedo9TBnA4DGdlMGgZRV7Mff5dsXQua0LnA.jpg"
-                  className="product-image"
-                />
-                <div className="product-info">
-                  <div>Innovative education book</div>
-                  <div className="product-category">Books</div>
-                </div>
-              </td>
-              <td>08 Jan, 2023</td>
-              <td>$18.32</td>
-              <td>
-                <span className="status pending">Pending</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      {error ? (
+        <div className="error-message">{error}</div>
+      ) : (
+        <div className="order-history-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Products</th>
+                <th>Date</th>
+                <th>Shipped Date</th>
+                <th>Total Amount</th>
+                <th>Deposit</th>
+                <th>Shipping Fee</th>
+                <th>Balance Payment</th>
+                <th>Status</th>
+                <th>Note</th>
+                <th>Payment ID</th>
+                <th>Store ID</th>
+                <th>Voucher ID</th>
+                <th>Shipper Partner ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.length > 0 ? (
+                orders.map((order) => (
+                  <tr key={order.orderId}>
+                    <td>{order.orderId}</td>
+                    <td>
+                      {order.products && order.products.length > 0 ? (
+                        order.products.map((product, index) => (
+                          <div key={index}>
+                            <img
+                              alt={product.name}
+                              height="40"
+                              width="40"
+                              src={product.imageUrl}
+                              className="product-image"
+                            />
+                            <div className="product-info">
+                              <div>{product.name}</div>
+                              <div className="product-category">
+                                {product.category}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div>No products found</div>
+                      )}
+                    </td>
+                    <td>
+                      {order.orderDate
+                        ? new Date(order.orderDate).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                    <td>
+                      {order.shippedDate
+                        ? new Date(order.shippedDate).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                    <td>${order.totalPrice?.toFixed(2) || "N/A"}</td>
+                    <td>${order.deposit?.toFixed(2) || "N/A"}</td>
+                    <td>${order.shippingFee?.toFixed(2) || "N/A"}</td>
+                    <td>${order.balancePayment?.toFixed(2) || "N/A"}</td>
+                    <td>
+                      <span
+                        className={`status ${
+                          order.status ? order.status.toLowerCase() : "unknown"
+                        }`}
+                      >
+                        {order.status || "Unknown"}
+                      </span>
+                    </td>
+                    <td>{order.note || "No notes"}</td>
+                    <td>{order.paymentId || "N/A"}</td>
+                    <td>{order.storeId || "N/A"}</td>
+                    <td>{order.voucherId || "N/A"}</td>
+                    <td>{order.shipperPartnerId || "N/A"}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="14">No orders found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
       <a className="continue-shopping" href="#">
         Continue Shopping
       </a>

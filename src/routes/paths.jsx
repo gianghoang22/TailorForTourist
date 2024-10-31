@@ -42,6 +42,12 @@ import FabricManagement from "../pages/admin/FabricManagement";
 import StoreManagement from "../pages/admin/StoreManagement";
 import LiningManagement from "../pages/admin/LiningManagement";
 import VoucherManagement from "../pages/admin/VoucherManagement";
+
+import Payment from "../pages/payment/payment";
+
+import OrderDetails from "../pages/orderDetails/OrderDetails";
+
+import CreatePassword from "../pages/signIn/CreatePassword";
 export const routes = [
   {
     path: "/",
@@ -98,6 +104,14 @@ export const routes = [
     ],
   },
   {
+    path: "/order-details",
+    element: <OrderDetails />,
+  },
+  {
+    path: "/new-password",
+    element: <CreatePassword />,
+  },
+  {
     path: "/booking",
     element: <BookingPage />,
   },
@@ -133,6 +147,10 @@ export const routes = [
     element: <ProductPage />,
   },
   {
+    path: "/payment",
+    element: <Payment />,
+  },
+  {
     path: "/product-collection/:id",
     element: <ProductDetail />,
   },
@@ -146,7 +164,7 @@ export const routes = [
   },
   {
     path: "fabricdetails",
-    element: <FabricDetailPage/>
+    element: <FabricDetailPage />,
   },
   {
     path: "/signin",

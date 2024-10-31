@@ -1,11 +1,30 @@
-import React, { useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom"; // Import Link, Outlet, and useLocation for routing
+import React, { useState, useEffect } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import "./UserProfile.scss";
 
 const UserProfile = () => {
   const [avatar, setAvatar] = useState(
     "https://storage.googleapis.com/a1aa/image/RqwuZhRNHWqJIF94Z50tiNgZTK3iL4fa551tpuNLLghW42yJA.jpg"
   );
+  const [userInfo, setUserInfo] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    gender: "",
+    dob: "",
+    roleId: "",
+  });
+  const [originalUserInfo, setOriginalUserInfo] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isChangePasswordRoute =
+    location.pathname === "/profile/change-password";
+  const isOrderHistoryRoute = location.pathname === "/profile/order-history";
+  const isMeasurementRoute = location.pathname === "/profile/measurement";
 
   const handleAvatarChange = (event) => {
     const file = event.target.files[0];
@@ -18,42 +37,123 @@ const UserProfile = () => {
     }
   };
 
-  // User information
-  const [userInfo, setUserInfo] = useState({
-    fullName: "Miriam Michael",
-    email: "miriam@example.com",
-    phone: "(123) 456-7890",
-    address: "123 Main Street, San Francisco, California",
-    city: "San Francisco",
-    state: "California",
-    zip: "94101",
-    country: "USA",
-    website: "www.example.com",
-  });
-
-  const location = useLocation();
-  const isChangePasswordRoute =
-    location.pathname === "/profile/change-password";
-  const isOrderHistoryRoute = location.pathname === "/profile/order-history";
-  const isMeasurementRoute = location.pathname === "/profile/measurement";
-  const [isEditing, setIsEditing] = useState(false);
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    // Update the user information here
-    console.log("Update user information:", userInfo);
-  };
-
   const handleEdit = () => {
     setIsEditing(true);
   };
 
   const handleCancel = () => {
+    setUserInfo(originalUserInfo);
     setIsEditing(false);
   };
 
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const userID = localStorage.getItem("userID");
+    if (!userID) {
+      console.error("User ID not found in localStorage.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://localhost:7194/api/User/${userID}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(userInfo),
+        }
+      );
+
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        throw new Error(
+          `Failed to update user info: ${errorResponse.message || response.statusText}`
+        );
+      }
+
+      setIsEditing(false);
+      console.log("User information updated successfully");
+    } catch (error) {
+      console.error("Error updating user info:", error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found in localStorage.");
+        navigate("/signin", { state: { alert: "Please log in first." } });
+        return;
+      }
+
+      try {
+        const decodedToken = jwtDecode(token);
+        const currentTime = Math.floor(Date.now() / 1000);
+        if (decodedToken.exp < currentTime) {
+          navigate("/signin", {
+            state: { alert: "Session expired. Please log in again." },
+          });
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to decode token:", error);
+        navigate("/signin", {
+          state: { alert: "Invalid token. Please log in again." },
+        });
+        return;
+      }
+
+      const userID = localStorage.getItem("userID");
+      if (!userID) {
+        console.error("User ID is not available in localStorage.");
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `https://localhost:7194/api/User/${userID}`
+        );
+        if (!response.ok) {
+          const errorResponse = await response.json();
+          throw new Error(
+            `Failed to fetch user data: ${errorResponse.message || response.statusText}`
+          );
+        }
+        const data = await response.json();
+        setUserInfo({
+          id: data.userId,
+          name: data.name,
+          email: data.email,
+          gender: data.gender,
+          phone: data.phone,
+          address: data.address,
+          dob: data.dob,
+          roleId: data.roleId,
+        });
+        setOriginalUserInfo({
+          id: data.userId,
+          name: data.name,
+          email: data.email,
+          gender: data.gender,
+          phone: data.phone,
+          address: data.address,
+          dob: data.dob,
+          roleId: data.roleId,
+        });
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
+
   return (
     <div className="container">
+      {/* Only render this section if not on the specified routes */}
       {!isChangePasswordRoute &&
         !isOrderHistoryRoute &&
         !isMeasurementRoute && (
@@ -62,8 +162,7 @@ const UserProfile = () => {
               <h1 className="title">Profile</h1>
               <p className="description">
                 The Profile page is your digital hub, where you can fine-tune
-                your experience. Here's a closer look at the settings you can
-                expect to find in your profile page.
+                your experience.
               </p>
             </div>
             <div className="profile-container">
@@ -75,7 +174,7 @@ const UserProfile = () => {
                     className="avatar"
                     src={avatar}
                   />
-                  <h2 className="name">{userInfo.fullName}</h2>
+                  <h2 className="name">{userInfo.name}</h2>
                   <input
                     type="file"
                     id="fileInput"
@@ -131,11 +230,11 @@ const UserProfile = () => {
                           <label>Full Name:</label>
                           <input
                             type="text"
-                            value={userInfo.fullName}
+                            value={userInfo.name}
                             onChange={(event) =>
                               setUserInfo({
                                 ...userInfo,
-                                fullName: event.target.value,
+                                name: event.target.value,
                               })
                             }
                             style={{ width: "100%", margin: "10px 0" }}
@@ -184,130 +283,71 @@ const UserProfile = () => {
                           />
                         </div>
                         <div className="form-group">
-                          <label>City:</label>
-                          <input
-                            type="text"
-                            value={userInfo.city}
+                          <label>Gender:</label>
+                          <select
+                            value={userInfo.gender}
                             onChange={(event) =>
                               setUserInfo({
                                 ...userInfo,
-                                city: event.target.value,
+                                gender: event.target.value,
                               })
                             }
                             style={{ width: "100%", margin: "10px 0" }}
-                          />
+                          >
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                          </select>
                         </div>
                         <div className="form-group">
-                          <label>State:</label>
+                          <label>Date of Birth:</label>
                           <input
-                            type="text"
-                            value={userInfo.state}
+                            type="date"
+                            value={userInfo.dob}
                             onChange={(event) =>
                               setUserInfo({
                                 ...userInfo,
-                                state: event.target.value,
+                                dob: event.target.value,
                               })
                             }
                             style={{ width: "100%", margin: "10px 0" }}
                           />
                         </div>
-                        <div className="form-group">
-                          <label>Zip:</label>
-                          <input
-                            type="text"
-                            value={userInfo.zip}
-                            onChange={(event) =>
-                              setUserInfo({
-                                ...userInfo,
-                                zip: event.target.value,
-                              })
-                            }
-                            style={{ width: "100%", margin: "10px 0" }}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Country:</label>
-                          <input
-                            type="text"
-                            value={userInfo.country}
-                            onChange={(event) =>
-                              setUserInfo({
-                                ...userInfo,
-                                country: event.target.value,
-                              })
-                            }
-                            style={{ width: "100%", margin: "10px 0" }}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Website:</label>
-                          <input
-                            type="url"
-                            value={userInfo.website}
-                            onChange={(event) =>
-                              setUserInfo({
-                                ...userInfo,
-                                website: event.target.value,
-                              })
-                            }
-                            style={{ width: "100%", margin: "10px 0" }}
-                          />
-                        </div>
-                        <div className="button-group">
-                          <button type="submit" className="save-btn">
-                            Save Changes
-                          </button>
-                        </div>
+                        <button type="submit" className="submit-btn">
+                          Save
+                        </button>
                       </form>
                     </div>
                   ) : (
-                    <table className="profile-table">
-                      <tbody>
-                        <tr>
-                          <td className="label">Full Name</td>
-                          <td className="value">{userInfo.fullName}</td>
-                        </tr>
-                        <tr>
-                          <td className="label">Email</td>
-                          <td className="value">{userInfo.email}</td>
-                        </tr>
-                        <tr>
-                          <td className="label">Phone</td>
-                          <td className="value">{userInfo.phone}</td>
-                        </tr>
-                        <tr>
-                          <td className="label">Address</td>
-                          <td className="value">{userInfo.address}</td>
-                        </tr>
-                        <tr>
-                          <td className="label">City</td>
-                          <td className="value">{userInfo.city}</td>
-                        </tr>
-                        <tr>
-                          <td className="label">State</td>
-                          <td className="value">{userInfo.state}</td>
-                        </tr>
-                        <tr>
-                          <td className="label">Zip</td>
-                          <td className="value">{userInfo.zip}</td>
-                        </tr>
-                        <tr>
-                          <td className="label">Country</td>
-                          <td className="value">{userInfo.country}</td>
-                        </tr>
-                        <tr>
-                          <td className="label">Website</td>
-                          <td className="value">{userInfo.website}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <div className="info-container">
+                      <p>
+                        <strong>Email:</strong> {userInfo.email}
+                      </p>
+                      <p>
+                        <strong>Phone:</strong> {userInfo.phone}
+                      </p>
+                      <p>
+                        <strong>Address:</strong> {userInfo.address}
+                      </p>
+                      <p>
+                        <strong>Gender:</strong> {userInfo.gender}
+                      </p>
+                      <p>
+                        <strong>Date of Birth:</strong> {userInfo.dob}
+                      </p>
+                    </div>
                   )}
                 </div>
+                {/* Render the Outlet for child routes */}
+                <Outlet />
               </div>
             </div>
           </div>
         )}
-      <Outlet />
+      {/* This part renders when on child routes */}
+      {isChangePasswordRoute && <Outlet />}
+      {isOrderHistoryRoute && <Outlet />}
+      {isMeasurementRoute && <Outlet />}
     </div>
   );
 };

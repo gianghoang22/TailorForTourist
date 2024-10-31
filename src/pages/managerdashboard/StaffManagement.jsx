@@ -131,13 +131,18 @@ const StaffManagement = () => {
           body: JSON.stringify(newStaff),
         }
       );
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error updating staff");
+        // Check for 204 status to confirm success without content
+        if (response.status !== 204) {
+          const error = await response.json();
+          throw new Error(error.message || "Error updating staff");
+        }
       }
-      const updatedUser = await response.json();
+
+      // Update staff data locally after a successful edit
       const updatedStaff = staffData.map((s) =>
-        s.userId === editIndex ? updatedUser : s
+        s.userId === editIndex ? { ...s, ...newStaff } : s
       );
       setStaffData(updatedStaff);
       setNewStaff({

@@ -37,7 +37,7 @@ const StoreManagement = () => {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        setStoreData(data); // No filtering required
+        setStoreData(data);
       } catch (error) {
         console.error("Error fetching store data:", error);
         setError("Error fetching store data. Please try again later.");
@@ -67,9 +67,16 @@ const StoreManagement = () => {
       }
 
       const addedStore = await response.json();
-      setStoreData([...storeData, addedStore]); // Update store data without needing to refetch
+      setStoreData([...storeData, addedStore]);
       setError(null);
       setShowSuccessMessage(true);
+      setNewStore({
+        storeId: null,
+        userId: 0,
+        name: "",
+        address: "",
+        contactNumber: "",
+      });
     } catch (error) {
       console.error("Error adding new store:", error);
       setError(error.message);
@@ -93,13 +100,14 @@ const StoreManagement = () => {
           body: JSON.stringify(newStore),
         }
       );
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Error updating store");
       }
-      const updatedStore = await response.json();
+
       const updatedStores = storeData.map((s) =>
-        s.storeId === editIndex ? updatedStore : s
+        s.storeId === editIndex ? { ...s, ...newStore } : s
       );
       setStoreData(updatedStores);
       setNewStore({
@@ -111,6 +119,7 @@ const StoreManagement = () => {
       });
       setEditIndex(null);
       setError(null);
+      setShowSuccessMessage(true); // Show success message after update
     } catch (error) {
       console.error("Error updating store:", error);
       setError(error.message);
@@ -175,9 +184,15 @@ const StoreManagement = () => {
             variant="outlined"
             style={{ marginRight: "1rem" }}
           />
-          <Button variant="contained" color="secondary" onClick={handleAdd}>
-            Add Store
-          </Button>
+          {editIndex ? (
+            <Button variant="contained" color="primary" onClick={handleUpdate}>
+              Update Store
+            </Button>
+          ) : (
+            <Button variant="contained" color="secondary" onClick={handleAdd}>
+              Add Store
+            </Button>
+          )}
         </div>
 
         <TextField
@@ -234,13 +249,6 @@ const StoreManagement = () => {
           </TableBody>
         </Table>
       </TableContainer>
-
-      {showSuccessMessage && (
-        <div className="success-message">
-          <p>Added successfully!</p>
-          <button onClick={() => window.location.reload()}>Refresh</button>
-        </div>
-      )}
     </div>
   );
 };

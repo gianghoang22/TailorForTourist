@@ -14,27 +14,67 @@ const BookingPage = () => {
   const [availableTimes, setAvailableTimes] = useState([]);
   const [selectedTime, setSelectedTime] = useState("");
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    fullName: "",
     email: "",
     phone: "",
     description: "",
+    service: "",
   });
   const [availableStores, setAvailableStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState(1);
   const [phoneError, setPhoneError] = useState("");
   const [dateError, setDateError] = useState("");
   const [timeError, setTimeError] = useState("");
-
-  useEffect(() => {
-    if (date) {
-      updateAvailableTimes(date);
-    }
-  }, [date]);
+  const [serviceError, setServiceError] = useState("");
 
   useEffect(() => {
     fetchStores();
-  }, []);
+    fetchUserDetails();
+    updateAvailableTimes(date);
+  }, [date]);
+
+  const fetchUserDetails = async () => {
+    const userId = localStorage.getItem("userID");
+    if (userId) {
+      try {
+        const response = await fetch(
+          `https://localhost:7194/api/User/${userId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        const userData = await response.json();
+        if (userData) {
+          setFormData({
+            fullName: userData.name || "",
+            email: userData.email || "",
+            phone: userData.phone || "",
+            description: "",
+            service: "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user details:", error);
+      }
+    }
+  };
+
+  const fetchStores = async () => {
+    try {
+      const response = await fetch("https://localhost:7194/api/Store");
+      const data = await response.json();
+      setAvailableStores(data);
+      if (data.length > 0) {
+        setSelectedStoreId(data[0].storeId);
+      }
+    } catch (error) {
+      console.error("Error fetching store data:", error);
+    }
+  };
 
   const updateAvailableTimes = (selectedDate) => {
     const times = [
@@ -54,19 +94,6 @@ const BookingPage = () => {
     setAvailableTimes(times);
   };
 
-  const fetchStores = async () => {
-    try {
-      const response = await fetch("https://localhost:7194/api/Store");
-      const data = await response.json();
-      setAvailableStores(data);
-      if (data.length > 0) {
-        setSelectedStoreId(data[0].storeId);
-      }
-    } catch (error) {
-      console.error("Error fetching store data:", error);
-    }
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -76,8 +103,7 @@ const BookingPage = () => {
   };
 
   const handleStoreChange = (e) => {
-    const storeId = e.target.value;
-    setSelectedStoreId(storeId);
+    setSelectedStoreId(e.target.value);
   };
 
   const validatePhone = (phone) => {
@@ -100,10 +126,38 @@ const BookingPage = () => {
         ? convertTimeTo24Hour(selectedTime)
         : selectedTime;
 
+    const bookingData = {
+      bookingDate,
+      time: `${time}:00`,
+      note: formData.description,
+      status: "pending",
+      storeId: selectedStoreId,
+      service: formData.service,
+    };
+
+    const userId = localStorage.getItem("userID");
+
+    if (userId) {
+      // For logged-in users
+      bookingData.userId = userId;
+      bookingData.guestName = formData.fullName;
+      bookingData.guestEmail = formData.email;
+      bookingData.guestPhone = formData.phone;
+    } else {
+      // For guests
+      bookingData.guestName = formData.fullName.trim();
+      bookingData.guestEmail = formData.email;
+      bookingData.guestPhone = formData.phone;
+    }
+
     // Validation checks
     let isValid = true;
 
-    // Check future date
+    if (!bookingData.guestName) {
+      setPhoneError("Please provide your name.");
+      isValid = false;
+    }
+
     if (date <= new Date()) {
       setDateError("Please select a future date.");
       isValid = false;
@@ -111,7 +165,6 @@ const BookingPage = () => {
       setDateError("");
     }
 
-    // Check time selection
     if (!selectedTime) {
       setTimeError("Please select an available time.");
       isValid = false;
@@ -119,27 +172,18 @@ const BookingPage = () => {
       setTimeError("");
     }
 
-    // Validate phone
-    const isPhoneValid = validatePhone(formData.phone);
-    if (!isPhoneValid) {
+    if (!userId) {
+      isValid = validatePhone(formData.phone) && isValid;
+    }
+
+    if (!formData.service) {
+      setServiceError("Please select a service.");
       isValid = false;
+    } else {
+      setServiceError("");
     }
 
-    // If any validation fails, exit early
-    if (!isValid) {
-      return;
-    }
-
-    const bookingData = {
-      bookingDate,
-      time: `${time}:00`,
-      note: formData.description,
-      status: "on-going",
-      storeId: selectedStoreId,
-      guestName: `${formData.firstName} ${formData.lastName}`,
-      guestEmail: formData.email,
-      guestPhone: formData.phone,
-    };
+    if (!isValid) return;
 
     try {
       const response = await fetch(
@@ -148,18 +192,25 @@ const BookingPage = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify(bookingData),
         }
       );
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log("Booking successful:", result);
-        navigate("/booking-thanks");
-      } else {
-        console.error("Error creating booking:", response.statusText);
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(
+          "Error creating booking:",
+          response.statusText,
+          errorData
+        );
+        return; // Stop execution if there's an error
       }
+
+      const result = await response.json();
+      console.log("Booking successful:", result);
+      navigate("/booking-thanks");
     } catch (error) {
       console.error("Error submitting booking:", error);
     }
@@ -179,15 +230,6 @@ const BookingPage = () => {
 
     return `${hours}:${minutes}`;
   };
-
-  const formattedDate = date
-    ? date.toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "";
 
   return (
     <div className="booking-page">
@@ -213,9 +255,9 @@ const BookingPage = () => {
             <h3>About</h3>
             <p>
               Our team at Alts (Alteration Specialists) Court St offers standard
-              services, bridal services and specialty services. The studio is
-              conveniently located on Court Street between President st and
-              Union st. Tour our studio.
+              services, bridal services, and specialty services. The studio is
+              conveniently located on Court Street between President St and
+              Union St. Tour our studio.
             </p>
           </div>
           <div className="contact-info">
@@ -303,19 +345,19 @@ const BookingPage = () => {
           {selectedTime && (
             <div className="selected-time-info">
               <p>
-                You have selected: <strong>{formattedDate}</strong> at{" "}
-                <strong>{selectedTime}</strong>
+                You have selected: <strong>{date.toLocaleDateString()}</strong>{" "}
+                at <strong>{selectedTime}</strong>
               </p>
             </div>
           )}
           <form onSubmit={handleSubmit} className="booking-form">
             <div className="form-group">
-              <label htmlFor="firstName">Fullname:</label>
+              <label htmlFor="fullName">Full Name:</label>
               <input
                 type="text"
-                id="firstName"
-                name="firstName"
-                value={formData.firstName}
+                id="fullName"
+                name="fullName"
+                value={formData.fullName}
                 onChange={handleInputChange}
                 required
               />
@@ -351,6 +393,23 @@ const BookingPage = () => {
                 value={formData.description}
                 onChange={handleInputChange}
               />
+            </div>
+            <div className="form-group">
+              <label htmlFor="service">Service:</label>
+              <select
+                id="service"
+                name="service"
+                value={formData.service}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="">Select a service</option>
+                <option value="Tailor">Tailor</option>
+                <option value="Return">Return</option>
+                <option value="Exchange">Exchange</option>
+                <option value="Fix">Fix</option>
+              </select>
+              {serviceError && <p className="error">{serviceError}</p>}
             </div>
             <button type="submit" className="submit-button">
               Book Appointment
