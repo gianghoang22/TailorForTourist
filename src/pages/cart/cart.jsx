@@ -1,99 +1,125 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
+import { useNavigate } from 'react-router-dom';
 import { getCart, removeFromCart, updateQuantity } from '../../utils/cartUtil.js';
 import './Cart.scss';
+import { Navigation } from '../../layouts/components/navigation/Navigation.jsx';
+import { Footer } from '../../layouts/components/footer/Footer.jsx';
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
 
   useEffect(() => {
     const items = getCart();
-    console.log("Lấy giỏ hàng khi render:", items);
     setCartItems(items);
     calculateTotal(items);
   }, []);
 
-  // Recalculate the total price whenever cartItems change
   const calculateTotal = (items) => {
-    const total = items.reduce((acc, item) => {
-      // Only include fabric items in total price calculation
-      if (item.type === 'fabric') {
-        return acc + item.price * item.quantity;
-      }
-      return acc; // Don't add styles or linings
-    }, 0);
+    const total = items.reduce((acc, item) => acc + (item.price * item.quantity || 0), 0);
     setTotalPrice(total);
   };
 
-  const handleRemoveFromCart = (id, type) => {
-    const updatedCart = removeFromCart(id, type);
+  const handleRemoveFromCart = (productId) => {
+    const updatedCart = removeFromCart(productId);
     setCartItems(updatedCart);
     calculateTotal(updatedCart);
   };
 
-  const handleQuantityChange = (id, type, delta) => {
-    const updatedCart = updateQuantity(id, type, delta);
+  const handleQuantityChange = (productId, delta) => {
+    const updatedCart = updateQuantity(productId, delta);
     setCartItems(updatedCart);
     calculateTotal(updatedCart);
-  };
-
-  const handleReturnToCustomization = () => {
-    navigate('/custom-suits/'); // Navigate to the customization page
   };
 
   const handleCheckout = () => {
-    navigate('/checkout'); // Navigate to the checkout page
+    const currentCart = getCart();
+    localStorage.setItem('checkoutCart', JSON.stringify(currentCart));
+    navigate('/checkout');
   };
 
   return (
-    <div className="cart-container">
-      <h1>Your Cart</h1>
-      {cartItems.length > 0 ? (
-        <div>
-          <ul>
-            {cartItems.map((item, index) => (
-              <li key={index} className="cart-item">
-                <div className="item-details">
-                  <h2>{item.name}</h2>
-                  <h3>{item.price} USD</h3>
-                  <img src={item.imageUrl} alt={item.name} />
-                  <p>Type: {item.type}</p>
-
-                  {/* Quantity controls */}
-                  <div className="quantity-controls">
-                    <button onClick={() => handleQuantityChange(item.id, item.type, item.quantity - 1)}>-</button>
-                    <span>{item.quantity}</span>
-                    <button onClick={() => handleQuantityChange(item.id, item.type, item.quantity + 1)}>+</button>
-                  </div>
-                  
-                  {/* Remove button */}
-                  <button onClick={() => handleRemoveFromCart(item.id, item.type)}>Remove</button>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          {/* Display total price */}
-          <div className="total-price">
-            <h2>Total Price: {totalPrice} USD</h2>
+    <>
+      <Navigation />
+      <div className="page-with-side-bar">
+        <div className="all">
+          <div className="left-side">
+            <div className="sec-title">
+              <h1 className="tt-txt">
+                <span className="tt-sub">Cart</span>
+                A Dong Silk
+              </h1>
+            </div>
           </div>
-
-          {/* Return to customization button */}
-          <button className="return-button" onClick={handleReturnToCustomization}>
-            Return to Customization
-          </button>
-
-          {/* Checkout button */}
-          <button className="checkout-button" onClick={handleCheckout}>
-            Checkout
-          </button>
+          <div className="right-main">
+            <div className="woocommerce">
+              <form className="woocommerce-cart-form">
+                <table className="shop_table" cellSpacing={0}>
+                  <thead>
+                    <tr>
+                      <th className="product-remove"></th>
+                      <th className="product-name">Product</th>
+                      <th className="product-fabric">Fabric</th>
+                      <th className="product-style">Style</th>
+                      <th className="product-lining">Lining</th>
+                      <th className="product-price">Price</th>
+                      <th className="product-quantity">Quantity</th>
+                      <th className="product-subtotal">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cartItems.length > 0 ? (
+                      cartItems.map((item) => (
+                        <tr key={item.productId} className="woocommerce-cart-form__cart-item">
+                          <td className="product-remove">
+                            <button onClick={() => handleRemoveFromCart(item.productId)}>x</button>
+                          </td>
+                          <td className="product-name">
+                            <span>{item.name}</span>
+                          </td>
+                          <td className="product-fabric">
+                            <span>{item.fabric?.optionValue || "Not available"}</span>
+                          </td>
+                          <td className="product-style">
+                            <span>{item.style?.optionValue || "Not available"}</span>
+                          </td>
+                          <td className="product-lining">
+                            <span>{item.lining?.optionValue || "Not available"}</span>
+                          </td>
+                          <td className="product-price">
+                            <span>{item.price} USD</span>
+                          </td>
+                          <td className="product-quantity">
+                            <span>{item.quantity}</span>
+                          </td>
+                          <td className="product-subtotal">
+                            <span>{(item.price * item.quantity).toFixed(2)} USD</span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={8} style={{ textAlign: 'center' }}>
+                          Your cart is empty.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </form>
+            </div>
+          </div>
         </div>
-      ) : (
-        <p>Your cart is empty.</p>
-      )}
-    </div>
+      </div>
+      <div>
+        <h2>Total Price of Fabrics: {totalPrice.toFixed(2)} USD</h2>
+        <button className="checkout-button" onClick={handleCheckout}>
+          Checkout
+        </button>
+      </div>
+      <Footer />
+    </>
   );
 };
 

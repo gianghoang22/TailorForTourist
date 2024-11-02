@@ -4,6 +4,7 @@ import SignUp from "../pages/signUp/signUp";
 import HomePage from "../pages/home/HomePage";
 import BookingPage from "../pages/booking/BookingPage";
 import Checkout from "../pages/checkout/Checkout";
+import MeasurementGuide from "../pages/measurementGuide/MeasurementGuide";
 
 import ProductPage from "../pages/product/ProductPage";
 import ProductDetail from "../pages/product/ProductDetail";
@@ -16,11 +17,13 @@ import CustomSuit from "../pages/customsuit/CustomSuit";
 import CustomStyle from "../pages/customSuit/custom/CustomStyle";
 import CustomLining from "../pages/customSuit/custom/CustomLining";
 import CustomFabric from "../pages/customSuit/custom/CustomFabric";
+import MeasureGuest from "../pages/customSuit/measure/MeasureGuest";
 
 import StaffDashboard from "../pages/staff/StaffDashboard";
 import OrderList from "../pages/staff/staffManager/OrderList";
 import BookingList from "../pages/staff/staffManager/BookingList";
 import ShipmentList from "../pages/staff/staffManager/ShipmentList";
+import MeasureList from "../pages/staff/staffManager/MeasureList";
 
 import OrderHistory from "../pages/profile/OrderHistory";
 import Measurement from "../pages/profile/Measurement";
@@ -159,11 +162,11 @@ export const routes = [
     element: <Checkout />,
   },
   {
-    path: "/fabric",
+    path: "/fabrics",
     element: <Fabric />,
   },
   {
-    path: "fabricdetails",
+    path: "/fabrics/:id",
     element: <FabricDetailPage />,
   },
   {
@@ -195,26 +198,30 @@ export const routes = [
         path: "shipment",
         element: <ShipmentList />,
       },
-    ],
-  },
-  {
-    path: "/custom-suits",
-    element: <CustomSuit />,
-    children: [
       {
-        path: "fabric",
-        element: <CustomFabric />,
-      },
-      {
-        path: "style",
-        element: <CustomStyle />,
-      },
-      {
-        path: "lining",
-        element: <CustomLining />,
+        path: "measurement",
+        element: <MeasureList />,
       },
     ],
   },
+  // {
+  //   path: "/custom-suits",
+  //   element: <CustomSuit />,
+  //   children: [
+  //     {
+  //       path: "fabric",
+  //       element: <CustomFabric />,
+  //     },
+  //     {
+  //       path: "style",
+  //       element: <CustomStyle />,
+  //     },
+  //     {
+  //       path: "lining",
+  //       element: <CustomLining />,
+  //     },
+  //   ],
+  // },
 
   {
     path: "/staff",
@@ -259,5 +266,13 @@ export const routes = [
         element: <CustomLining />,
       },
     ],
+  },
+  {
+    path: "/measure",
+    element: <MeasureGuest />,
+  },
+  {
+    path: "/how-to-measure",
+    element: <MeasurementGuide />,
   },
 ];

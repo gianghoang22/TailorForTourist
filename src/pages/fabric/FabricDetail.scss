@@ -1,29 +1,61 @@
-.fabric-detail-page {
-    padding: 20px;
-  
-    .fabric-name {
-      font-size: 2rem;
-      margin-bottom: 20px;
-    }
-  
-    .fabric-info {
-      display: flex;
-      align-items: center;
-  
-      img {
-        max-width: 300px;
-        margin-right: 20px;
-      }
-  
-      .fabric-description {
-        font-size: 1.2rem;
-        margin-bottom: 10px;
-      }
-  
-      .fabric-price,
-      .fabric-composition {
-        font-weight: bold;
-      }
+/* FabricDetail.scss */
+.fabric-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  img {
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+  }
+
+  .price {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #e67e22;
+    margin-bottom: 1.5rem;
+  }
+
+  p {
+    font-size: 1.2rem;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+
+    &.description {
+      text-align: justify;
+      color: #444;
     }
   }
-  
+
+  .back-btn {
+    margin-top: 2rem;
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &:hover {
+      background-color: #2980b9;
+    }
+  }
+}

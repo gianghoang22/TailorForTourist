@@ -1,47 +1,102 @@
+import { toast } from "react-toastify";
+
+const storageType = localStorage;
+
+// Lấy giỏ hàng từ storage
 export const getCart = () => {
-  const cart = localStorage.getItem("cart");
+  const cart = storageType.getItem("cart");
   return cart ? JSON.parse(cart) : [];
 };
 
+// Lưu giỏ hàng vào storage
+const saveCart = (cart) => {
+  storageType.setItem("cart", JSON.stringify(cart));
+};
+
+// Thêm sản phẩm vào giỏ hàng
 export const addToCart = (product) => {
   let cart = getCart();
 
-  // Check if the product is already in the cart
-  const existingItem = cart.find(
-    (item) => item.id === product.id && item.type === product.type
-  );
+  // Tạo ID duy nhất cho mỗi sản phẩm dựa trên thuộc tính của nó
+  const productId = `${product.type}-${product.fabricId}-${product.styleId}-${product.liningId}`;
 
-  if (existingItem) {
-    // If the item already exists, increase its quantity by 1
-    existingItem.quantity += 1;
+  // Kiểm tra sản phẩm đã có trong giỏ chưa
+  const existingProduct = cart.find((item) => item.productId === productId);
+
+  if (existingProduct) {
+    // Nếu sản phẩm đã có, tăng số lượng
+    existingProduct.quantity += 1;
+    toast.success(
+      `Cập nhật số lượng sản phẩm "${product.name}" trong giỏ hàng!`
+    );
   } else {
-    // If the item doesn't exist, add it to the cart with quantity 1
-    cart.push({ ...product, quantity: 1 });
+    // Thêm sản phẩm mới với tất cả chi tiết
+    const newProduct = {
+      ...product,
+      quantity: 1,
+      productId,
+      fabric: product.fabric, // Thêm thông tin fabric
+      style: product.style, // Thêm thông tin style
+      lining: product.lining, // Thêm thông tin lining
+    };
+    cart.push(newProduct);
+    toast.success(`Sản phẩm "${product.name}" đã được thêm vào giỏ hàng!`);
   }
 
-  localStorage.setItem("cart", JSON.stringify(cart)); // Save the updated cart
+  saveCart(cart);
 };
 
-export const removeFromCart = (id, type) => {
+// Thêm sản phẩm tùy chỉnh vào giỏ hàng
+export const addCustomProductToCart = (product) => {
   let cart = getCart();
-  const updatedCart = cart.filter(
-    (item) => !(item.id === id && item.type === type)
-  );
-  localStorage.setItem("cart", JSON.stringify(updatedCart)); // Update cart in localStorage
-  return updatedCart;
+
+  // Tạo ID duy nhất cho sản phẩm tùy chỉnh
+  const customProductId = `${product.fabric.id}-${product.style.id}-${product.lining.id}-${Date.now()}`;
+
+  const customProduct = {
+    productId: customProductId,
+    fabric: product.fabric,
+    style: product.style,
+    lining: product.lining,
+    price: product.fabric.price + product.style.price + product.lining.price,
+    quantity: 1,
+  };
+
+  cart.push(customProduct);
+
+  saveCart(cart);
+
+  toast.success(`Sản phẩm tùy chỉnh đã được thêm vào giỏ hàng!`);
 };
 
-export const updateQuantity = (id, type, quantity) => {
+// Xóa sản phẩm khỏi giỏ hàng
+export const removeFromCart = (productId) => {
   let cart = getCart();
 
-  // Find the item in the cart and update its quantity
+  cart = cart.filter((item) => item.productId !== productId);
+
+  saveCart(cart);
+
+  return cart;
+};
+
+// Cập nhật số lượng sản phẩm
+export const updateQuantity = (productId, quantity) => {
+  let cart = getCart();
+
   cart = cart.map((item) => {
-    if (item.id === id && item.type === type) {
-      return { ...item, quantity: Math.max(1, quantity) }; // Ensure quantity is >= 1
+    if (item.productId === productId) {
+      return { ...item, quantity: Math.max(1, quantity) };
     }
     return item;
   });
 
-  localStorage.setItem("cart", JSON.stringify(cart)); // Save the updated cart
+  saveCart(cart);
+
   return cart;
+};
+
+// Lấy giỏ hàng hiện tại
+export const getCurrentCart = () => {
+  return getCart();
 };

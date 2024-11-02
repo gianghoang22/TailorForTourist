@@ -5,10 +5,10 @@ import './CustomLining.scss';
 import lining_icon from '../../../assets/img/iconCustom/icon-accent-vailot.jpg';
 
 const CustomLining = () => {
-  const [linings, setLinings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedLining, setSelectedLining] = useState(null);
+  const [linings, setLinings] = useState([]);  // Lưu trữ danh sách các lining
+  const [loading, setLoading] = useState(true);  // Trạng thái loading
+  const [error, setError] = useState(null);  // Trạng thái lỗi
+  const [selectedLining, setSelectedLining] = useState(null);  // Lưu trữ lining đã chọn
 
   // Fetch lining data on component mount
   useEffect(() => {
@@ -19,7 +19,7 @@ const CustomLining = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        setLinings(data);  // Set the linings data
+        setLinings(data);  // Lưu dữ liệu linings
       } catch (error) {
         setError(error.message);  // Set error state
       } finally {
@@ -29,25 +29,17 @@ const CustomLining = () => {
     fetchLinings();
   }, []);
 
-  // Handle lining selection
+  // Xử lý khi người dùng chọn một Lining
   const handleLiningClick = (lining) => {
-    setSelectedLining(lining);  // Set the clicked lining as selected
-  };
+    setSelectedLining(lining);  // Cập nhật lining được chọn
 
-  // Handle adding the selected lining to the cart
-  const handleAddToCart = () => {
-    if (selectedLining) {
-      // Add the selected lining to the cart
-      addToCart({
-        id: selectedLining.liningId,
-        name: selectedLining.liningName,
-        imageUrl: selectedLining.imageUrl,
-        type: 'lining',
-      });
-      alert(`${selectedLining.liningName} has been added to the cart!`);
-    } else {
-      alert('Please select a lining first.');
-    }
+    // Tự động thêm vào giỏ hàng sau khi chọn lining
+    addToCart({
+      id: lining.liningId,
+      name: lining.liningName,
+      imageUrl: lining.imageUrl,
+      type: 'lining',
+    });
   };
 
   if (loading) {
@@ -70,14 +62,14 @@ const CustomLining = () => {
           </li>
         </div>
 
-        {/* List of linings */}
+        {/* Danh sách các lining */}
         <div className='right-items-lining'>
           <ul className="list-lining">
             {linings.map((lining) => (
               <li
                 key={lining.liningId}
                 className={`lining-item ${selectedLining && selectedLining.liningId === lining.liningId ? 'selected' : ''}`}
-                onClick={() => handleLiningClick(lining)}
+                onClick={() => handleLiningClick(lining)}  // Gọi handleLiningClick khi người dùng bấm chọn lining
               >
                 <div className="lining-img">
                   {lining.imageUrl ? <img src={lining.imageUrl} alt={lining.liningName} /> : 'No image available'}
@@ -89,7 +81,7 @@ const CustomLining = () => {
         </div>
       </div>
 
-      {/* Selected lining details */}
+      {/* Chi tiết lining được chọn */}
       <div className='right-half'>
         {selectedLining && (
           <div className='lining-details'>
@@ -101,15 +93,11 @@ const CustomLining = () => {
                 {selectedLining.imageUrl ? <img src={selectedLining.imageUrl} alt={selectedLining.liningName} /> : 'No image available'}
               </div>
             </div>
-
-            {/* Add to Cart Button */}
-            <button className="add-to-cart-btn" onClick={handleAddToCart}>Add to Cart</button>
           </div>
         )}
 
-        {/* Next button */}
         <div className='next-btn'>
-          <Link to="/cart">
+          <Link to="/measure">
             <button className='navigation-button'>Next</button>
           </Link>
         </div>

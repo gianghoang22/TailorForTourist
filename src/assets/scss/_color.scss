@@ -1,89 +1,79 @@
+@use './variables' as vars;
 
-/*-------------   Color Variable  --------------*/
+/*-------------   Color Variables  --------------*/
 
-//Colors
-	$white: #ffffff;
-	$black: #16161a;
-	$gray:#f7f7fd;
+// Base Colors
+$white: #ffffff;
+$black: #16161a;
+$gray: #f7f7fd;
 
-//Theme color
-	$theme-color: #BE9278;
-	$theme-color2: #140C40;
-	$theme-color3: #f27420;
-	$theme-color4: #ff3500;
+// Theme Colors
+$theme-color: #BE9278;
+$theme-color2: #140C40;
+$theme-color3: #f27420;
+$theme-color4: #ff3500;
 
-// btn and Section color
-	$btn_bg: #BE9278;
+// Button and Section Color
+$btn_bg: $theme-color; // You can reference the theme color directly
 
-// Heading color
-	$heading-color:#101A31;
-	$heading_color2: #080808;
+// Heading Colors
+$heading-color: #101A31;
+$heading-color2: #080808;
 
-	
 // Body Font
-	$body-text-color: #010A44;
-	$hr-border-color:#eceff8;
+$body-text-color: #010A44;
+$hr-border-color: #eceff8;
 
+// Section Backgrounds
+$section_bg1: #454545;
 
+$gray-color: #bebebe;
+$gray-color-2: #bdbdbd;
 
-// Section Bg
-	$section_bg1: #454545;
+// Font Color
+$font_color1: #10285d;
+$border_color: #fdcb9e;
 
+// Background Colors
+$brand-bg: #f1f4fa;
+$testimonial-bg: #f9fafc;
 
-.white-bg{
-	background: #ffffff;
-}
-.gray-bg{
-	background: #F5F9FB;
-}
+/*------------- Color Classes --------------*/
 
-	$gray-color: #bebebe;
-	$gray-color-2: #bdbdbd;
-
-
-// font color
-	$font_color1: #10285d;
-	$border_color: #fdcb9e;
-
-
-// bg
-	$brand-bg: #f1f4fa;
-	$testimonial-bg:#f9fafc;
-
-
-
-/*-------------Color include--------------*/
-
-
-/*-- Background color---*/
-
+// Background Color Classes
 .gray-bg {
-	background: $gray;
+    background: vars.$gray;
 }
+
 .white-bg {
-	background:$white;
+    background: vars.$white;
 }
+
 .black-bg {
-	background: $black;
+    background: vars.$black;
 }
+
 .theme-bg {
-	background:$theme-color;
-}
-.brand-bg{
-	background: $brand-bg;
-}
-.testimonial-bg{
-	background: $testimonial-bg;
+    background: vars.$theme-color;
 }
 
+.brand-bg {
+    background: vars.$brand-bg;
+}
 
-/*--- color------*/
+.testimonial-bg {
+    background: vars.$testimonial-bg;
+}
+
+// Text Color Classes
 .white-color {
-	color: $white;
+    color: vars.$white;
 }
+
 .black-color {
-	color: $black;
+    color: vars.$black;
 }
+
 .theme-color {
-	color: $theme-color;
+    color: vars.$theme-color;
 }

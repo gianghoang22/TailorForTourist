@@ -28,10 +28,11 @@ const CustomStyle = () => {
   const [styleOptions, setStyleOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [openOptionType, setOpenOptionType] = useState([]);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedStyle, setSelectedStyle] = useState(null); // Track the selected style
+  const [openOptionType, setOpenOptionType] = useState([]); // Điều khiển mở rộng loại tùy chọn
+  const [selectedOptionValues, setSelectedOptionValues] = useState({}); // Lưu lựa chọn của từng optionType
+  const [selectedStyle, setSelectedStyle] = useState(null);  // Lưu style đã chọn
 
+  // Fetch both styles and options in parallel
   useEffect(() => {
     const fetchStylesAndOptions = async () => {
       try {
@@ -43,7 +44,7 @@ const CustomStyle = () => {
         setStyles(stylesResponse.data);
         setStyleOptions(optionsResponse.data);
       } catch (error) {
-        setError(error.message);
+        setError('Failed to load styles or options. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -52,32 +53,44 @@ const CustomStyle = () => {
     fetchStylesAndOptions();
   }, []);
 
+  // Mở rộng hoặc đóng optionType khi người dùng nhấp vào
   const handleOptionTypeClick = (optionType) => {
     setOpenOptionType((prev) =>
       prev.includes(optionType) ? prev.filter(type => type !== optionType) : [...prev, optionType]
     );
   };
 
-  const handleOptionValueClick = (optionValue, style) => {
-    setSelectedImage(optionTypeImages[optionValue]); // Display image for selected option value
-    setSelectedStyle({ styleId: style.styleId, styleName: style.styleName, optionValue });
+  // Xử lý khi người dùng chọn một option-value
+  const handleOptionValueClick = (optionValue, style, optionType) => {
+    // Cập nhật selectedOptionValues: chỉ một optionValue được chọn trong mỗi optionType
+    setSelectedOptionValues((prev) => ({
+      ...prev,
+      [optionType]: optionValue  // Đảm bảo mỗi optionType chỉ có một giá trị optionValue được chọn
+    }));
+
+    const newSelectedStyle = {
+      styleId: style.styleId,
+      styleName: style.styleName,
+      optionType,
+      optionValue
+    };
+
+    setSelectedStyle(newSelectedStyle);
+
+    // Tự động thêm sản phẩm vào giỏ hàng sau khi người dùng chọn option-value
+    addToCart({
+      id: newSelectedStyle.styleId, // Gán style ID
+      name: newSelectedStyle.styleName,
+      optionType: newSelectedStyle.optionType,
+      optionValue: newSelectedStyle.optionValue,
+      imageUrl: optionTypeImages[newSelectedStyle.optionValue], // Đường dẫn ảnh
+      type: 'style' // Xác định đây là kiểu 'style'
+    });
   };
 
+  // Lấy các optionValues thuộc về styleId và optionType cụ thể
   const getOptionValues = (styleId, optionType) => {
     return styleOptions.filter(option => option.styleId === styleId && option.optionType === optionType);
-  };
-
-  const handleAddToCart = () => {
-    if (selectedStyle) {
-      addToCart({
-        name: selectedStyle.styleName,
-        imageUrl: selectedStyle.imageUrl,
-      })
-      alert(`${selectedStyle.styleName} has been added to the cart!`);
-    }
-     else {
-      alert('Please select a style first.');
-    }
   };
 
   if (loading) {
@@ -101,6 +114,7 @@ const CustomStyle = () => {
                 </div>
               </div>
               <ul className="submenu">
+                {/* Duyệt qua từng optionType trong style */}
                 {Array.from(new Set(styleOptions.filter(option => option.styleId === style.styleId).map(option => option.optionType))).map(optionType => (
                   <li key={optionType}>
                     <div className="option-type" onClick={(e) => { e.stopPropagation(); handleOptionTypeClick(optionType); }}>
@@ -114,23 +128,24 @@ const CustomStyle = () => {
                           {optionType}
                         </span>
                       </a>
+                      {/* Hiển thị các option-value tương ứng */}
                       {openOptionType.includes(optionType) && (
                         <ul className="option-values">
-                        {getOptionValues(style.styleId, optionType).map(option => (
-                          <li 
-                            key={option.styleOptionId} 
-                            className="option-value" 
-                            onClick={(e) => { e.stopPropagation(); handleOptionValueClick(option.optionValue, style); }}
-                          >
-                            <img 
-                              src={optionTypeImages[option.optionValue]} 
-                              alt={option.optionValue} 
-                              className="option-value-image"
-                            />
-                            {option.optionValue}
-                          </li>
-                        ))}
-                      </ul>
+                          {getOptionValues(style.styleId, optionType).map(option => (
+                            <li 
+                              key={option.styleOptionId} 
+                              className={`option-value ${selectedOptionValues[optionType] === option.optionValue ? 'selected' : ''}`}  // Chỉ hiển thị một optionValue được chọn
+                              onClick={(e) => { e.stopPropagation(); handleOptionValueClick(option.optionValue, style, optionType); }}
+                            >
+                              <img 
+                                src={optionTypeImages[option.optionValue]} 
+                                alt={option.optionValue} 
+                                className="option-value-image"
+                              />
+                              {option.optionValue}
+                            </li>
+                          ))}
+                        </ul>
                       )}
                     </div>
                   </li>
@@ -146,26 +161,24 @@ const CustomStyle = () => {
         {selectedStyle && (
           <div className='selected-style-details'>
             <div className="product-info" id="pd_info">
-            <h1 className="pd-name">
+              <h1 className="pd-name">
                 CUSTOM 
                 <span>SUIT</span>
               </h1>
-            <h3>Selected Style:</h3>
-            {selectedImage && <img src={selectedImage} alt={selectedImage} />}
-            <p><strong>Style:</strong> {selectedStyle.styleName}</p>
-            <p><strong>Option:</strong> {selectedStyle.optionValue}</p>
-            <button className="add-to-cart-btn" onClick={handleAddToCart}>Add to Cart</button>
+              <h3>Selected Style:</h3>
+              <img src={optionTypeImages[selectedStyle.optionValue]} alt="Selected option" />
+              <p><strong>Style:</strong> {selectedStyle.styleName}</p>
+              <p><strong>Option:</strong> {selectedStyle.optionValue}</p>
             </div>
           </div>
         )}
 
-        
-      {/* Next button */}
-      <div className='next-btn'>
-        <Link to="/custom-suits/lining">
-          <button className='navigation-button'>Go to Lining</button>
-        </Link>
-      </div>
+        {/* Nút chuyển tới bước Lining */}
+        <div className='next-btn'>
+          <Link to="/custom-suits/lining">
+            <button className='navigation-button'>Go to Lining</button>
+          </Link>
+        </div>
       </div>
     </div>
   );

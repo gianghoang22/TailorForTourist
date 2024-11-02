@@ -10,12 +10,12 @@ import sale_icon from '../../../assets/img/filter/icon-fabricFilter-sale.png';
 import search_icon from '../../../assets/img/icon/search.png';
 
 const CustomFabric = () => {
-  const [fabrics, setFabrics] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedTag, setSelectedTag] = useState('All');
-  const [selectedFabric, setSelectedFabric] = useState(null);
-  const [searchTerm, setSearchTerm] = useState(''); // State for search term
+  const [fabrics, setFabrics] = useState([]);  // Chứa danh sách các fabric
+  const [loading, setLoading] = useState(true);  // Trạng thái loading
+  const [error, setError] = useState(null);  // Trạng thái lỗi
+  const [selectedTag, setSelectedTag] = useState('All');  // Tag được chọn
+  const [searchTerm, setSearchTerm] = useState('');  // State cho ô tìm kiếm
+  const [selectedFabric, setSelectedFabric] = useState(null);  // Lưu fabric đã chọn
 
   const tagImage = {
     'All': all_icon,
@@ -49,23 +49,18 @@ const CustomFabric = () => {
     fetchFabrics(tag === 'All' ? '' : tag);
   };
 
+  // Khi người dùng chọn một Fabric, thêm vào giỏ hàng ngay lập tức
   const handleFabricClick = (fabric) => {
     setSelectedFabric(fabric);
-  };
-
-  const handleAddToCart = () => {
-    if (selectedFabric) {
-      addToCart({
-        id: selectedFabric.fabricId,
-        name: selectedFabric.fabricName,
-        price: selectedFabric.price,
-        imageUrl: selectedFabric.imageUrl,
-        type: 'fabric',
-      });
-      alert(`${selectedFabric.fabricName} has been added to the cart!`);
-    } else {
-      alert('Please select a fabric first.');
-    }
+    
+    // Gọi trực tiếp hàm addToCart để lưu fabricId vào giỏ hàng khi bấm vào fabric
+    addToCart({
+      id: fabric.fabricId,
+      name: fabric.fabricName,
+      price: fabric.price,
+      imageUrl: fabric.imageUrl,
+      type: 'fabric',
+    });
   };
 
   // Filter fabrics by search term
@@ -90,20 +85,20 @@ const CustomFabric = () => {
           ))}
         </div>
 
-          {/* right item */}
+        {/* right item */}
         <div className='right-items-fabric'>
 
           {/* Search Box */}
-        <div className="search-box">
-          <input id='live-search'
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <span className='icon'>
-            <img src={search_icon} alt={search_icon} />
-          </span>
-        </div>
+          <div className="search-box">
+            <input id='live-search'
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <span className='icon'>
+              <img src={search_icon} alt={search_icon} />
+            </span>
+          </div>
           
           <ul className="list-fabric">
           {filteredFabrics.length > 0 ? (
@@ -124,38 +119,32 @@ const CustomFabric = () => {
             <li>No fabrics match your search.</li>
           )}
           </ul>
-          
-          
-      
         </div>
       </div>
 
-        {/* item detail */}
-
+      {/* item detail */}
       <div className='right-half'>
         {selectedFabric && (
           <div className='fabric-details'>
             <div className="product-info" id='pd_info'>
-            <h1 className="pd-name">
-              CUSTOM 
-              <span>SUIT</span>
-            </h1>
-            <p className='composition set'>{selectedFabric.description}</p>
-            <p className='price'>{selectedFabric.price} USD</p>
-            <div className="fabric-img">
-              {selectedFabric.imageUrl ? <img src={selectedFabric.imageUrl} alt={selectedFabric.fabricName} /> : 'No image available'}
+              <h1 className="pd-name">
+                CUSTOM 
+                <span>SUIT</span>
+              </h1>
+              <p className='composition set'>{selectedFabric.description}</p>
+              <p className='price'>{selectedFabric.price} USD</p>
+              <div className="fabric-img">
+                {selectedFabric.imageUrl ? <img src={selectedFabric.imageUrl} alt={selectedFabric.fabricName} /> : 'No image available'}
+              </div>
             </div>
-            </div>
-            {/* add to cart */}
-            <button className="add-to-cart-btn" onClick={handleAddToCart}>Add to Cart</button>
           </div>
         )}
 
-<div className='next-btn'>
-        <Link to="/custom-suits/style">
-          <button className='navigation-button'>Go to Style</button>
-        </Link>
-      </div>
+        <div className='next-btn'>
+          <Link to="/custom-suits/style">
+            <button className='navigation-button'>Go to Style</button>
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,83 @@
+.page-with-side-bar {
+    float: left;
+    width: 100%;
+    padding: 50px;
+    &:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+}
+
+.all {
+    position: relative;
+    margin: 0 auto;
+    width: 1170px;
+    max-width: 100%;
+}
+
+.left-side {
+    float: left;
+    clear: left;
+    min-height: 1px;
+    margin-bottom: 30px;
+    width: 270px;
+
+    .sec-title {
+        color: #000;
+        text-transform: uppercase;
+        font-size: 36px;
+        line-height: 1;
+        margin-bottom: 30px;
+
+        .tt-sub {
+            display: block;
+            font-weight: 400;
+            color: #707070;
+            line-height: 1;
+        }
+    }
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    font-family: "PoppinsVN", sans-serif;
+    line-height: 1.3;
+}
+
+.right-main {
+    float: right;
+    clear: right;
+    min-height: 1px;
+    margin-bottom: 30px;
+    width: calc(100% - 300px);
+
+    p > .section-title {
+        float: left;
+        width: 100%;
+    }
+        iframe {
+            width: 48%;
+            float: left;
+            margin: 1%;
+            height: 280px;
+        }
+}
+
+// Strong/bold styling
+strong, .bold {
+    font-weight: 600;
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+    .left-side, .right-main {
+        float: none;
+        width: 100%;
+    }
+
+    .video-container {
+        width: 100%;
+        margin: 5% 0;
+    }
+}
