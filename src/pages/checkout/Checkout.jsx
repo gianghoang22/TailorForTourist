@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import './Checkout.scss';
 import { Navigation } from "../../layouts/components/navigation/Navigation";
 import { Footer } from "../../layouts/components/footer/Footer";
 
 const Checkout = () => {
   const [checkoutCart, setCheckoutCart] = useState([]);
+  const navigate = useNavigate(); // Initialize navigate
 
   useEffect(() => {
     const cartData = JSON.parse(localStorage.getItem('checkoutCart')) || [];
@@ -25,6 +27,7 @@ const Checkout = () => {
 
   const handlePayment = () => {
     toast.success('Proceeding to payment!');
+    navigate('/checkout/order-receive'); // Use navigate to change the URL
   };
 
   const [loginOpen, setLoginOpen] = useState(false);
@@ -273,49 +276,51 @@ const Checkout = () => {
                   onChange={handlePaymentMethodChange}
                 />
                 <img src="https://purepng.com/public/uploads/large/purepng.com-visa-logologobrand-logoiconslogos-251519938794uqvcz.png" alt="Visa" width="30" />
-                <img src="https://logo-marque.com/wp-content/uploads/2020/09/Mastercard-Logo.png" alt="MasterCard" width="30" />
+                <img src="https://logo-marque.com/wp-content/uploads/2020/09/Mastercard-Logo.png" alt="Mastercard" width="30" />
                 Credit Card
               </label>
+
+              {paymentMethod === 'card' && (
+                <div className="card-details">
+                  <input
+                    type="text"
+                    name="cardNumber"
+                    value={formData.cardNumber}
+                    onChange={handleInputChange}
+                    placeholder="Card Number"
+                    required
+                  />
+                  <input
+                    type="text"
+                    name="cardName"
+                    value={formData.cardName}
+                    onChange={handleInputChange}
+                    placeholder="Card Name"
+                    required
+                  />
+                  <input
+                    type="text"
+                    name="expiryDate"
+                    value={formData.expiryDate}
+                    onChange={handleInputChange}
+                    placeholder="MM/YY"
+                    required
+                  />
+                  <input
+                    type="text"
+                    name="cvv"
+                    value={formData.cvv}
+                    onChange={handleInputChange}
+                    placeholder="CVV"
+                    required
+                  />
+                </div>
+              )}
+
+              <button type="button" className="proceed-button" onClick={handlePayment}>
+                Proceed to Payment
+              </button>
             </div>
-
-            {paymentMethod === 'card' && (
-              <div className="payment-details">
-                <input
-                  type="text"
-                  name="cardNumber"
-                  value={formData.cardNumber}
-                  onChange={handleInputChange}
-                  placeholder="Card Number *"
-                  required
-                />
-                <input
-                  type="text"
-                  name="cardName"
-                  value={formData.cardName}
-                  onChange={handleInputChange}
-                  placeholder="Name on Card *"
-                  required
-                />
-                <input
-                  type="text"
-                  name="expiryDate"
-                  value={formData.expiryDate}
-                  onChange={handleInputChange}
-                  placeholder="Expiry Date (MM/YY) *"
-                  required
-                />
-                <input
-                  type="text"
-                  name="cvv"
-                  value={formData.cvv}
-                  onChange={handleInputChange}
-                  placeholder="CVV *"
-                  required
-                />
-              </div>
-            )}
-
-            <button type="button" onClick={handlePayment}>Proceed to Payment</button>
           </form>
         </div>
       </div>

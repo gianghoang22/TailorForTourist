@@ -20,13 +20,73 @@ const Measurement = () => {
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+  const validateFields = () => {
+    const newErrors = {};
+    const numberFields = [
+      "chest",
+      "waist",
+      "hip",
+      "neck",
+      "armhole",
+      "biceps",
+      "shoulder",
+      "sleeveLength",
+      "jacketLength",
+      "pantsWaist",
+      "crotch",
+      "thigh",
+      "pantsLength",
+    ];
+
+    numberFields.forEach((field) => {
+      if (!formData[field]) {
+        newErrors[field] = "This field is required";
+      } else if (isNaN(formData[field]) || formData[field] < 0 || formData[field] > 200) {
+        newErrors[field] = "Please enter a valid number (0-200)";
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0; // return true if no errors
+  };
+
+  const handleSubmit = () => {
+    if (validateFields()) {
+      // If validation passes, post data to the API
+      fetch("https://localhost:7194/api/Measurement", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Success:", data);
+          // Optionally reset the form or handle success feedback
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    }
+  };
+
   const handleEdit = () => {
+    if (isEditing) {
+      handleSubmit(); // Call submit function if currently editing
+    }
     setIsEditing(!isEditing);
   };
 
@@ -44,159 +104,58 @@ const Measurement = () => {
         <div className="form-content">
           <div className="measurements">
             <h2>Measurements Table 1</h2>
-            <div className="form-group">
-              <label>Chest</label>
-              <input
-                name="chest"
-                type="number"
-                value={formData.chest}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
-            <div className="form-group">
-              <label>Waist</label>
-              <input
-                name="waist"
-                type="number"
-                value={formData.waist}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
-            <div className="form-group">
-              <label>Hip</label>
-              <input
-                name="hip"
-                type="number"
-                value={formData.hip}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
-            <div className="form-group">
-              <label>Neck</label>
-              <input
-                name="neck"
-                type="number"
-                value={formData.neck}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
+            {["chest", "waist", "hip", "neck"].map((field) => (
+              <div className="form-group" key={field}>
+                <label>{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                <input
+                  name={field}
+                  type="number"
+                  value={formData[field]}
+                  onChange={handleChange}
+                  placeholder="cm"
+                  disabled={!isEditing}
+                />
+                {errors[field] && <span className="error">{errors[field]}</span>} {/* Error displayed here */}
+              </div>
+            ))}
           </div>
 
           <div className="measurements">
             <h2>Measurements Table 2</h2>
-            <div className="form-group">
-              <label>Armhole</label>
-              <input
-                name="armhole"
-                type="number"
-                value={formData.armhole}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
-            <div className="form-group">
-              <label>Biceps</label>
-              <input
-                name="biceps"
-                type="number"
-                value={formData.biceps}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
-            <div className="form-group">
-              <label>Shoulder</label>
-              <input
-                name="shoulder"
-                type="number"
-                value={formData.shoulder}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
-            <div className="form-group">
-              <label>Sleeve Length</label>
-              <input
-                name="sleeveLength"
-                type="number"
-                value={formData.sleeveLength}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
-            <div className="form-group">
-              <label>Jacket Length</label>
-              <input
-                name="jacketLength"
-                type="number"
-                value={formData.jacketLength}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
+            {["armhole", "biceps", "shoulder", "sleeveLength", "jacketLength"].map((field) => (
+              <div className="form-group" key={field}>
+                <label>{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                <input
+                  name={field}
+                  type="number"
+                  value={formData[field]}
+                  onChange={handleChange}
+                  placeholder="cm"
+                  disabled={!isEditing}
+                />
+                {errors[field] && <span className="error">{errors[field]}</span>} {/* Error displayed here */}
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="form-content">
           <div className="measurements">
             <h2>Measurements Table 3</h2>
-            <div className="form-group">
-              <label>Pants Waist</label>
-              <input
-                name="pantsWaist"
-                type="number"
-                value={formData.pantsWaist}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
-            <div className="form-group">
-              <label>Crotch</label>
-              <input
-                name="crotch"
-                type="number"
-                value={formData.crotch}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
-            <div className="form-group">
-              <label>Thigh</label>
-              <input
-                name="thigh"
-                type="number"
-                value={formData.thigh}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
-            <div className="form-group">
-              <label>Pants Length</label>
-              <input
-                name="pantsLength"
-                type="number"
-                value={formData.pantsLength}
-                onChange={handleChange}
-                placeholder="cm"
-                disabled={!isEditing}
-              />
-            </div>
+            {["pantsWaist", "crotch", "thigh", "pantsLength"].map((field) => (
+              <div className="form-group" key={field}>
+                <label>{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                <input
+                  name={field}
+                  type="number"
+                  value={formData[field]}
+                  onChange={handleChange}
+                  placeholder="cm"
+                  disabled={!isEditing}
+                />
+                {errors[field] && <span className="error">{errors[field]}</span>} {/* Error displayed here */}
+              </div>
+            ))}
           </div>
         </div>
 

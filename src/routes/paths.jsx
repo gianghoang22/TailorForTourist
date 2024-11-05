@@ -5,6 +5,7 @@ import HomePage from "../pages/home/HomePage";
 import BookingPage from "../pages/booking/BookingPage";
 import Checkout from "../pages/checkout/Checkout";
 import MeasurementGuide from "../pages/measurementGuide/MeasurementGuide";
+import OrderReceive from "../pages/checkout/orderReceive/OrderReceive";
 
 import ProductPage from "../pages/product/ProductPage";
 import ProductDetail from "../pages/product/ProductDetail";
@@ -142,6 +143,10 @@ export const routes = [
   {
     path: "/checkout",
     element: <Checkout />,
+  },
+  {
+    path: "/checkout/order-receive",
+    element: <OrderReceive />,
   },
   {
     path: "/fabrics",

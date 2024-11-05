@@ -107,3 +107,15 @@ body {
         }
     }
 }
+
+.error {
+    color: red; /* Red text for visibility */
+    font-weight: bold; /* Make text bold */
+    font-size: 0.875rem; /* Optional: adjust font size for better readability */
+    margin-top: 4px; /* Add some space between the input and error message */
+    background-color: #ffe6e6; /* Optional: light red background for emphasis */
+    border: 1px solid red; /* Optional: add a border around the error message */
+    padding: 4px; /* Add some padding for better spacing */
+    border-radius: 4px; /* Optional: round the corners of the error box */
+  }
+  
