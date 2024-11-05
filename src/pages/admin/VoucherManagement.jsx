@@ -19,7 +19,7 @@ const VoucherManagement = () => {
   const [voucherData, setVoucherData] = useState([]);
   const [newVoucher, setNewVoucher] = useState({
     voucherId: null,
-    status: "On going",
+    status: "OnGoing",
     voucherCode: "",
     description: "",
     discountNumber: 0,
@@ -54,6 +54,7 @@ const VoucherManagement = () => {
   };
 
   const handleAdd = async () => {
+    console.log("Sending voucher data:", newVoucher);
     try {
       const response = await fetch("https://localhost:7194/api/Voucher", {
         method: "POST",
@@ -64,7 +65,7 @@ const VoucherManagement = () => {
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json(); // Attempt to parse the error response
         throw new Error(error.message || "Error adding new voucher");
       }
 
@@ -72,6 +73,15 @@ const VoucherManagement = () => {
       setVoucherData([...voucherData, addedVoucher]);
       setError(null);
       setShowSuccessMessage(true);
+      setNewVoucher({
+        voucherId: null,
+        status: "OnGoing",
+        voucherCode: "",
+        description: "",
+        discountNumber: 0,
+        dateStart: "",
+        dateEnd: "",
+      });
     } catch (error) {
       console.error("Error adding new voucher:", error);
       setError(error.message);
@@ -82,8 +92,19 @@ const VoucherManagement = () => {
     setNewVoucher(voucher);
     setEditIndex(voucher.voucherId);
   };
-
+  const validateVoucherCode = (code) => {
+    const bigSalePattern = /^BIGSALE\d{2}$/;
+    const freeShipPattern = /^FREESHIP\d{2}$/;
+    return bigSalePattern.test(code) || freeShipPattern.test(code);
+  };
   const handleUpdate = async () => {
+    if (!validateVoucherCode(newVoucher.voucherCode)) {
+      setError(
+        "Voucher code must be in the format 'BIGSALExx' or 'FREESHIPxx', where 'xx' is two digits."
+      );
+      return;
+    }
+
     try {
       const response = await fetch(
         `https://localhost:7194/api/Voucher/${editIndex}`,
@@ -95,10 +116,20 @@ const VoucherManagement = () => {
           body: JSON.stringify(newVoucher),
         }
       );
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error updating voucher");
+        let errorMessage = "Error updating voucher";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          // Fallback to text if JSON parsing fails
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
+
       const updatedVoucher = await response.json();
       const updatedVouchers = voucherData.map((v) =>
         v.voucherId === editIndex ? updatedVoucher : v
@@ -106,7 +137,7 @@ const VoucherManagement = () => {
       setVoucherData(updatedVouchers);
       setNewVoucher({
         voucherId: null,
-        status: "On going",
+        status: "OnGoing",
         voucherCode: "",
         description: "",
         discountNumber: 0,
@@ -115,12 +146,12 @@ const VoucherManagement = () => {
       });
       setEditIndex(null);
       setError(null);
+      setShowSuccessMessage(true);
     } catch (error) {
       console.error("Error updating voucher:", error);
       setError(error.message);
     }
   };
-
   const handleDelete = async (voucherId) => {
     try {
       const response = await fetch(
@@ -204,9 +235,15 @@ const VoucherManagement = () => {
               shrink: true,
             }}
           />
-          <Button variant="contained" color="secondary" onClick={handleAdd}>
-            Add Voucher
-          </Button>
+          {editIndex ? (
+            <Button variant="contained" color="primary" onClick={handleUpdate}>
+              Update Voucher
+            </Button>
+          ) : (
+            <Button variant="contained" color="secondary" onClick={handleAdd}>
+              Add Voucher
+            </Button>
+          )}
         </div>
 
         <TextField
@@ -243,7 +280,7 @@ const VoucherManagement = () => {
               <TableRow key={v.voucherId}>
                 <TableCell>{v.voucherCode}</TableCell>
                 <TableCell>{v.description}</TableCell>
-                <TableCell>{v.discountNumber * 100}%</TableCell>
+                <TableCell>{v.discountNumber}%</TableCell>
                 <TableCell>{v.status}</TableCell>
                 <TableCell>
                   {new Date(v.dateStart).toLocaleDateString()}
@@ -276,7 +313,7 @@ const VoucherManagement = () => {
 
       {showSuccessMessage && (
         <div className="success-message">
-          <p>Added successfully!</p>
+          <p>Added/Updated successfully!</p>
           <button onClick={() => window.location.reload()}>Refresh</button>
         </div>
       )}

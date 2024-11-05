@@ -94,13 +94,15 @@ const FabricManagement = () => {
           body: JSON.stringify(newFabric),
         }
       );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error updating fabric");
+
+      // Handle the 204 No Content response
+      if (response.status !== 204) {
+        throw new Error("Error updating fabric");
       }
-      const updatedFabric = await response.json();
+
+      // Update local state without needing to refetch
       const updatedFabrics = fabricData.map((f) =>
-        f.fabricId === editIndex ? updatedFabric : f
+        f.fabricId === editIndex ? { ...f, ...newFabric } : f
       );
       setFabricData(updatedFabrics);
       setNewFabric({
@@ -113,6 +115,7 @@ const FabricManagement = () => {
       });
       setEditIndex(null);
       setError(null);
+      setShowSuccessMessage(true); // Show success message after update
     } catch (error) {
       console.error("Error updating fabric:", error);
       setError(error.message);
@@ -186,9 +189,19 @@ const FabricManagement = () => {
             variant="outlined"
             style={{ marginRight: "1rem" }}
           />
-          <Button variant="contained" color="secondary" onClick={handleAdd}>
-            Add Fabric
-          </Button>
+          {editIndex ? (
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleUpdate}
+            >
+              Update Fabric
+            </Button>
+          ) : (
+            <Button variant="contained" color="secondary" onClick={handleAdd}>
+              Add Fabric
+            </Button>
+          )}
         </div>
 
         <TextField
@@ -250,7 +263,7 @@ const FabricManagement = () => {
 
       {showSuccessMessage && (
         <div className="success-message">
-          <p>Added successfully!</p>
+          <p>Added/Updated successfully!</p>
           <button onClick={() => window.location.reload()}>Refresh</button>
         </div>
       )}

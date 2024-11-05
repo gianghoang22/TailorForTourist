@@ -22,7 +22,7 @@ body {
 }
 
 .order-history-table {
-  width: 80%; // Adjust the width as needed
+  width: 120%; // Adjust the width as needed
   margin: 0 auto;
   padding: 20px;
   background-color: #fff;
@@ -35,7 +35,8 @@ body {
     border-collapse: collapse;
     margin-bottom: 20px;
 
-    th, td {
+    th,
+    td {
       padding: 15px;
       text-align: left;
       border-bottom: 1px solid #ddd;
@@ -49,7 +50,7 @@ body {
   .status {
     padding: 5px 10px;
     border-radius: 5px;
-    color: #fff;
+    color: #b10e0e;
     font-size: 12px;
   }
 
@@ -71,7 +72,7 @@ body {
 }
 
 .promo-section {
-  margin-top: 100px!important;
+  margin-top: 100px !important;
   width: 100vw; // Use viewport width
   padding: 40px;
   text-align: center;

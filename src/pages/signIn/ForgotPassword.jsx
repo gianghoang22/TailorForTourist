@@ -9,16 +9,44 @@ import DialogTitle from "@mui/material/DialogTitle";
 import OutlinedInput from "@mui/material/OutlinedInput";
 
 function ForgotPassword({ open, handleClose }) {
+  const [email, setEmail] = React.useState("");
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    try {
+      const response = await fetch(
+        "https://localhost:7194/api/User/forgot-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json();
+      // Handle success (e.g., show a success message, close the dialog, etc.)
+      console.log("Success:", data);
+      handleClose();
+    } catch (error) {
+      console.error("Error:", error);
+      // Handle error (e.g., show an error message)
+    }
+  };
+
   return (
     <Dialog
       open={open}
       onClose={handleClose}
       PaperProps={{
         component: "form",
-        onSubmit: (event) => {
-          event.preventDefault();
-          handleClose();
-        },
+        onSubmit: handleSubmit,
       }}
     >
       <DialogTitle>Reset password</DialogTitle>
@@ -39,6 +67,8 @@ function ForgotPassword({ open, handleClose }) {
           placeholder="Email address"
           type="email"
           fullWidth
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
       </DialogContent>
       <DialogActions sx={{ pb: 3, px: 3 }}>

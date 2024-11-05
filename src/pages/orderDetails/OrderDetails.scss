@@ -1,0 +1,259 @@
+.order-details {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+  }
+
+  &__content {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+
+    @media (max-width: 968px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__items {
+    .cart-item {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      border: 1px solid #e0e0e0;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+
+      &__image {
+        img {
+          width: 100%;
+          height: auto;
+          object-fit: cover;
+          border-radius: 4px;
+        }
+      }
+
+      &__details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      &__name {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin: 0;
+      }
+
+      &__style {
+        color: #666;
+        margin: 0;
+      }
+
+      &__gift-box {
+        background-color: #f5f5f5;
+        padding: 0.75rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+
+        .gift-icon {
+          margin-right: 0.5rem;
+        }
+
+        .gift-message {
+          margin: 0.5rem 0 0;
+          color: #666;
+        }
+      }
+
+      &__specs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+
+        .spec {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+
+          span:first-child {
+            color: #666;
+            font-size: 0.9rem;
+          }
+        }
+      }
+
+      &__quantity {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        .quantity-btn {
+          width: 30px;
+          height: 30px;
+          border: 1px solid #ddd;
+          background: white;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.2s;
+
+          &:hover {
+            background: #f5f5f5;
+          }
+        }
+      }
+
+      &__total {
+        font-weight: 500;
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  &__summary {
+    background: #f8f8f8;
+    padding: 1.5rem;
+    border-radius: 8px;
+    height: fit-content;
+
+    .coupon-section {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+
+      .coupon-input {
+        flex: 1;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+    }
+
+    .donation-section {
+      border: 1px solid #ddd;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+      background: white;
+
+      p {
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+
+        &:first-child {
+          font-weight: 500;
+        }
+      }
+    }
+
+    .summary-calculations {
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #eee;
+
+        &.total {
+          font-weight: 600;
+          font-size: 1.1rem;
+          border-bottom: none;
+        }
+      }
+
+      .shipping-info {
+        color: #0066cc;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+.btn-apply,
+.btn-update {
+  padding: 0.75rem 1.5rem;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+}
+
+.btn-checkout {
+  width: 100%;
+  padding: 1rem;
+  background: #000;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 1.5rem;
+
+  &:hover {
+    background: #222;
+  }
+
+  .btn-remove,
+  .btn-checkout-item {
+    background-color: #ff6b6b; // Red for remove
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition:
+      background-color 0.3s,
+      transform 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px; // Space between icon and text
+  }
+
+  .btn-checkout-item {
+    background-color: #4caf50; // Green for checkout
+  }
+
+  .btn-remove:hover,
+  .btn-checkout-item:hover {
+    background-color: darken(#ff6b6b, 10%); // Darken on hover
+    transform: scale(1.05); // Slightly enlarge
+  }
+
+  .cart-item__actions {
+    display: flex;
+    gap: 10px; // Space between buttons
+  }
+
+  .quantity-btn {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .quantity-btn:hover {
+    background-color: #e0e0e0; // Lighten on hover
+  }
+
+  .cart-item__total {
+    font-weight: bold;
+    color: #333;
+  }
+}

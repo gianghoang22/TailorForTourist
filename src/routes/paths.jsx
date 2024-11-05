@@ -18,7 +18,7 @@ import CustomSuit from "../pages/customsuit/CustomSuit";
 import CustomStyle from "../pages/customSuit/custom/CustomStyle";
 import CustomLining from "../pages/customSuit/custom/CustomLining";
 import CustomFabric from "../pages/customSuit/custom/CustomFabric";
-import MeasureGuest from '../pages/customSuit/measure/MeasureGuest';
+import MeasureGuest from "../pages/customSuit/measure/MeasureGuest";
 
 import StaffDashboard from "../pages/staff/StaffDashboard";
 import OrderList from "../pages/staff/staffManager/OrderList";
@@ -46,6 +46,12 @@ import FabricManagement from "../pages/admin/FabricManagement";
 import StoreManagement from "../pages/admin/StoreManagement";
 import LiningManagement from "../pages/admin/LiningManagement";
 import VoucherManagement from "../pages/admin/VoucherManagement";
+
+import Payment from "../pages/payment/payment";
+
+import OrderDetails from "../pages/orderDetails/OrderDetails";
+
+import CreatePassword from "../pages/signIn/CreatePassword";
 export const routes = [
   {
     path: "/",
@@ -102,6 +108,14 @@ export const routes = [
     ],
   },
   {
+    path: "/order-details",
+    element: <OrderDetails />,
+  },
+  {
+    path: "/new-password",
+    element: <CreatePassword />,
+  },
+  {
     path: "/booking",
     element: <BookingPage />,
   },
@@ -137,6 +151,10 @@ export const routes = [
     element: <ProductPage />,
   },
   {
+    path: "/payment",
+    element: <Payment />,
+  },
+  {
     path: "/product-collection/:id",
     element: <ProductDetail />,
   },
@@ -154,7 +172,7 @@ export const routes = [
   },
   {
     path: "/fabrics/:id",
-    element: <FabricDetailPage/>
+    element: <FabricDetailPage />,
   },
   {
     path: "/signin",
@@ -188,7 +206,7 @@ export const routes = [
       {
         path: "measurement",
         element: <MeasureList />,
-      }
+      },
     ],
   },
   // {
@@ -256,10 +274,10 @@ export const routes = [
   },
   {
     path: "/measure",
-    element: <MeasureGuest />
+    element: <MeasureGuest />,
   },
   {
     path: "/how-to-measure",
-    element: <MeasurementGuide />
-  }
+    element: <MeasurementGuide />,
+  },
 ];

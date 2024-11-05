@@ -126,6 +126,16 @@ export default function SignIn(props) {
           "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
         ];
 
+      // Store userID from the correct claim and other tokens in localStorage
+      localStorage.setItem(
+        "userID",
+        decodedToken[
+          "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"
+        ]
+      ); // Use the correct claim
+      localStorage.setItem("roleID", userRole);
+      localStorage.setItem("token", result.token); // Store the JWT
+
       // Redirect based on user role
       switch (userRole) {
         case "customer":

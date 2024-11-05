@@ -43,7 +43,7 @@ const UserManagement = () => {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        setUserData(data); // No filtering by roleId
+        setUserData(data);
       } catch (error) {
         console.error("Error fetching user data:", error);
         setError("Error fetching user data. Please try again later.");
@@ -72,8 +72,8 @@ const UserManagement = () => {
         throw new Error(error.message || "Error adding new user");
       }
 
-      await response.json(); // Wait for the response to be parsed
-      setUserData([...userData, newUser]); // Update user data without needing to refetch
+      const addedUser = await response.json(); // Get the response with the added user
+      setUserData([...userData, addedUser]); // Update user data with the new user
       setError(null);
       setShowSuccessMessage(true);
     } catch (error) {
@@ -84,7 +84,7 @@ const UserManagement = () => {
 
   const handleEdit = (user) => {
     setNewUser(user);
-    setEditIndex(user.userId);
+    setEditIndex(user.userId); // Set the user ID to edit
   };
 
   const handleUpdate = async () => {
@@ -103,11 +103,8 @@ const UserManagement = () => {
         const error = await response.json();
         throw new Error(error.message || "Error updating user");
       }
-      const updatedUser = await response.json();
-      const updatedUsers = userData.map((u) =>
-        u.userId === editIndex ? updatedUser : u
-      );
-      setUserData(updatedUsers);
+
+      // Clear the form fields after successful update
       setNewUser({
         name: "",
         email: "",
@@ -120,8 +117,12 @@ const UserManagement = () => {
         roleId: 2,
         status: "Active",
       });
-      setEditIndex(null);
+      setEditIndex(null); // Clear edit index
       setError(null);
+      setShowSuccessMessage(true);
+
+      // Refresh the page to fetch the latest user data
+      window.location.reload();
     } catch (error) {
       console.error("Error updating user:", error);
       setError(error.message);
@@ -207,9 +208,15 @@ const UserManagement = () => {
             <MenuItem value="Female">Female</MenuItem>
             <MenuItem value="Other">Other</MenuItem>
           </TextField>
-          <Button variant="contained" color="secondary" onClick={handleAdd}>
-            Add User
-          </Button>
+          {editIndex !== null ? ( // Check if in edit mode
+            <Button variant="contained" color="primary" onClick={handleUpdate}>
+              Update User
+            </Button>
+          ) : (
+            <Button variant="contained" color="secondary" onClick={handleAdd}>
+              Add User
+            </Button>
+          )}
         </div>
 
         <TextField
@@ -275,7 +282,7 @@ const UserManagement = () => {
 
       {showSuccessMessage && (
         <div className="success-message">
-          <p>Added successfully!</p>
+          <p>Operation completed successfully!</p>
           <button onClick={() => window.location.reload()}>Refresh</button>
         </div>
       )}

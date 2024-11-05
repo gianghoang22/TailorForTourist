@@ -68,6 +68,7 @@ const LiningManagement = () => {
       setLiningData([...liningData, addedLining]); // Update lining data without needing to refetch
       setError(null);
       setShowSuccessMessage(true);
+      setNewLining({ liningId: null, liningName: "", imageUrl: "" }); // Reset form
     } catch (error) {
       console.error("Error adding new lining:", error);
       setError(error.message);
@@ -91,22 +92,47 @@ const LiningManagement = () => {
           body: JSON.stringify(newLining),
         }
       );
+
+      console.log("Response Status:", response.status);
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Error updating lining");
       }
-      const updatedLining = await response.json();
+
+      // Handle 204 No Content
+      if (response.status === 204) {
+        // Optionally, you can show a success message here
+        console.log("Lining updated successfully.");
+        // Refresh the page
+        window.location.reload();
+        return; // Successfully updated without needing to parse response
+      }
+
+      // For any other response, you can check if the body is empty
+      const textResponse = await response.text();
+      if (textResponse.trim() === "") {
+        console.warn(
+          "Received empty response body, but update was likely successful"
+        );
+        // Refresh the page
+        window.location.reload();
+        return; // Handle the empty response accordingly, but do nothing further
+      }
+
+      // If there is a non-empty response, parse it
+      const updatedLining = JSON.parse(textResponse);
       const updatedLinings = liningData.map((l) =>
         l.liningId === editIndex ? updatedLining : l
       );
       setLiningData(updatedLinings);
-      setNewLining({
-        liningId: null,
-        liningName: "",
-        imageUrl: "",
-      });
+      setNewLining({ liningId: null, liningName: "", imageUrl: "" });
       setEditIndex(null);
       setError(null);
+      setShowSuccessMessage(true);
+
+      // Refresh the page after successful update
+      window.location.reload();
     } catch (error) {
       console.error("Error updating lining:", error);
       setError(error.message);
@@ -163,9 +189,19 @@ const LiningManagement = () => {
             variant="outlined"
             style={{ marginRight: "1rem" }}
           />
-          <Button variant="contained" color="secondary" onClick={handleAdd}>
-            Add Lining
-          </Button>
+          {editIndex ? (
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleUpdate}
+            >
+              Update Lining
+            </Button>
+          ) : (
+            <Button variant="contained" color="secondary" onClick={handleAdd}>
+              Add Lining
+            </Button>
+          )}
         </div>
 
         <TextField
@@ -229,7 +265,7 @@ const LiningManagement = () => {
 
       {showSuccessMessage && (
         <div className="success-message">
-          <p>Added successfully!</p>
+          <p>Added/Updated successfully!</p>
           <button onClick={() => window.location.reload()}>Refresh</button>
         </div>
       )}
