@@ -48,10 +48,10 @@ import LiningManagement from "../pages/admin/LiningManagement";
 import VoucherManagement from "../pages/admin/VoucherManagement";
 
 import Payment from "../pages/payment/payment";
-
+import ContactUs from "../pages/contact/ContactUs";
 import OrderDetails from "../pages/orderDetails/OrderDetails";
-
 import CreatePassword from "../pages/signIn/CreatePassword";
+
 export const routes = [
   {
     path: "/",
@@ -280,4 +280,8 @@ export const routes = [
     path: "/how-to-measure",
     element: <MeasurementGuide />,
   },
+  {
+    path: "/contact-us",
+    element: <ContactUs />,
+  }
 ];
