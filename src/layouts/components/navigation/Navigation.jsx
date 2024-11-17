@@ -56,7 +56,7 @@ export const Navigation = () => {
                   <a href="#">SHIRTS</a>
                   <ul className="submenu">
                     <li>
-                      <a href="#">COLLECTIONS</a>
+                      <a href="#">SHIRTS COLLECTIONS</a>
                     </li>
                   </ul>
                 </li>
@@ -65,7 +65,7 @@ export const Navigation = () => {
                   <ul className="submenu">
                     
                     <li>
-                      <a href="#">COLLECTIONS</a>
+                      <a href="#">PANTS COLLECTIONS</a>
                     </li>
                   </ul>
                 </li>
@@ -114,7 +114,7 @@ export const Navigation = () => {
                       <a href="#">BRIDESMAID</a>
                     </li>
                     <li>
-                      <a href="#">BRIDESMAID</a>
+                      <a href="#">BRIDE</a>
                     </li>
                   </ul>
                 </li>
@@ -133,7 +133,7 @@ export const Navigation = () => {
                   </ul>
                 </li>
                 <li>
-                <Link to="/contact-us">Contact</Link>
+                <Link to="/contact-us">CONTACT</Link>
                 </li>
                 {isLoggedIn && (
                   <li>

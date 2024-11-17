@@ -1,32 +1,32 @@
-import { createSlice } from "@reduxjs/toolkit";
+// src/features/cart/cartSlice.js
+import { createSlice } from '@reduxjs/toolkit';
 
+const cartSlice = createSlice({
+  name: 'cart',
+  initialState: {
+    items: [],
+  },
+  reducers: {
+    addToCart: (state, action) => {
+      const item = action.payload;
+      const existingItem = state.items.find((cartItem) => cartItem.id === item.id);
 
-const ProductSlice = createSlice({
-    
-        name: 'products',
-        initialState: {
-          CartArr: [],
-        },
-        reducers: {
-          addProduct: (state, action) => {
-            const productIndex = state.CartArr.findIndex((p)=> p.id === action.payload.id )
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        state.items.push({ ...item, quantity: 1 });
+      }
+    },
+    //Remove item
+    removeFromCart: (state, action) => {
+      state.items = state.items.filter((item) => item.id !== action.payload);
+    },
+    //Clear cart
+    clearCart: (state) => {
+      state.items = [];
+    },
+  },
+});
 
-            if (productIndex === -1) {
-                state.CartArr.push({...action.payload, quantity: 1})
-            } else {
-                state.CartArr[productIndex].quantity += 1;
-            }
-          },
-          removeProduct: (state, action) => {
-            const productIndexRemove = action.payload.id
-            const newCartArr = state.CartArr.filter((item) => item.id !== productIndexRemove)
-            return {...state, CartArr: newCartArr}
-        },
-        },
-      
-})
-
-// Action creators are generated for each case reducer function
-export const { addProduct, removeProduct } = ProductSlice.actions
-
-export default ProductSlice.reducer
+export const { addToCart, removeFromCart, clearCart } = cartSlice.actions;
+export default cartSlice.reducer;

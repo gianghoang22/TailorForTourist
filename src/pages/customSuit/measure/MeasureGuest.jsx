@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './MeasureGuest.scss';
-
+import { Navigation } from '../../../layouts/components/navigation/Navigation';
+import { Footer } from '../../../layouts/components/footer/Footer';
 const MeasureGuest = () => {
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [username, setUsername] = useState('');
@@ -41,6 +42,7 @@ const MeasureGuest = () => {
 
   return (
     <>
+    <Navigation/>
       <div id='measure' className="product-detail-page measures-pages">
         <div className="all">
           <div className="sec-title center-txt">
@@ -354,6 +356,7 @@ const MeasureGuest = () => {
           <button className="navigation-button">Next</button>
         </Link>
       </div>
+      <Footer/>
     </>
   );
 };
