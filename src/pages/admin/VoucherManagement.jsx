@@ -52,9 +52,49 @@ const VoucherManagement = () => {
     const { name, value } = e.target;
     setNewVoucher({ ...newVoucher, [name]: value });
   };
+  const validateForm = () => {
+    const { voucherCode, description, discountNumber, dateStart, dateEnd } =
+      newVoucher;
 
+    if (
+      !voucherCode ||
+      !description ||
+      !discountNumber ||
+      !dateStart ||
+      !dateEnd
+    ) {
+      setError(
+        "All fields must be filled in. Please complete all fields before proceeding."
+      );
+      return false;
+    }
+
+    return true;
+  };
+  const isDuplicateVoucherCode = (code) => {
+    return voucherData.some((voucher) => voucher.voucherCode === code);
+  };
+  const isValidDateStart = (date) => {
+    const selectedDate = new Date(date);
+    const currentDate = new Date(today);
+    return selectedDate >= currentDate;
+  };
+  const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
   const handleAdd = async () => {
-    console.log("Sending voucher data:", newVoucher);
+    if (!validateForm()) return;
+
+    if (!isValidDateStart(newVoucher.dateStart)) {
+      setError(
+        "Start date cannot be in the past. Please select today or a future date."
+      );
+      return;
+    }
+
+    if (isDuplicateVoucherCode(newVoucher.voucherCode)) {
+      setError("Voucher code already exists. Please use a unique code.");
+      return;
+    }
+
     try {
       const response = await fetch("https://localhost:7194/api/Voucher", {
         method: "POST",
@@ -65,7 +105,7 @@ const VoucherManagement = () => {
       });
 
       if (!response.ok) {
-        const error = await response.json(); // Attempt to parse the error response
+        const error = await response.json();
         throw new Error(error.message || "Error adding new voucher");
       }
 
@@ -98,9 +138,29 @@ const VoucherManagement = () => {
     return bigSalePattern.test(code) || freeShipPattern.test(code);
   };
   const handleUpdate = async () => {
+    if (!validateForm()) return;
+
     if (!validateVoucherCode(newVoucher.voucherCode)) {
       setError(
         "Voucher code must be in the format 'BIGSALExx' or 'FREESHIPxx', where 'xx' is two digits."
+      );
+      return;
+    }
+
+    if (
+      voucherData.some(
+        (voucher) =>
+          voucher.voucherCode === newVoucher.voucherCode &&
+          voucher.voucherId !== editIndex
+      )
+    ) {
+      setError("Voucher code already exists. Please use a unique code.");
+      return;
+    }
+
+    if (!isValidDateStart(newVoucher.dateStart)) {
+      setError(
+        "Start date cannot be in the past. Please select today or a future date."
       );
       return;
     }
@@ -123,7 +183,6 @@ const VoucherManagement = () => {
           const errorData = await response.json();
           errorMessage = errorData.message || errorMessage;
         } catch (jsonError) {
-          // Fallback to text if JSON parsing fails
           const errorText = await response.text();
           errorMessage = errorText || errorMessage;
         }

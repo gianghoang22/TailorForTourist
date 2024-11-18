@@ -52,6 +52,24 @@ const StoreManagement = () => {
   };
 
   const handleAdd = async () => {
+    // Check for required fields
+    const { name, address, contactNumber } = newStore;
+    if (!name || !address || !contactNumber) {
+      setError("All fields are required. Please complete all fields.");
+      return;
+    }
+
+    // Check for unique store name and contact number
+    const isDuplicate = storeData.some(
+      (store) => store.name === name || store.contactNumber === contactNumber
+    );
+    if (isDuplicate) {
+      setError(
+        "Store name or contact number already exists. Please use unique values."
+      );
+      return;
+    }
+
     try {
       const response = await fetch("https://localhost:7194/api/Store", {
         method: "POST",
@@ -89,6 +107,27 @@ const StoreManagement = () => {
   };
 
   const handleUpdate = async () => {
+    const { name, address, contactNumber } = newStore;
+
+    // Check for required fields
+    if (!name || !address || !contactNumber) {
+      setError("All fields are required. Please complete all fields.");
+      return;
+    }
+
+    // Check for unique store name and contact number
+    const isDuplicate = storeData.some(
+      (store) =>
+        (store.name === name || store.contactNumber === contactNumber) &&
+        store.storeId !== editIndex
+    );
+    if (isDuplicate) {
+      setError(
+        "Store name or contact number already exists. Please use unique values."
+      );
+      return;
+    }
+
     try {
       const response = await fetch(
         `https://localhost:7194/api/Store/${editIndex}`,
@@ -158,6 +197,9 @@ const StoreManagement = () => {
     <div className="store-management">
       <h2>Store Management</h2>
       {error && <Alert severity="error">{error}</Alert>}
+      {showSuccessMessage && (
+        <Alert severity="success">Store successfully updated/added!</Alert>
+      )}
       <div className="header">
         <div className="form">
           <TextField

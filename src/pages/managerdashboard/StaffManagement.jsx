@@ -57,8 +57,43 @@ const StaffManagement = () => {
     const { name, value } = e.target;
     setNewStaff({ ...newStaff, [name]: value });
   };
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^\d{10}$/; // For a 10-digit phone number, adjust if needed
+
+  const isUniqueEmail = (email) =>
+    !staffData.some((staff) => staff.email === email);
+  const isUniquePhone = (phone) =>
+    !staffData.some((staff) => staff.phone === phone);
 
   const handleAdd = async () => {
+    // Check if any required field is empty
+    if (
+      !newStaff.name ||
+      !newStaff.email ||
+      !newStaff.phone ||
+      !newStaff.address
+    ) {
+      setError("All fields are required.");
+      return;
+    }
+
+    if (!emailRegex.test(newStaff.email)) {
+      setError("Invalid email format");
+      return;
+    }
+    if (!phoneRegex.test(newStaff.phone)) {
+      setError("Phone number must be 10 digits");
+      return;
+    }
+    if (!isUniqueEmail(newStaff.email)) {
+      setError("Email already exists");
+      return;
+    }
+    if (!isUniquePhone(newStaff.phone)) {
+      setError("Phone number already exists");
+      return;
+    }
+
     try {
       const response = await fetch("https://localhost:7194/api/User", {
         method: "POST",
@@ -74,24 +109,6 @@ const StaffManagement = () => {
         throw new Error(error.message || "Error adding new staff");
       }
 
-      await response.json(); // Wait for the response to be parsed
-
-      // Re-fetch staff data instead of refreshing the page
-      // fetchStaffData(); // Call the function to fetch data again
-
-      // setNewStaff({
-      //   name: "",
-      //   email: "",
-      //   gender: "Male",
-      //   address: "nowhere",
-      //   dob: "2003-12-12",
-      //   isConfirmed: true,
-      //   phone: "0915230240",
-      //   password: "123456",
-      //   roleId: 2,
-      //   status: "Active",
-      // });
-
       setError(null); // Clear any previous errors
       setShowSuccessMessage(true); // Show success message
     } catch (error) {
@@ -99,7 +116,6 @@ const StaffManagement = () => {
       setError(error.message); // Set the error message
     }
   };
-
   const handleEdit = (staffData) => {
     setNewStaff(staffData);
     setEditIndex(staffData.userId);
@@ -120,6 +136,34 @@ const StaffManagement = () => {
     setEditIndex(null);
   };
   const handleUpdate = async () => {
+    // Check if any required field is empty
+    if (
+      !newStaff.name ||
+      !newStaff.email ||
+      !newStaff.phone ||
+      !newStaff.address
+    ) {
+      setError("All fields are required.");
+      return;
+    }
+
+    if (!emailRegex.test(newStaff.email)) {
+      setError("Invalid email format");
+      return;
+    }
+    if (!phoneRegex.test(newStaff.phone)) {
+      setError("Phone number must be 10 digits");
+      return;
+    }
+    if (!isUniqueEmail(newStaff.email) && editIndex !== newStaff.userId) {
+      setError("Email already exists");
+      return;
+    }
+    if (!isUniquePhone(newStaff.phone) && editIndex !== newStaff.userId) {
+      setError("Phone number already exists");
+      return;
+    }
+
     try {
       const response = await fetch(
         `https://localhost:7194/api/User/${editIndex}`,

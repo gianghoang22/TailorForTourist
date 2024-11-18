@@ -57,7 +57,36 @@ const UserManagement = () => {
     setNewUser({ ...newUser, [name]: value });
   };
 
+  const validateEmailUnique = (email) => {
+    // Check if the email is unique
+    return !userData.some((user) => user.email === email);
+  };
+
+  const validateFields = () => {
+    // Check if all required fields are filled
+    return (
+      newUser.name &&
+      newUser.email &&
+      newUser.phone &&
+      newUser.address &&
+      newUser.gender &&
+      newUser.dob
+    );
+  };
+
   const handleAdd = async () => {
+    // Check if email is unique
+    if (!validateEmailUnique(newUser.email)) {
+      setError("Email must be unique.");
+      return;
+    }
+
+    // Check if all fields are filled
+    if (!validateFields()) {
+      setError("All fields must be filled.");
+      return;
+    }
+
     try {
       const response = await fetch("https://localhost:7194/api/User", {
         method: "POST",
@@ -72,8 +101,8 @@ const UserManagement = () => {
         throw new Error(error.message || "Error adding new user");
       }
 
-      const addedUser = await response.json(); // Get the response with the added user
-      setUserData([...userData, addedUser]); // Update user data with the new user
+      const addedUser = await response.json();
+      setUserData([...userData, addedUser]);
       setError(null);
       setShowSuccessMessage(true);
     } catch (error) {
@@ -88,6 +117,22 @@ const UserManagement = () => {
   };
 
   const handleUpdate = async () => {
+    // Check if email is unique, but exclude the currently edited user
+    if (
+      !validateEmailUnique(newUser.email) &&
+      newUser.email !==
+        userData.find((user) => user.userId === editIndex)?.email
+    ) {
+      setError("Email must be unique.");
+      return;
+    }
+
+    // Check if all fields are filled
+    if (!validateFields()) {
+      setError("All fields must be filled.");
+      return;
+    }
+
     try {
       const response = await fetch(
         `https://localhost:7194/api/User/${editIndex}`,
@@ -104,7 +149,6 @@ const UserManagement = () => {
         throw new Error(error.message || "Error updating user");
       }
 
-      // Clear the form fields after successful update
       setNewUser({
         name: "",
         email: "",
@@ -120,8 +164,6 @@ const UserManagement = () => {
       setEditIndex(null); // Clear edit index
       setError(null);
       setShowSuccessMessage(true);
-
-      // Refresh the page to fetch the latest user data
       window.location.reload();
     } catch (error) {
       console.error("Error updating user:", error);
@@ -208,7 +250,7 @@ const UserManagement = () => {
             <MenuItem value="Female">Female</MenuItem>
             <MenuItem value="Other">Other</MenuItem>
           </TextField>
-          {editIndex !== null ? ( // Check if in edit mode
+          {editIndex !== null ? (
             <Button variant="contained" color="primary" onClick={handleUpdate}>
               Update User
             </Button>
@@ -262,7 +304,6 @@ const UserManagement = () => {
                     variant="outlined"
                     color="primary"
                     onClick={() => handleEdit(u)}
-                    style={{ marginRight: "0.5rem" }}
                   >
                     Edit
                   </Button>
@@ -279,12 +320,8 @@ const UserManagement = () => {
           </TableBody>
         </Table>
       </TableContainer>
-
       {showSuccessMessage && (
-        <div className="success-message">
-          <p>Operation completed successfully!</p>
-          <button onClick={() => window.location.reload()}>Refresh</button>
-        </div>
+        <Alert severity="success">User has been successfully updated!</Alert>
       )}
     </div>
   );

@@ -1,27 +1,148 @@
 .staff-dashboard {
-  padding: 20px;
-  background-color: #f4f6f8;
+  display: flex;
   min-height: 100vh;
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  background-color: #f5f7fb;
+  color: #333;
 
-    .navigation-buttons {
+  .sidebar {
+    width: 250px;
+    background-color: #fff;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+
+    .logo {
+      padding: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .user-profile {
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #e0e0e0;
+
+      .avatar {
+        width: 60px;
+        height: 60px;
+      }
+    }
+
+    .menu-items {
+      flex-grow: 1;
+      padding: 20px 0;
+
       button {
-        margin-right: 10px;
-        &:last-child {
-          margin-right: 0;
+        width: 100%;
+        justify-content: flex-start;
+        padding: 10px 20px;
+        text-transform: none;
+        color: #666;
+
+        &.active {
+          background-color: #e3f2fd;
+          color: #1976d2;
         }
       }
     }
   }
 
-  .paper {
+  .main-content {
+    flex-grow: 1;
     padding: 20px;
-    background-color: #fff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+    overflow-y: auto;
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      margin-bottom: 20px;
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+    }
+
+    .dashboard-content {
+      .chart-container {
+        padding: 20px;
+        height: 100%;
+        margin-bottom: 20px;
+      }
+
+      .details-container {
+        padding: 20px;
+      }
+    }
+  }
+}
+
+// Dark mode styles
+.dark-mode {
+  background-color: #121212;
+  color: #fff;
+
+  .sidebar,
+  .header,
+  .chart-container,
+  .details-container {
+    background-color: #1e1e1e;
+    color: #fff;
+  }
+
+  .sidebar {
+    border-right-color: #333;
+
+    .menu-items button {
+      color: #bbb;
+
+      &.active {
+        background-color: #0d47a1;
+        color: #fff;
+      }
+    }
+
+    .user-profile,
+    .logo {
+      border-color: #333;
+    }
+  }
+
+  .header {
+    .MuiButton-root {
+      color: #fff;
+    }
+  }
+
+  .chart-container,
+  .details-container {
+    .MuiTypography-root {
+      color: #fff;
+    }
+  }
+}
+
+// Responsive styles
+@media (max-width: 960px) {
+  .staff-dashboard {
+    flex-direction: column;
+
+    .sidebar {
+      width: 100%;
+      order: 2;
+    }
+
+    .main-content {
+      order: 1;
+    }
   }
 }

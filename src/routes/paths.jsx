@@ -51,6 +51,8 @@ import Payment from "../pages/payment/payment";
 import OrderDetails from "../pages/orderDetails/OrderDetails";
 
 import CreatePassword from "../pages/signIn/CreatePassword";
+
+import TailorDashboard from "../pages/tailor/TailorDashboard";
 export const routes = [
   {
     path: "/",
@@ -113,6 +115,10 @@ export const routes = [
   {
     path: "/new-password",
     element: <CreatePassword />,
+  },
+  {
+    path: "/tailor",
+    element: <TailorDashboard />,
   },
   {
     path: "/booking",

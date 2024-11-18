@@ -54,6 +54,14 @@ const FabricManagement = () => {
 
   const handleAdd = async () => {
     try {
+      // Validate required fields
+      if (!newFabric.fabricName || !newFabric.price || !newFabric.description) {
+        setError("Fabric name, price, and description are required.");
+        return;
+      }
+
+      console.log("Adding Fabric Data:", newFabric); // Log data before sending
+
       const response = await fetch("https://localhost:7194/api/Fabrics", {
         method: "POST",
         headers: {
@@ -63,17 +71,21 @@ const FabricManagement = () => {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error adding new fabric");
+        const errorResponse = await response.json();
+        console.error("Error adding new fabric:", errorResponse);
+        setError(errorResponse.message || "Error adding new fabric");
+        return;
       }
 
       const addedFabric = await response.json();
-      setFabricData([...fabricData, addedFabric]); // Update fabric data without needing to refetch
+      setFabricData([...fabricData, addedFabric]); // Update local state without needing to refetch
       setError(null);
       setShowSuccessMessage(true);
     } catch (error) {
       console.error("Error adding new fabric:", error);
-      setError(error.message);
+      setError(
+        error.message || "Unexpected error occurred while adding fabric"
+      );
     }
   };
 
@@ -84,6 +96,14 @@ const FabricManagement = () => {
 
   const handleUpdate = async () => {
     try {
+      // Validate required fields
+      if (!newFabric.fabricName || !newFabric.price || !newFabric.description) {
+        setError("Fabric name, price, and description are required.");
+        return;
+      }
+
+      console.log("Updating Fabric Data:", newFabric); // Log data before sending
+
       const response = await fetch(
         `https://localhost:7194/api/Fabrics/${editIndex}`,
         {
@@ -132,7 +152,9 @@ const FabricManagement = () => {
       );
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Error deleting fabric");
+        console.error("Error deleting fabric:", error);
+        setError(error.message || "Error deleting fabric");
+        return;
       }
       setFabricData(fabricData.filter((f) => f.fabricId !== fabricId));
       setError(null);

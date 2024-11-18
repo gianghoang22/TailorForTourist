@@ -1,17 +1,18 @@
 // src/components/MeasureList.js
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import "./MeasureList.scss"; // Import the new styles
 
 const MeasureList = () => {
   const [users, setUsers] = useState([]);
   const [measurements, setMeasurements] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [editMeasurementId, setEditMeasurementId] = useState(null);  // To track editing state
+  const [editMeasurementId, setEditMeasurementId] = useState(null); // To track editing state
 
-  const API_URL = 'https://localhost:7194/api/Measurement';
-  const USER_API_URL = 'https://localhost:7194/api/User';
+  const API_URL = "https://localhost:7194/api/Measurement";
+  const USER_API_URL = "https://localhost:7194/api/User";
 
   // Fetch all users, filter by roleId === 3
   useEffect(() => {
@@ -19,15 +20,12 @@ const MeasureList = () => {
       try {
         const response = await axios.get(`${USER_API_URL}`);
         const allUsers = response.data;
-
-        // Filter users where roleId === 3
-        const customers = allUsers.filter(user => user.roleId === 3);
+        const customers = allUsers.filter((user) => user.roleId === 3);
         setUsers(customers);
       } catch (error) {
-        console.error('Error fetching users:', error);
+        console.error("Error fetching users:", error);
       }
     };
-
     fetchUsers();
   }, []);
 
@@ -37,7 +35,7 @@ const MeasureList = () => {
       const response = await axios.get(`${API_URL}/byUser/${userId}`);
       setMeasurements(response.data);
     } catch (error) {
-      console.error('Error fetching measurements:', error);
+      console.error("Error fetching measurements:", error);
     }
   };
 
@@ -46,68 +44,100 @@ const MeasureList = () => {
     try {
       const response = await axios.put(`${API_URL}/${measurementId}`, {
         ...values,
-        userId: userId // Attach the userId in the request body
+        userId: userId,
       });
-      setMeasurements(measurements.map(m => (m.measurementId === measurementId ? response.data : m)));
-      setEditMeasurementId(null);  // Reset edit mode after update
+      setMeasurements(
+        measurements.map((m) =>
+          m.measurementId === measurementId ? response.data : m
+        )
+      );
+      setEditMeasurementId(null);
     } catch (error) {
-      console.error('Error updating measurement:', error);
+      console.error("Error updating measurement:", error);
     }
   };
 
   const validationSchema = Yup.object().shape({
-    weight: Yup.number().required('Weight is required').min(30, 'Weight should be at least 30kg').max(200, 'Weight cannot exceed 200kg'),
-    height: Yup.number().required('Height is required').min(100, 'Height should be at least 100cm').max(250, 'Height cannot exceed 250cm'),
-    neck: Yup.number().required('Neck size is required').min(30, 'Neck size should be at least 30cm'),
-    hip: Yup.number().required('Hip size is required').min(60, 'Hip size should be at least 60cm'),
-    waist: Yup.number().required('Waist size is required').min(50, 'Waist size should be at least 50cm'),
-    armhole: Yup.number().required('Armhole size is required').min(20, 'Armhole should be at least 20cm'),
-    biceps: Yup.number().required('Biceps size is required').min(20, 'Biceps should be at least 20cm'),
-    pantsWaist: Yup.number().required('Pants waist size is required').min(50, 'Pants waist should be at least 50cm'),
-    crotch: Yup.number().required('Crotch size is required').min(20, 'Crotch should be at least 20cm'),
-    thigh: Yup.number().required('Thigh size is required').min(40, 'Thigh should be at least 40cm'),
-    pantsLength: Yup.number().required('Pants length is required').min(50, 'Pants length should be at least 50cm'),
+    weight: Yup.number()
+      .required("Weight is required")
+      .min(30, "Weight should be at least 30kg")
+      .max(200, "Weight cannot exceed 200kg"),
+    height: Yup.number()
+      .required("Height is required")
+      .min(100, "Height should be at least 100cm")
+      .max(250, "Height cannot exceed 250cm"),
+    neck: Yup.number()
+      .required("Neck size is required")
+      .min(30, "Neck size should be at least 30cm"),
+    hip: Yup.number()
+      .required("Hip size is required")
+      .min(60, "Hip size should be at least 60cm"),
+    waist: Yup.number()
+      .required("Waist size is required")
+      .min(50, "Waist size should be at least 50cm"),
+    armhole: Yup.number()
+      .required("Armhole size is required")
+      .min(20, "Armhole should be at least 20cm"),
+    biceps: Yup.number()
+      .required("Biceps size is required")
+      .min(20, "Biceps should be at least 20cm"),
+    pantsWaist: Yup.number()
+      .required("Pants waist size is required")
+      .min(50, "Pants waist should be at least 50cm"),
+    crotch: Yup.number()
+      .required("Crotch size is required")
+      .min(20, "Crotch should be at least 20cm"),
+    thigh: Yup.number()
+      .required("Thigh size is required")
+      .min(40, "Thigh should be at least 40cm"),
+    pantsLength: Yup.number()
+      .required("Pants length is required")
+      .min(50, "Pants length should be at least 50cm"),
   });
 
   const formik = useFormik({
     initialValues: {
-      weight: '',
-      height: '',
-      neck: '',
-      hip: '',
-      waist: '',
-      armhole: '',
-      biceps: '',
-      pantsWaist: '',
-      crotch: '',
-      thigh: '',
-      pantsLength: '',
+      weight: "",
+      height: "",
+      neck: "",
+      hip: "",
+      waist: "",
+      armhole: "",
+      biceps: "",
+      pantsWaist: "",
+      crotch: "",
+      thigh: "",
+      pantsLength: "",
     },
     validationSchema,
     onSubmit: async (values) => {
       try {
         if (selectedUser) {
           if (editMeasurementId) {
-            // Update existing measurement
-            updateMeasurementByUserId(selectedUser.userId, editMeasurementId, values);
+            updateMeasurementByUserId(
+              selectedUser.userId,
+              editMeasurementId,
+              values
+            );
           } else {
-            // Otherwise create a new measurement
-            const response = await axios.post(API_URL, { ...values, userId: selectedUser.userId });
+            const response = await axios.post(API_URL, {
+              ...values,
+              userId: selectedUser.userId,
+            });
             setMeasurements([...measurements, response.data]);
           }
           formik.resetForm();
         } else {
-          console.error('No user selected');
+          console.error("No user selected");
         }
       } catch (error) {
-        console.error('Error adding/updating measurement:', error);
+        console.error("Error adding/updating measurement:", error);
       }
     },
     enableReinitialize: true,
   });
 
   const handleEdit = (measurement) => {
-    // Set form values for editing
     formik.setValues({
       weight: measurement.weight,
       height: measurement.height,
@@ -121,15 +151,17 @@ const MeasureList = () => {
       thigh: measurement.thigh,
       pantsLength: measurement.pantsLength,
     });
-    setEditMeasurementId(measurement.measurementId);  // Set to editing mode
+    setEditMeasurementId(measurement.measurementId);
   };
 
   const handleDelete = async (measurementId) => {
     try {
       await axios.delete(`${API_URL}/${measurementId}`);
-      setMeasurements(measurements.filter(m => m.measurementId !== measurementId));
+      setMeasurements(
+        measurements.filter((m) => m.measurementId !== measurementId)
+      );
     } catch (error) {
-      console.error('Error deleting measurement:', error);
+      console.error("Error deleting measurement:", error);
     }
   };
 
@@ -139,9 +171,9 @@ const MeasureList = () => {
   };
 
   return (
-    <div>
+    <div className="measure-list">
       <h2>Customer List</h2>
-      <table border="1">
+      <table>
         <thead>
           <tr>
             <th>Name</th>
@@ -156,8 +188,10 @@ const MeasureList = () => {
               <td>{user.name}</td>
               <td>{user.email}</td>
               <td>{user.phone}</td>
-              <td>
-                <button onClick={() => handleShowMeasurements(user)}>Show Measurements</button>
+              <td className="actions">
+                <button onClick={() => handleShowMeasurements(user)}>
+                  Show Measurements
+                </button>
               </td>
             </tr>
           ))}
@@ -167,7 +201,7 @@ const MeasureList = () => {
       {selectedUser && (
         <>
           <h3>Measurements for {selectedUser.name}</h3>
-          <table border="1">
+          <table>
             <thead>
               <tr>
                 <th>Weight</th>
@@ -186,43 +220,76 @@ const MeasureList = () => {
                   <td>{measurement.neck}</td>
                   <td>{measurement.hip}</td>
                   <td>{measurement.waist}</td>
-                  <td>
-                    <button onClick={() => handleEdit(measurement)}>Edit</button>
-                    <button onClick={() => handleDelete(measurement.measurementId)}>Delete</button>
+                  <td className="actions">
+                    <button onClick={() => handleEdit(measurement)}>
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(measurement.measurementId)}
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <h3>{editMeasurementId ? 'Edit Measurement' : 'Add Measurement'}</h3>
-          <form onSubmit={formik.handleSubmit}>
+          <h3>{editMeasurementId ? "Edit Measurement" : "Add Measurement"}</h3>
+          <form onSubmit={formik.handleSubmit} className="measurement-form">
             <div>
               <label>Weight:</label>
-              <input type="number" name="weight" value={formik.values.weight} onChange={formik.handleChange} />
+              <input
+                type="number"
+                name="weight"
+                value={formik.values.weight}
+                onChange={formik.handleChange}
+              />
               {formik.errors.weight && <div>{formik.errors.weight}</div>}
             </div>
             <div>
               <label>Height:</label>
-              <input type="number" name="height" value={formik.values.height} onChange={formik.handleChange} />
+              <input
+                type="number"
+                name="height"
+                value={formik.values.height}
+                onChange={formik.handleChange}
+              />
               {formik.errors.height && <div>{formik.errors.height}</div>}
             </div>
             <div>
               <label>Neck:</label>
-              <input type="number" name="neck" value={formik.values.neck} onChange={formik.handleChange} />
+              <input
+                type="number"
+                name="neck"
+                value={formik.values.neck}
+                onChange={formik.handleChange}
+              />
               {formik.errors.neck && <div>{formik.errors.neck}</div>}
             </div>
             <div>
               <label>Hip:</label>
-              <input type="number" name="hip" value={formik.values.hip} onChange={formik.handleChange} />
+              <input
+                type="number"
+                name="hip"
+                value={formik.values.hip}
+                onChange={formik.handleChange}
+              />
               {formik.errors.hip && <div>{formik.errors.hip}</div>}
             </div>
             <div>
               <label>Waist:</label>
-              <input type="number" name="waist" value={formik.values.waist} onChange={formik.handleChange} />
+              <input
+                type="number"
+                name="waist"
+                value={formik.values.waist}
+                onChange={formik.handleChange}
+              />
               {formik.errors.waist && <div>{formik.errors.waist}</div>}
             </div>
-            <button type="submit">{editMeasurementId ? 'Update' : 'Add'}</button>
+            <button type="submit">
+              {editMeasurementId ? "Update" : "Add"} Measurement
+            </button>
           </form>
         </>
       )}
