@@ -8,17 +8,15 @@ import { Footer } from '../../layouts/components/footer/Footer';
 import { Navigation } from '../../layouts/components/navigation/Navigation';
 
 // ProductItem Component
-const ProductItem = ({ product }) => {
-  return (
-    <div className="col-md-4">
-      <Link to={`/product-collection/${product.productID}`} className="card">
-        <img src={product.imgURL} alt={product.productCode} />
-        <h5 className="card-title">{product.productCode}</h5>
-        <p className="card-text">Price from: {product.price} $</p>
-      </Link>
-    </div>
-  );
-};
+const ProductItem = ({ product }) => (
+  <div className="col-md-4">
+    <Link to={`/product-collection/${product.productID}`} className="card">
+      <img src={product.imgURL} alt={product.productCode} />
+      <h5 className="card-title">{product.productCode}</h5>
+      <p className="card-text">Price from: {product.price} $</p>
+    </Link>
+  </div>
+);
 
 ProductItem.propTypes = {
   product: PropTypes.shape({
@@ -35,18 +33,16 @@ ProductItem.propTypes = {
 };
 
 // Product Collection Component
-const Product = ({ products }) => {
-  return (
-    <div>
-      <h1>Product Collection</h1>
-      <div className="row" style={{ paddingBottom: '50px' }}>
-        {products.map((product) => (
-          <ProductItem key={product.productID} product={product} />
-        ))}
-      </div>
+const Product = ({ products }) => (
+  <div>
+    <h1>Product Collection</h1>
+    <div className="row" style={{ paddingBottom: '50px' }}>
+      {products.map((product) => (
+        <ProductItem key={product.productID} product={product} />
+      ))}
     </div>
-  );
-};
+  </div>
+);
 
 Product.propTypes = {
   products: PropTypes.arrayOf(
@@ -65,15 +61,33 @@ Product.propTypes = {
 };
 
 const ProductPage = () => {
-  const [products, setProducts] = useState([]);  // Holds the filtered products
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
 
-  // Fetch products based on the selected subcategory
-  const handleSubcategorySelect = async (subcategoryId) => {
+  useEffect(() => {
+    fetchAllProducts();
+  }, []);
+
+  // Fetch all products
+  const fetchAllProducts = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`https://localhost:7194/api/product?subcategoryId=${subcategoryId}`);
+      const response = await axios.get('https://localhost:7194/api/Product/products/custom-false');
+      setProducts(response.data);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  // Fetch products by category ID
+  const fetchProductsByCategory = async (categoryId) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`https://localhost:7194/api/Product/category/${categoryId}`);
       setProducts(response.data);
       setLoading(false);
     } catch (err) {
@@ -102,7 +116,9 @@ const ProductPage = () => {
         <div className="page-width-sidebar clear">
           {/* Sidebar on the left */}
           <div className="side-left">
-            <Sidebar onSelectSubcategory={handleSubcategorySelect} />
+            <Sidebar 
+              onSelectSubcategory={fetchProductsByCategory} // Pass fetchProductsByCategory to Sidebar
+            />
           </div>
 
           {/* Product Grid on the right */}
@@ -113,7 +129,7 @@ const ProductPage = () => {
               <Product products={products} />
             )}
             {!loading && !error && products.length === 0 && (
-              <p>No products found for the selected category.</p>
+              <p>No products found for the selected criteria.</p>
             )}
           </div>
         </div>

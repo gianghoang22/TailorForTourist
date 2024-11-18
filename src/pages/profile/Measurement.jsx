@@ -66,6 +66,66 @@ const Measurement = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  const validateFields = () => {
+    const newErrors = {};
+    const numberFields = [
+      "chest",
+      "waist",
+      "hip",
+      "neck",
+      "armhole",
+      "biceps",
+      "shoulder",
+      "sleeveLength",
+      "jacketLength",
+      "pantsWaist",
+      "crotch",
+      "thigh",
+      "pantsLength",
+    ];
+
+    numberFields.forEach((field) => {
+      if (!formData[field]) {
+        newErrors[field] = "This field is required";
+      } else if (
+        isNaN(formData[field]) ||
+        formData[field] < 0 ||
+        formData[field] > 200
+      ) {
+        newErrors[field] = "Please enter a valid number (0-200)";
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0; // return true if no errors
+  };
+
+  const handleSubmit = () => {
+    if (validateFields()) {
+      // If validation passes, post data to the API
+      fetch("https://localhost:7194/api/Measurement", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Success:", data);
+          // Optionally reset the form or handle success feedback
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    }
+  };
+
   const handleEdit = async () => {
     const userID = localStorage.getItem("userID");
     if (!userID) {

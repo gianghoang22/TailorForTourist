@@ -1,0 +1,117 @@
+.page-no-side-bar {
+    .ggmap {
+        height: 350px;
+        margin-bottom: 30px;
+    }
+  }
+
+  .page-no-side-bar {
+    float: left;
+    width: 100%;
+    padding-top: 30px;
+}
+
+.contact-row {
+    margin-left: -15px;
+    margin-right: -15px;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+}
+
+.contact-row .contact-col {
+    float: left;
+    width: 33.3333%;
+    padding: 0 15px;
+    min-height: 1px;
+    margin-bottom: 30px;
+}
+
+.conactInfo-dl {
+    line-height: 20px;
+}
+
+.conactInfo-dl dt {
+    float: left;
+    width: 30px;
+    color: #a4712a;
+    font-size: 18px;
+}
+
+.fa {
+    display: inline-block;
+    font: normal normal normal 14px / 1 FontAwesome;
+    font-size: inherit;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.conactInfo-dl dd {
+    display: block;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.conactInfo-dl .lb {
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #000;
+}
+
+.conactInfo-dl dd p {
+    margin-bottom: 2px;
+}
+
+div.wpcf7 {
+    margin: 0;
+    padding: 0;
+}
+
+div.wpcf7 .screen-reader-response {
+    position: absolute;
+    overflow: hidden;
+    clip: rect(1px, 1px, 1px, 1px);
+    height: 1px;
+    width: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.contact-form .frow {
+    margin-bottom: 10px;
+}
+
+.wpcf7-form-control-wrap {
+    position: relative;
+}
+
+.fcontrol.gray-control {
+    background-color: #f8f8f8;
+    border-color: #e1e1e1;
+}
+.fcontrol {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    -ms-appearance: none;
+    -o-appearance: none;
+    width: 100%;
+    height: 40px;
+    font-family: "PoppinsVN", sans-serif;
+    font-size: 14px;
+    border: solid 1px #e1e1e1;
+    padding: 10px 15px;
+    line-height: 20px;
+    outline: 0;
+    -webkit-transition: all .3s ease-in-out;
+    -moz-transition: all .3s ease-in-out;
+    -o-transition: all .3s ease-in-out;
+    -ms-transition: all .3s ease-in-out;
+    transition: all .3s ease-in-out;
+    display: block;
+}

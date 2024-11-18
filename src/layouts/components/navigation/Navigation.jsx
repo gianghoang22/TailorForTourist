@@ -3,6 +3,8 @@ import "../navigation/Navigation.scss";
 import "bootstrap/dist/css/bootstrap.min.css";
 import logo from "../../../assets/img/logo/logo.png";
 import { useNavigate } from "react-router-dom";
+import { Link } from 'react-router-dom';
+
 
 export const Navigation = () => {
   const navigate = useNavigate();
@@ -35,19 +37,16 @@ export const Navigation = () => {
                   <a href="#">SUITS</a>
                   <ul className="submenu">
                     <li>
-                      <a href="#">DESIGN YOUR SUITS</a>
+                      <Link to="/custom-suits">DESIGN YOUR SUITS</Link>
                     </li>
                     <li>
-                      <a href="#">COLLECTIONS</a>
+                      <Link to="/product-collection">COLLECTIONS</Link>
                     </li>
                   </ul>
                 </li>
                 <li>
                   <a href="#">BLAZERS</a>
                   <ul className="submenu">
-                    <li>
-                      <a href="#">DESIGN YOUR BLAZERS</a>
-                    </li>
                     <li>
                       <a href="#">BLAZERS COLLECTION</a>
                     </li>
@@ -57,21 +56,16 @@ export const Navigation = () => {
                   <a href="#">SHIRTS</a>
                   <ul className="submenu">
                     <li>
-                      <a href="#">DESIGN YOUR SHIRTS</a>
-                    </li>
-                    <li>
-                      <a href="#">COLLECTIONS</a>
+                      <a href="#">SHIRTS COLLECTIONS</a>
                     </li>
                   </ul>
                 </li>
                 <li>
                   <a href="#">PANTS</a>
                   <ul className="submenu">
+                    
                     <li>
-                      <a href="#">DESIGN YOUR PANTS</a>
-                    </li>
-                    <li>
-                      <a href="#">COLLECTIONS</a>
+                      <a href="#">PANTS COLLECTIONS</a>
                     </li>
                   </ul>
                 </li>
@@ -120,7 +114,7 @@ export const Navigation = () => {
                       <a href="#">BRIDESMAID</a>
                     </li>
                     <li>
-                      <a href="#">BRIDESMAID</a>
+                      <a href="#">BRIDE</a>
                     </li>
                   </ul>
                 </li>
@@ -139,7 +133,7 @@ export const Navigation = () => {
                   </ul>
                 </li>
                 <li>
-                  <a href="#">Contact</a>
+                <Link to="/contact-us">CONTACT</Link>
                 </li>
                 {isLoggedIn && (
                   <li>

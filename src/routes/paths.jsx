@@ -5,6 +5,7 @@ import HomePage from "../pages/home/HomePage";
 import BookingPage from "../pages/booking/BookingPage";
 import Checkout from "../pages/checkout/Checkout";
 import MeasurementGuide from "../pages/measurementGuide/MeasurementGuide";
+import OrderReceive from "../pages/checkout/orderReceive/OrderReceive";
 
 import ProductPage from "../pages/product/ProductPage";
 import ProductDetail from "../pages/product/ProductDetail";
@@ -47,11 +48,9 @@ import LiningManagement from "../pages/admin/LiningManagement";
 import VoucherManagement from "../pages/admin/VoucherManagement";
 
 import Payment from "../pages/payment/payment";
-
+import ContactUs from "../pages/contact/ContactUs";
 import OrderDetails from "../pages/orderDetails/OrderDetails";
-
 import CreatePassword from "../pages/signIn/CreatePassword";
-
 import TailorDashboard from "../pages/tailor/TailorDashboard";
 export const routes = [
   {
@@ -168,6 +167,10 @@ export const routes = [
     element: <Checkout />,
   },
   {
+    path: "/checkout/order-receive",
+    element: <OrderReceive />,
+  },
+  {
     path: "/fabrics",
     element: <Fabric />,
   },
@@ -280,5 +283,9 @@ export const routes = [
   {
     path: "/how-to-measure",
     element: <MeasurementGuide />,
+  },
+  {
+    path: "/contact-us",
+    element: <ContactUs />,
   },
 ];

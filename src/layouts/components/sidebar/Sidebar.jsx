@@ -6,28 +6,25 @@ const Sidebar = ({ onSelectSubcategory }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeSubcategory, setActiveSubcategory] = useState(null); // Track active subcategory
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        // Fetch categories from the API
         const response = await axios.get('https://localhost:7194/api/category');
-        
-        // Debugging: Log the full response
-        console.log('API Response:', response);
-        
-        // Check if response and response.data are valid
-        if (response && response.data && Array.isArray(response.data)) {
-          setCategories(response.data);  // Set categories if valid
+        if (Array.isArray(response.data.data)) {
+          setCategories(response.data.data);
         } else {
-          throw new Error('Invalid response format');  // Handle unexpected response format
+          throw new Error('API returned unexpected format: expected an array');
         }
         setLoading(false);
       } catch (err) {
-        setError(err.message);  // Log the error message
+        console.error('Error fetching categories:', err);
+        setError(err.message || 'Failed to fetch categories');
         setLoading(false);
       }
     };
+
     fetchCategories();
   }, []);
 
@@ -36,7 +33,8 @@ const Sidebar = ({ onSelectSubcategory }) => {
   };
 
   const handleSubcategoryClick = (subcategoryId) => {
-    onSelectSubcategory(subcategoryId); // Notify parent component (ProductPage)
+    setActiveSubcategory(subcategoryId); // Set active subcategory on click
+    onSelectSubcategory(subcategoryId);
   };
 
   if (loading) {
@@ -52,14 +50,17 @@ const Sidebar = ({ onSelectSubcategory }) => {
   return (
     <div id="nav_menu5" className='widget widget_nav_menu'>
       <div className="menu-widget-container">
-        <ul id="meu-widget" className="menu">
+        <ul id="menu-widget" className="menu">
           {parentCategories.map(category => (
-            <li id='menu-item' key={category.categoryId} className="menu-item menu-item-type-taxonomy menu-item-object-product_cat menu-item-has-children dropdown">
+            <li key={category.categoryId} className="menu-item menu-item-type-taxonomy menu-item-object-product_cat menu-item-has-children dropdown">
               <a>{category.name}</a>
-              <ul id='menu-widget' className="menu">
+              <ul className="menu">
                 {getSubcategories(category.categoryId).map(subcategory => (
                   <li key={subcategory.categoryId} className="menu-item menu-item-type-post_type menu-item-object-page">
-                    <a onClick={() => handleSubcategoryClick(subcategory.categoryId)}>
+                    <a
+                      onClick={() => handleSubcategoryClick(subcategory.categoryId)}
+                      className={activeSubcategory === subcategory.categoryId ? 'selected' : ''}
+                    >
                       {subcategory.name}
                     </a>
                   </li>
