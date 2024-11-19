@@ -205,7 +205,9 @@ const MeasureGuest = () => {
   </div>
   
   <p className="center-txt">
-    <button type="submit" className="primary-btn btn">Confirm</button>
+    <Link to='/cart'>
+    <button className="primary-btn btn">Confirm</button>
+    </Link>
   </p>
 </form>
 
