@@ -76,10 +76,8 @@ const Checkout = () => {
     toast.success("Payment successful!");
     console.log("Payment Details:", details);
 
-    // Confirm the order after successful PayPal payment
     confirmOrderAPI();
 
-    // Navigate to order confirmation page
     navigate('/checkout/order-receive');
   };
 
@@ -298,79 +296,79 @@ const Checkout = () => {
           <div id="order_review" className="woocommerce-checkout-review-order">
 
           <table className='shop_table woocommerce-checkout-review-order-table'>
-            <thead>
-              <tr>
-                <th className='product-name'>Product</th>
-                <th className='product-total'>Total</th>
-                <th className='product-info'></th>
-              </tr>
-            </thead>
-            <tbody>
-              {checkoutCart.length === 0 ? (
-                <tr>
-                  <td colSpan="4">No items in cart</td>
-                </tr>
-              ) : (
-                checkoutCart.map((item, index) => (
-                  <>
-                  <tr className='cart_item' key={index}>
-                    <td className='product-name'>{item.productName}</td>
-                    <td className='product-total'>
-                      <span className="woocommerce-Price-amount amount">
-                      {item.productPrice.toFixed(2)}&nbsp;
-                      </span>
-                      <span className="woocommerce-Price-currencySymbol">USD</span>
-                      </td>
-                    <td className='product-info'>
-                      <button className='btn mona-view-product-info' type="button" onClick={() => handleViewInfo(item)}>
-                        View Info
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className='product-name'>
-                      <strong>Shipping</strong>
-                    </td>
-                    <td className="product-total" colSpan={2}>
-                      <p>
-                      Shipping cost is based on the weight of the order. Our Online Department will inform you the cost before we ship.
-                      </p>
-                      <p>
-                        Read more: <strong>
-                          <a href="#" style={{color: '#a4712a'}}>Shipping policy</a>
-                        </strong>
-                      </p>
-                    </td>
-                  </tr>
-                  </>
-                ))
-              )}
-              </tbody>
-              <tfoot>
-              {checkoutCart.length > 0 && (
-                <>
-                <tr className='cart-subtotal'>
-                  <th>Subtotal</th>
-                  <td colSpan="2">
-                    <span className='woocommerce-Price-amount amount'>{total.toFixed(2)}&nbsp;
-                      <span className='woocommerce-Price-currencySymbol'>USD</span>
-                    </span>
-                  </td>
-                </tr>
-                <tr className="order-total">
-                <th>Total</th>
-                <td colSpan="2">
-                    <strong>
-                  <span className='woocommerce-Price-amount amount'>{total.toFixed(2)}&nbsp;
-                    <span className='woocommerce-Price-currencySymbol'>USD&nbsp; ({convertToVND(total).toLocaleString("vi-VN")} VND)</span>
-                  </span>
-                    </strong>
-                </td>
-                </tr>
-              </>
-              )}
-              </tfoot>
-          </table>
+    <thead>
+      <tr>
+        <th className='product-name'>Product</th>
+        <th className='product-total'>Total</th>
+        <th className='product-info'></th>
+      </tr>
+    </thead>
+    <tbody>
+      {checkoutCart.length === 0 ? (
+        <tr>
+          <td colSpan="4">No items in cart</td>
+        </tr>
+      ) : (
+        checkoutCart.map((item, index) => (
+          <tr className='cart_item' key={index}>
+            <td className='product-name'>{item.productName}</td>
+            <td className='product-total'>
+              <span className="woocommerce-Price-amount amount">
+                {item.productPrice.toFixed(2)}&nbsp;
+              </span>
+              <span className="woocommerce-Price-currencySymbol">USD</span>
+            </td>
+            <td className='product-info'>
+              <button className='btn mona-view-product-info' type="button" onClick={() => handleViewInfo(item)}>
+                View Info
+              </button>
+            </td>
+          </tr>
+        ))
+      )}
+      
+      {/* Shipping row outside the loop, inside tbody */}
+      <tr>
+        <td className='product-name'>
+          <strong>Shipping</strong>
+        </td>
+        <td className="product-total" colSpan={2}>
+          <p>
+            Shipping cost is based on the weight of the order. Our Online Department will inform you the cost before we ship.
+          </p>
+          <p>
+            Read more: <strong>
+              <a href="#" style={{color: '#a4712a'}}>Shipping policy</a>
+            </strong>
+          </p>
+        </td>
+      </tr>
+    </tbody>
+    <tfoot>
+      {checkoutCart.length > 0 && (
+        <>
+          <tr className='cart-subtotal'>
+            <th>Subtotal</th>
+            <td colSpan="2">
+              <span className='woocommerce-Price-amount amount'>{total.toFixed(2)}&nbsp;
+                <span className='woocommerce-Price-currencySymbol'>USD</span>
+              </span>
+            </td>
+          </tr>
+          <tr className="order-total">
+            <th>Total</th>
+            <td colSpan="2">
+              <strong>
+                <span className='woocommerce-Price-amount amount'>{total.toFixed(2)}&nbsp;
+                  <span className='woocommerce-Price-currencySymbol'>USD&nbsp; ({convertToVND(total).toLocaleString("vi-VN")} VND)</span>
+                </span>
+              </strong>
+            </td>
+          </tr>
+        </>
+      )}
+    </tfoot>
+  </table>
 
           <div id="order" className="woocommerce-checkout-payment">
   <ul className="wc_payment_methods payment_methods methods">

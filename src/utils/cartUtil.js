@@ -55,27 +55,6 @@ export const addToCart = (item) => {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
 };
 
-export const addNonCustomSuitToCart = (item) => {
-  const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-
-  if (item.type === 'non-custom-suit') {
-    const newSuit = {
-      id: `NONCUSTOM-${item.id}-${Date.now()}`,
-      name: `Non-Custom Suit: ${item.name}`,
-      price: item.price,
-      type: 'NONCUSTOM_SUIT',
-      complete: true,
-    };
-    cart.push(newSuit);
-    toast.success(`${item.name} added to your cart`);
-  } else {
-    toast.error('Invalid item!');
-    return;
-  }
-
-  localStorage.setItem(CART_KEY, JSON.stringify(cart));
-};
-
 export const getCart = () => {
   return JSON.parse(localStorage.getItem(CART_KEY) || '[]');
 };

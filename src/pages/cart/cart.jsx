@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { getCart, removeFromCart as removeCustomProduct } from '../../utils/cartUtil';
 import { Link, useNavigate } from 'react-router-dom';
-import './Cart.scss';
 import { Navigation } from '../../layouts/components/navigation/Navigation.jsx';
 import { Footer } from '../../layouts/components/footer/Footer.jsx';
 import { useSelector, useDispatch } from 'react-redux';
 import { removeFromCart as removeNonCustomProduct } from '../../redux/slice/cartSlice.js';
 import ProductInfoModal from './ProductInfoModal.jsx';
+import './Cart.scss';
 
 const Cart = () => {
   const [customCart, setCustomCart] = useState([]);
@@ -120,17 +120,25 @@ const Cart = () => {
                         )
                       ))}
                       {nonCustomCart.map((item) => (
-                        <tr key={item.id}>
-                          <td>{item.name}</td>
-                          <td>${item.price}</td>
-                          <td>
-                            <button className="view-info-btn" onClick={() => handleViewInfo(item)}>View Info</button>
-                          </td>
-                          <td>
-                            <button className="remove-btn" onClick={() => handleRemoveItem(item.id, false)}>Remove</button>
-                          </td>
-                        </tr>
-                      ))}
+  <tr key={item.id}>
+    <td className='product-thumbnail'>
+      <img style={{ width: '32px' }} src={item.image} alt={item.name} />
+    </td>
+    <td className='product-name'>{item.name}</td>
+    <td className='product-style'>{item.style}</td>
+    <td className='product-lining'>{item.lining}</td>
+    <td className='product-price'>${item.price}</td>
+    <td>
+      <button
+        onClick={() => handleRemoveItem(item.id, false)}
+        className="remove-btn"
+      >
+        Remove
+      </button>
+    </td>
+  </tr>
+))}
+
                     </tbody>
                   </table>
 

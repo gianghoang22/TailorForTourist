@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import axios from 'axios';
-import './ProductDetail.scss';
 import { Navigation } from '../../layouts/components/navigation/Navigation.jsx';
 import { Footer } from '../../layouts/components/footer/Footer.jsx';
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../../redux/slice/cartSlice.js';
 import { toast } from 'react-toastify';
-import { addNonCustomSuitToCart } from '../../utils/cartUtil';
+import axios from 'axios';
+import './ProductDetail.scss';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -29,10 +31,20 @@ const ProductDetailPage = () => {
   }, [id]);
 
   const handleAddToCart = () => {
-    addNonCustomSuitToCart(product);
-    toast.success('Product added to cart!');
-    console.log(product);
+    const productToAdd = {
+      id: product.id,
+      name: product.productCode,
+      price: product.price,
+      fabric: product.fabricName,
+      style: product.style,
+      lining: product.liningName,
+      quantity: 1,
+    }
+
+    dispatch(addToCart(productToAdd));
+    toast.success('Product added to cart.');
   };
+
 
   if (loading) return <p className="loading">Loading...</p>;
   if (error) return <p className="error">Error: {error}</p>;

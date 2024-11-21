@@ -135,6 +135,9 @@ export const Navigation = () => {
                 <li>
                 <Link to="/contact-us">CONTACT</Link>
                 </li>
+                <li>
+                <Link to="/cart">YOUR CART</Link>
+                </li>
                 {isLoggedIn && (
                   <li>
                     <a href="/profile">Profile</a>
