@@ -38,7 +38,7 @@ const BookingPage = () => {
     if (userId) {
       try {
         const response = await fetch(
-          `https://localhost:7194/api/User/${userId}`,
+          `http://157.245.50.125:8080/api/User/${userId}`,
           {
             method: "GET",
             headers: {
@@ -65,7 +65,7 @@ const BookingPage = () => {
 
   const fetchStores = async () => {
     try {
-      const response = await fetch("https://localhost:7194/api/Store");
+      const response = await fetch("http://157.245.50.125:8080/api/Store");
       const data = await response.json();
       setAvailableStores(data);
       if (data.length > 0) {
@@ -187,7 +187,7 @@ const BookingPage = () => {
 
     try {
       const response = await fetch(
-        "https://localhost:7194/api/Booking/guest-booking",
+        "http://157.245.50.125:8080/api/Booking/guest-booking",
         {
           method: "POST",
           headers: {

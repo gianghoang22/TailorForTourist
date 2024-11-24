@@ -18,7 +18,7 @@ import {
   Checkbox,
 } from '@mui/material';
 
-const BASE_URL = 'https://localhost:7194/api';
+const BASE_URL = 'http://157.245.50.125:8080/api';
 
 const fetchAllOrders = async () => {
   const response = await fetch(`${BASE_URL}/Orders`);

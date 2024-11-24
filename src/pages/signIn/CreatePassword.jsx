@@ -89,7 +89,7 @@ export default function CreatePassword({ token }) {
   
     try {
       // First, get the refreshToken from the /api/Login/login endpoint
-      const loginResponse = await fetch("https://localhost:7194/api/Login/login", {
+      const loginResponse = await fetch("http://157.245.50.125:8080/api/Login/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -117,7 +117,7 @@ export default function CreatePassword({ token }) {
       console.log("Sending request:", requestBody); // Log the request body
   
       const response = await fetch(
-        "https://localhost:7194/api/User/reset-password",
+        "http://157.245.50.125:8080/api/User/reset-password",
         {
           method: "POST",
           headers: {

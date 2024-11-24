@@ -19,7 +19,7 @@ const OrderHistory = () => {
     console.log("Retrieved userID:", userID);
 
     if (userID) {
-      fetch(`https://localhost:7194/api/Orders/user/${userID}`)
+      fetch(`http://157.245.50.125:8080/api/Orders/user/${userID}`)
         .then((response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok");

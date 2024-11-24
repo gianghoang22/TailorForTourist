@@ -60,7 +60,7 @@ const Measurement = () => {
   const handleSubmit = () => {
     if (validateFields()) {
       // If validation passes, post data to the API
-      fetch("https://localhost:7194/api/Measurement", {
+      fetch("http://157.245.50.125:8080/api/Measurement", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

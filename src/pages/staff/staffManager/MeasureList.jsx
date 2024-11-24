@@ -10,8 +10,8 @@ const MeasureList = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [editMeasurementId, setEditMeasurementId] = useState(null);  // To track editing state
 
-  const API_URL = 'https://localhost:7194/api/Measurement';
-  const USER_API_URL = 'https://localhost:7194/api/User';
+  const API_URL = 'http://157.245.50.125:8080/api/Measurement';
+  const USER_API_URL = 'http://157.245.50.125:8080/api/User';
 
   // Fetch all users, filter by roleId === 3
   useEffect(() => {

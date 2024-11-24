@@ -74,7 +74,7 @@ const ProductPage = () => {
   const fetchAllProducts = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('https://localhost:7194/api/Product/products/custom-false');
+      const response = await axios.get('http://157.245.50.125:8080/api/Product/products/custom-false');
       setProducts(response.data);
       setLoading(false);
     } catch (err) {
@@ -87,7 +87,7 @@ const ProductPage = () => {
   const fetchProductsByCategory = async (categoryId) => {
     setLoading(true);
     try {
-      const response = await axios.get(`https://localhost:7194/api/Product/category/${categoryId}`);
+      const response = await axios.get(`http://157.245.50.125:8080/api/Product/category/${categoryId}`);
       setProducts(response.data);
       setLoading(false);
     } catch (err) {

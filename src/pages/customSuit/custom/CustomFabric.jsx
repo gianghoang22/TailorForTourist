@@ -26,7 +26,7 @@ const CustomFabric = () => {
 
   const fetchFabrics = async (tag = '') => {
     try {
-      const response = await fetch(`https://localhost:7194/api/Fabrics${tag ? `/tag/${tag}` : ''}`);
+      const response = await fetch(`http://157.245.50.125:8080/api/Fabrics${tag ? `/tag/${tag}` : ''}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

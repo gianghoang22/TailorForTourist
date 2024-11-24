@@ -34,7 +34,7 @@ const VoucherManagement = () => {
   useEffect(() => {
     const fetchVoucherData = async () => {
       try {
-        const response = await fetch("https://localhost:7194/api/Voucher");
+        const response = await fetch("http://157.245.50.125:8080/api/Voucher");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
@@ -56,7 +56,7 @@ const VoucherManagement = () => {
   const handleAdd = async () => {
     console.log("Sending voucher data:", newVoucher);
     try {
-      const response = await fetch("https://localhost:7194/api/Voucher", {
+      const response = await fetch("http://157.245.50.125:8080/api/Voucher", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -107,7 +107,7 @@ const VoucherManagement = () => {
 
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Voucher/${editIndex}`,
+        `http://157.245.50.125:8080/api/Voucher/${editIndex}`,
         {
           method: "PUT",
           headers: {
@@ -155,7 +155,7 @@ const VoucherManagement = () => {
   const handleDelete = async (voucherId) => {
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Voucher/${voucherId}`,
+        `http://157.245.50.125:8080/api/Voucher/${voucherId}`,
         {
           method: "DELETE",
         }

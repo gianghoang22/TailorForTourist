@@ -9,7 +9,7 @@ import ProductInfoModal from '../cart/ProductInfoModal';
 import axios from 'axios';
 
 const CHECKOUT_API = {
-  confirmOrder: "https://localhost:7194/api/AddCart/confirmorder"
+  confirmOrder: "http://157.245.50.125:8080/api/AddCart/confirmorder"
 };
 
 const Checkout = () => {
