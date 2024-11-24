@@ -16,6 +16,14 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import "./UserManagement.scss";
 
+const roles = [
+  { id: 1, name: "Admin" },
+  { id: 2, name: "Staff" },
+  { id: 3, name: "Customer" },
+  { id: 4, name: "Manager" },
+  { id: 5, name: "Tailor Partner" },
+];
+
 const UserManagement = () => {
   const [userData, setUserData] = useState([]);
   const [newUser, setNewUser] = useState({
@@ -27,7 +35,7 @@ const UserManagement = () => {
     isConfirmed: true,
     phone: "0915230240",
     password: "123456",
-    roleId: 2,
+    roleId: 2, // Default role
     status: "Active",
   });
   const [editIndex, setEditIndex] = useState(null);
@@ -38,10 +46,31 @@ const UserManagement = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch("https://localhost:7194/api/User");
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError("You need to log in first!");
+          return;
+        }
+
+        const response = await fetch("https://localhost:7194/api/User", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 401) {
+          setError(
+            "You are not authorized to access this resource. Please log in."
+          );
+          localStorage.removeItem("token");
+          window.location.href = "/signin";
+          return;
+        }
+
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
+
         const data = await response.json();
         setUserData(data);
       } catch (error) {
@@ -58,12 +87,10 @@ const UserManagement = () => {
   };
 
   const validateEmailUnique = (email) => {
-    // Check if the email is unique
     return !userData.some((user) => user.email === email);
   };
 
   const validateFields = () => {
-    // Check if all required fields are filled
     return (
       newUser.name &&
       newUser.email &&
@@ -75,23 +102,28 @@ const UserManagement = () => {
   };
 
   const handleAdd = async () => {
-    // Check if email is unique
     if (!validateEmailUnique(newUser.email)) {
       setError("Email must be unique.");
       return;
     }
 
-    // Check if all fields are filled
     if (!validateFields()) {
       setError("All fields must be filled.");
       return;
     }
 
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("You need to log in first!");
+        return;
+      }
+
       const response = await fetch("https://localhost:7194/api/User", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(newUser),
       });
@@ -105,6 +137,7 @@ const UserManagement = () => {
       setUserData([...userData, addedUser]);
       setError(null);
       setShowSuccessMessage(true);
+      window.location.reload();
     } catch (error) {
       console.error("Error adding new user:", error);
       setError(error.message);
@@ -113,11 +146,10 @@ const UserManagement = () => {
 
   const handleEdit = (user) => {
     setNewUser(user);
-    setEditIndex(user.userId); // Set the user ID to edit
+    setEditIndex(user.userId);
   };
 
   const handleUpdate = async () => {
-    // Check if email is unique, but exclude the currently edited user
     if (
       !validateEmailUnique(newUser.email) &&
       newUser.email !==
@@ -127,19 +159,25 @@ const UserManagement = () => {
       return;
     }
 
-    // Check if all fields are filled
     if (!validateFields()) {
       setError("All fields must be filled.");
       return;
     }
 
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("You need to log in first!");
+        return;
+      }
+
       const response = await fetch(
         `https://localhost:7194/api/User/${editIndex}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(newUser),
         }
@@ -161,7 +199,7 @@ const UserManagement = () => {
         roleId: 2,
         status: "Active",
       });
-      setEditIndex(null); // Clear edit index
+      setEditIndex(null);
       setError(null);
       setShowSuccessMessage(true);
       window.location.reload();
@@ -173,10 +211,19 @@ const UserManagement = () => {
 
   const handleDelete = async (userId) => {
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("You need to log in first!");
+        return;
+      }
+
       const response = await fetch(
         `https://localhost:7194/api/User/${userId}`,
         {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
       if (!response.ok) {
@@ -250,6 +297,21 @@ const UserManagement = () => {
             <MenuItem value="Female">Female</MenuItem>
             <MenuItem value="Other">Other</MenuItem>
           </TextField>
+          <TextField
+            label="Role"
+            name="roleId"
+            select
+            value={newUser.roleId}
+            onChange={handleChange}
+            variant="outlined"
+            style={{ marginRight: "1rem" }}
+          >
+            {roles.map((role) => (
+              <MenuItem key={role.id} value={role.id}>
+                {role.name}
+              </MenuItem>
+            ))}
+          </TextField>
           {editIndex !== null ? (
             <Button variant="contained" color="primary" onClick={handleUpdate}>
               Update User
@@ -287,6 +349,7 @@ const UserManagement = () => {
               <TableCell>Address</TableCell>
               <TableCell>Gender</TableCell>
               <TableCell>Status</TableCell>
+              <TableCell>Role</TableCell> {/* Added Role Column */}
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -299,6 +362,10 @@ const UserManagement = () => {
                 <TableCell>{u.address}</TableCell>
                 <TableCell>{u.gender}</TableCell>
                 <TableCell>{u.status}</TableCell>
+                <TableCell>
+                  {roles.find((role) => role.id === u.roleId)?.name}
+                </TableCell>{" "}
+                {/* Display Role Name */}
                 <TableCell>
                   <Button
                     variant="outlined"

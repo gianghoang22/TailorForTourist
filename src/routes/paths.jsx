@@ -13,7 +13,7 @@ import Fabric from "../pages/fabric/Fabric";
 
 import UserProfile from "../pages/profile/UserProfile";
 import ChangePassword from "../pages/profile/ChangePassword";
-
+import Appointment from "../pages/profile/Appointment";
 import CustomSuit from "../pages/customsuit/CustomSuit";
 import CustomStyle from "../pages/customSuit/custom/CustomStyle";
 import CustomLining from "../pages/customSuit/custom/CustomLining";
@@ -52,6 +52,9 @@ import ContactUs from "../pages/contact/ContactUs";
 import OrderDetails from "../pages/orderDetails/OrderDetails";
 import CreatePassword from "../pages/signIn/CreatePassword";
 import TailorDashboard from "../pages/tailor/TailorDashboard";
+
+import ProtectedRoute from "../pages/ProtectedRoute/ProtectedRoute";
+
 export const routes = [
   {
     path: "/",
@@ -121,7 +124,13 @@ export const routes = [
   },
   {
     path: "/booking",
-    element: <BookingPage />,
+    element: (
+      <ProtectedRoute
+        element={<BookingPage />}
+        allowedRoles={["customer"]} // Specify allowed roles for logged-in users
+        allowGuestAccess={true} // Custom prop to allow guest access
+      />
+    ),
   },
   {
     path: "/booking-thanks",
@@ -133,21 +142,29 @@ export const routes = [
   },
   {
     path: "/profile",
-    element: <UserProfile />,
+    element: (
+      <ProtectedRoute
+        element={<UserProfile />}
+        allowedRoles={["customer"]} // Specify allowed roles
+      />
+    ),
     children: [
       {
-        path: "change-password", // This will be /profile/change-password
+        path: "change-password",
         element: <ChangePassword />,
       },
       {
-        path: "order-history", // This will be /profile/change-password
+        path: "order-history",
         element: <OrderHistory />,
       },
       {
-        path: "measurement", // This will be /profile/change-password
+        path: "measurement",
         element: <Measurement />,
       },
-      // Add other profile-related children routes here if needed
+      {
+        path: "appointment",
+        element: <Appointment />,
+      },
     ],
   },
   {

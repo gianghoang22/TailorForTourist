@@ -61,6 +61,7 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 export default function SignIn(props) {
   const [emailError, setEmailError] = React.useState("");
   const [passwordError, setPasswordError] = React.useState("");
+  const [authError, setAuthError] = React.useState(""); // New state for authentication error
   const [open, setOpen] = React.useState(false);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -112,6 +113,8 @@ export default function SignIn(props) {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        setAuthError("Invalid email or password."); // Set the auth error message
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
 
@@ -150,13 +153,16 @@ export default function SignIn(props) {
         case "admin":
           navigate("/admin");
           break;
+        case "tailor partner":
+          navigate("/tailor");
+          break;
         default:
           console.error("User role is not recognized.");
           break;
       }
     } catch (error) {
       console.error("There was an error with the login request:", error);
-      // Handle error (e.g., show an error message to the user)
+      setAuthError("Invalid email or password."); // Set the auth error message
     }
   };
 
@@ -245,6 +251,14 @@ export default function SignIn(props) {
             <Button type="submit" fullWidth variant="contained">
               Sign in
             </Button>
+            {authError && (
+              <Typography
+                color="error"
+                sx={{ textAlign: "center", marginTop: 1 }}
+              >
+                {authError}
+              </Typography>
+            )}
             <Typography sx={{ textAlign: "center" }}>
               Don&apos;t have an account?{" "}
               <span>

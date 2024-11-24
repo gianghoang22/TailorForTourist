@@ -95,6 +95,68 @@ header {
   gap: 20px;
 }
 
+.orders-table {
+  width: 100%;
+  border-collapse: collapse; /* Ensure borders are combined */
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+  thead {
+    background-color: #f9fafb;
+
+    th {
+      padding: 10px;
+      border: 2px solid #e5e7eb; /* Header cell border */
+      text-align: left;
+      font-weight: bold;
+    }
+  }
+
+  tbody {
+    tr {
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.05); /* Row hover effect */
+      }
+    }
+
+    td {
+      padding: 10px;
+      border: 1px solid #e5e7eb; /* Body cell border */
+
+      button {
+        background-color: #f02f15; /* Default button color for others */
+        color: #fff;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+
+        &:hover {
+          background-color: #2563eb; /* Darker blue on hover */
+        }
+      }
+    }
+  }
+}
+
+/* Specific style for the Edit button */
+.orders-table td .edit-button {
+  background-color: #4caf50; /* Green background */
+  color: white; /* White text */
+  border: none; /* No border */
+  padding: 5px 10px; /* Padding */
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+  transition: background-color 0.3s; /* Transition effect */
+
+  &:hover {
+    background-color: #45a049; /* Darker green on hover */
+  }
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -187,7 +249,10 @@ header {
 }
 
 .new-clients,
-.revenue-chart {
+.revenue-chart,
+.recent-emails,
+.todo-list,
+.board-meeting {
   background-color: #fff;
   border-radius: 10px;
   padding: 20px;
@@ -244,10 +309,6 @@ header {
 }
 
 .recent-emails {
-  background-color: #fff;
-  border-radius: 10px;
-  padding: 20px;
-
   h3 {
     font-size: 18px;
     margin-bottom: 15px;
@@ -288,13 +349,6 @@ header {
       font-size: 14px;
     }
   }
-}
-
-.todo-list,
-.board-meeting {
-  background-color: #fff;
-  border-radius: 10px;
-  padding: 20px;
 }
 
 .todo-list {
