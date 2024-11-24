@@ -5,7 +5,19 @@ import "./AdminDashboard.scss";
 const AdminDashboard = () => {
   const location = useLocation();
   const notificationCount = 5; // Example notification count
+  const handleLogout = () => {
+    // Clear user-related data from localStorage
 
+    localStorage.removeItem("userID");
+
+    localStorage.removeItem("roleID");
+
+    localStorage.removeItem("token");
+
+    Copy;
+    // Redirect to the login page
+    navigate("/signin");
+  };
   return (
     <div className="admin-dashboard">
       <div className="flex">
@@ -77,24 +89,13 @@ const AdminDashboard = () => {
               </li>
 
               <li>
-                <a href="#">
-                  <i className="fas fa-box"></i> Product
-                </a>
-              </li>
-              <li>
-                <a href="#">
-                  <i className="fas fa-blog"></i> Blog
-                </a>
-              </li>
-              <li>
-                <a href="#">
-                  <i className="fas fa-sign-in-alt"></i> Login
-                </a>
-              </li>
-              <li>
-                <a href="#">
-                  <i className="fas fa-exclamation-circle"></i> Not Found
-                </a>
+                <Link
+                  className="logout-link"
+                  to="/signin"
+                  onClick={handleLogout}
+                >
+                  <i className="fas fa-logout"></i> Logout
+                </Link>
               </li>
             </ul>
           </div>

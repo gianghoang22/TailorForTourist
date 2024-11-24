@@ -29,7 +29,7 @@ import MeasureList from "../pages/staff/staffManager/MeasureList";
 import OrderHistory from "../pages/profile/OrderHistory";
 import Measurement from "../pages/profile/Measurement";
 
-import Cart from "../pages/cart/cart";
+// import Cart from "../pages/cart/cart";
 import BookingThanks from "../pages/booking/BookingThanks";
 
 import StaffManagement from "../pages/managerdashboard/StaffManagement";
@@ -136,10 +136,10 @@ export const routes = [
     path: "/booking-thanks",
     element: <BookingThanks />,
   },
-  {
-    path: "/cart",
-    element: <Cart />,
-  },
+  // {
+  //   path: "/cart",
+  //   element: <Cart />,
+  // },
   {
     path: "/profile",
     element: (

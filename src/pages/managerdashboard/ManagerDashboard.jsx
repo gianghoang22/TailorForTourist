@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogTitle,
   MenuItem,
+  Select,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import "./ManagerDashboard.scss";
@@ -44,7 +45,17 @@ const ManagerDashboard = () => {
   const [loading, setLoading] = useState(false);
   const notificationCount = 5;
   const [tailorPartners, setTailorPartners] = useState([]);
+  const [processingStatuses, setProcessingStatuses] = useState({});
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const handleLogout = () => {
+    // Clear user-related data from localStorage
+    localStorage.removeItem("userID");
+    localStorage.removeItem("roleID");
+    localStorage.removeItem("token");
 
+    // Redirect to the login page
+    navigate("/signin");
+  };
   useEffect(() => {
     fetchOrders();
     fetchTailorPartners();
@@ -119,6 +130,81 @@ const ManagerDashboard = () => {
 
     fetchUsersAndStores();
   }, [orders]);
+
+  useEffect(() => {
+    const fetchProcessingStatuses = async () => {
+      const token = localStorage.getItem("token");
+
+      const statusPromises = orders.map(async (order) => {
+        try {
+          const response = await fetch(
+            `https://localhost:7194/api/ProcessingTailor/GetByOrderId/${order.orderId}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch status for order ${order.orderId}`
+            );
+          }
+          const data = await response.json();
+          return [order.orderId, data.status];
+        } catch (error) {
+          console.error(
+            `Error fetching processing status for ${order.orderId}:`,
+            error
+          );
+          return [order.orderId, "Unknown"];
+        }
+      });
+
+      const statuses = await Promise.all(statusPromises);
+      setProcessingStatuses(Object.fromEntries(statuses));
+    };
+
+    if (orders.length > 0) {
+      fetchProcessingStatuses();
+    }
+  }, [orders]);
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Pending":
+        return "brown";
+      case "Processing":
+        return "blue";
+      case "Finish":
+        return "green";
+      case "Cancel":
+        return "red";
+      default:
+        return "gray";
+    }
+  };
+
+  const getProcessingStatusColor = (status) => {
+    switch (status) {
+      case "Pending":
+        return "brown";
+      case "Doing":
+        return "blue";
+      case "Due":
+        return "Orange";
+      case "Finish":
+        return "green";
+      case "Not Start":
+        return "Pink";
+      case "Cancel":
+        return "red";
+      default:
+        return "gray";
+    }
+  };
 
   const fetchOrders = async () => {
     const token = localStorage.getItem("token");
@@ -220,6 +306,66 @@ const ManagerDashboard = () => {
     setSearchTerm(e.target.value?.toLowerCase() || "");
   };
 
+  const handleStatusChange = async (orderId, newStatus) => {
+    setUpdatingStatus(true);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `https://localhost:7194/api/Orders/updatestatus/${orderId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(newStatus),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.orderId === orderId ? { ...order, status: newStatus } : order
+        )
+      );
+
+      await fetchOrderStatus(orderId);
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      setError("Failed to update order status. Please try again.");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const fetchOrderStatus = async (orderId) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `https://localhost:7194/api/Orders/${orderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.orderId === orderId ? { ...order, status: data.status } : order
+        )
+      );
+    } catch (error) {
+      console.error("Error fetching updated order status:", error);
+    }
+  };
+
   const filteredOrders = useMemo(() => {
     if (!Array.isArray(orders)) return [];
     return orders.filter((order) =>
@@ -270,6 +416,13 @@ const ManagerDashboard = () => {
                   to="/manager/shipment"
                 >
                   <i className="fas fa-shipping-fast"></i> Shipment
+                </Link>
+                <Link
+                  className="logout-link"
+                  to="/signin"
+                  onClick={handleLogout}
+                >
+                  <i className="fas fa-logout"></i> Logout
                 </Link>
               </li>
             </ul>
@@ -358,75 +511,109 @@ const ManagerDashboard = () => {
                     }}
                   />
                 </div>
-
                 <TableContainer component={Paper}>
                   <Table>
                     <TableHead>
                       <TableRow>
                         <TableCell>User Name</TableCell>
                         <TableCell>Store Name</TableCell>
+
                         <TableCell>Order Date</TableCell>
                         <TableCell>Shipped Date</TableCell>
                         <TableCell>Note</TableCell>
                         <TableCell>Paid</TableCell>
                         <TableCell>Status</TableCell>
                         <TableCell>Total Price</TableCell>
+                        <TableCell>Processing Status</TableCell>
                         <TableCell>Actions</TableCell>
+                        <TableCell>Update Status</TableCell>
                       </TableRow>
                     </TableHead>
-                    {Array.isArray(orders) && orders.length > 0 ? (
-                      <TableBody>
-                        {orders.map((order) => (
-                          <TableRow key={order?.orderId || Math.random()}>
-                            <TableCell>
-                              {users[order?.userID] || "Unknown"}
-                            </TableCell>
-                            <TableCell>
-                              {stores[order?.storeId] || "Unknown"}
-                            </TableCell>
-                            <TableCell>
-                              {order?.orderDate
-                                ? new Date(order.orderDate).toLocaleDateString()
-                                : "-"}
-                            </TableCell>
-                            <TableCell>
-                              {order?.shippedDate
-                                ? new Date(
-                                    order.shippedDate
-                                  ).toLocaleDateString()
-                                : "-"}
-                            </TableCell>
-                            <TableCell>{order?.note || "-"}</TableCell>
-                            <TableCell>{order?.paid ? "Yes" : "No"}</TableCell>
-                            <TableCell>{order?.status || "-"}</TableCell>
-                            <TableCell>
-                              ${order?.totalPrice?.toFixed(2) || "0.00"}
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="outlined"
-                                color="primary"
-                                onClick={() => handleProcessTailor(order)}
-                                disabled={!order}
-                              >
-                                Process Tailor
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    ) : (
-                      <TableBody>
-                        <TableRow>
-                          <TableCell colSpan={9} align="center">
-                            No orders found
+                    <TableBody>
+                      {filteredOrders.map((order) => (
+                        <TableRow key={order.orderId}>
+                          <TableCell>
+                            {users[order.userID] || "Unknown"}
+                          </TableCell>
+                          <TableCell>
+                            {stores[order.storeId] || "Unknown"}
+                          </TableCell>
+                          <TableCell>
+                            {order.orderDate
+                              ? new Date(order.orderDate).toLocaleDateString()
+                              : "-"}
+                          </TableCell>
+                          <TableCell>
+                            {order.shippedDate
+                              ? new Date(order.shippedDate).toLocaleDateString()
+                              : "-"}
+                          </TableCell>
+                          <TableCell>{order.note || "-"}</TableCell>
+                          <TableCell>{order.paid ? "Yes" : "No"}</TableCell>
+                          <TableCell>
+                            <span
+                              style={{
+                                backgroundColor: getStatusColor(order.status),
+                                color: "white",
+                                padding: "4px 8px",
+                                borderRadius: "5px",
+                                fontSize: "12px",
+                              }}
+                            >
+                              {order.status || "-"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            ${order.totalPrice?.toFixed(2) || "0.00"}
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              style={{
+                                backgroundColor: getProcessingStatusColor(
+                                  processingStatuses[order.orderId]
+                                ),
+                                color: "white",
+                                padding: "4px 8px",
+                                borderRadius: "5px",
+                                fontSize: "12px",
+                              }}
+                            >
+                              {processingStatuses[order.orderId] ||
+                                "Loading..."}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outlined"
+                              color="primary"
+                              onClick={() => handleProcessTailor(order)}
+                              disabled={!order}
+                            >
+                              Process Tailor
+                            </Button>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={order.status}
+                              onChange={(e) =>
+                                handleStatusChange(
+                                  order.orderId,
+                                  e.target.value
+                                )
+                              }
+                              disabled={updatingStatus}
+                            >
+                              <MenuItem value="Pending">Pending</MenuItem>
+                              <MenuItem value="Processing">Processing</MenuItem>
+                              <MenuItem value="Finish">Finish</MenuItem>
+                              <MenuItem value="Cancel">Cancel</MenuItem>
+                            </Select>
                           </TableCell>
                         </TableRow>
-                      </TableBody>
-                    )}
+                      ))}
+                    </TableBody>
                   </Table>
                 </TableContainer>
-
                 <Dialog
                   open={processingDialogOpen}
                   onClose={() => setProcessingDialogOpen(false)}
@@ -456,7 +643,8 @@ const ManagerDashboard = () => {
                       margin="dense"
                     >
                       <MenuItem value="Doing">Doing</MenuItem>
-                      <MenuItem value="Delivery">Delivery</MenuItem>
+                      <MenuItem value="Not Start">Not Start</MenuItem>
+                      <MenuItem value="Finish">Finish</MenuItem>
                       <MenuItem value="Due">Due</MenuItem>
                       <MenuItem value="Cancel">Cancel</MenuItem>
                     </TextField>
