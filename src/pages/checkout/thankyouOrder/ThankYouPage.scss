@@ -1,0 +1,46 @@
+.thank-you-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f9f9f9;
+    font-family: 'Arial', sans-serif;
+  
+    .thank-you-message {
+      text-align: center;
+      background-color: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 500px;
+  
+      h1 {
+        font-size: 2rem;
+        color: #4caf50;
+        margin-bottom: 1rem;
+      }
+  
+      p {
+        font-size: 1rem;
+        color: #555;
+        margin-bottom: 1.5rem;
+      }
+  
+      .back-home-button {
+        padding: 0.75rem 2rem;
+        font-size: 1rem;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+  
+        &:hover {
+          background-color: #45a049;
+        }
+      }
+    }
+  }
+  
