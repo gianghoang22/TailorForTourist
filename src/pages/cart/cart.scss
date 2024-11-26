@@ -1,139 +1,104 @@
+/* Cart.scss */
+
 .page-with-side-bar {
-  float: left;
-  width: 100%;
-  padding-top: 30px;
-}
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  font-family: Arial, sans-serif;
 
-.all {
-  position: relative;
-  margin: 0 auto;
-  width: 1170px;
-  max-width: 100%;
-}
+  .all {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
 
-.page-with-side-bar .left-side {
-  float: left;
-  clear: left;
-  min-height: 1px;
-  margin-bottom: 30px;
-  width: 270px;
+    .left-side {
+      margin-bottom: 20px;
 
-  .sec-title {
-    color: #000;
-    text-transform: uppercase;
-    font-size: 36px;
-    line-height: 1;
-    margin-bottom: 30px;
-}
-}
+      .sec-title {
+        text-align: center;
 
-.page-with-side-bar .right-main {
-  float: right;
-  clear: right;
-  min-height: 1px;
-  margin-bottom: 30px;
-  width: calc(100% - 300px);
-}
+        .tt-txt {
+          font-size: 2rem;
+          font-weight: bold;
+          color: #2c3e50;
 
-.woocommerce table.cart_table {
-  border: 1px solid rgba(0, 0, 0, .1);
-  margin: 0 -1px 24px 0;
-  text-align: left;
-  width: 100%;
-  border-collapse: separate;
-  border-radius: 5px;
-}
+          .tt-sub {
+            font-size: 1.2rem;
+            color: #16a085;
+            display: block;
+            margin-bottom: 5px;
+          }
+        }
+      }
+    }
 
-.woocommerce table.cart_table th {
-  font-weight: 700;
-  padding: 9px 12px;
-}
+    ul {
+      list-style: none;
+      padding: 0;
 
-.woocommerce table.cart_table td {
-  border-top: 1px solid rgba(0, 0, 0, .1);
-  padding: 6px 12px;
-  vertical-align: middle;
-}
+      .cart-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid #ddd;
 
-.woocommerce .cart-collaterals {
-  width: 100%;
-}
+        .custom-product-details {
+          flex: 1;
 
-.woocommerce .cart-collaterals .cart_totals, .woocommerce-page .cart-collaterals .cart_totals {
-  float: right;
-  width: 48%;
-}
+          p {
+            margin: 5px 0;
 
-.cart_totals > h2 {
-  display: block;
-  font-weight: 400;
-  color: #707070;
-  line-height: 1;
-  font-weight: 24px;
-  font-size: 20px;
-  margin-bottom: 10px;
-  font-weight: bold;
-  text-transform: uppercase;
-}
+            strong {
+              color: #2c3e50;
+            }
+          }
+        }
 
-.woocommerce-cart .cart-collaterals .cart_totals table {
-  border-collapse: separate;
-    margin: 0 0 6px;
-    padding: 0;
-}
+        .remove-button {
+          padding: 8px 15px;
+          background-color: #e74c3c;
+          color: #fff;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: background-color 0.3s;
 
-.woocommerce-cart .cart-collaterals .cart_totals tr th {
-  border-top: 1px solid #ebe9eb;
-}
+          &:hover {
+            background-color: #c0392b;
+          }
+        }
+      }
+    }
 
-.woocommerce .cart-collaterals table.cart_table td {
-  padding: 6px 12px;
-  vertical-align: middle;
-}
+    .cart-total {
+      text-align: right;
+      margin-top: 20px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #2c3e50;
 
-.wc-proceed-to-checkout {
-  padding: 1em 0;
-}
+      p {
+        margin: 0;
+      }
+    }
 
-.woocommerce button {
-  display: inline-block;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    -ms-appearance: none;
-    -o-appearance: none;
-    border: none;
-    background-color: #a4712a;
-    color: white;
-    height: 40px;
-    line-height: 20px;
-    -webkit-transition: all 0.3s ease-in-out;
-    -moz-transition: all 0.3s ease-in-out;
-    -o-transition: all 0.3s ease-in-out;
-    -ms-transition: all 0.3s ease-in-out;
-    transition: all 0.3s ease-in-out;
-    padding: 10px 20px;
-    text-align: center;
-    border-radius: 4px;
-}
+    a {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #16a085;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+      text-align: center;
+      transition: background-color 0.3s;
 
-.return-to-shop {
-  font-size: 100%;
-    margin: 0;
-    line-height: 1;
-    cursor: pointer;
-    position: relative;
-    text-decoration: none;
-    overflow: visible;
-    padding: .618em 1em;
-    font-weight: 700;
-    border-radius: 3px;
-    left: auto;
-    color: #515151;
-    background-color: #ebe9eb;
-    border: 0;
-    display: inline-block;
-    background-image: none;
-    box-shadow: none;
-    text-shadow: none;
+      &:hover {
+        background-color: #138d75;
+      }
+    }
+  }
 }

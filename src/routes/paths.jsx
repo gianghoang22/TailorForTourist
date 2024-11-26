@@ -29,7 +29,6 @@ import MeasureList from "../pages/staff/staffManager/MeasureList";
 import OrderHistory from "../pages/profile/OrderHistory";
 import Measurement from "../pages/profile/Measurement";
 
-// import Cart from "../pages/cart/cart";
 import BookingThanks from "../pages/booking/BookingThanks";
 
 import StaffManagement from "../pages/managerdashboard/StaffManagement";
@@ -62,7 +61,9 @@ export const routes = [
   },
   {
     path: "/admin",
-    element: <AdminDashboard />,
+    element: (
+      <ProtectedRoute element={<AdminDashboard />} allowedRoles={["admin"]} />
+    ),
     children: [
       {
         path: "user-management",
@@ -90,12 +91,15 @@ export const routes = [
     path: "/manager",
     element: (
       <ErrorBoundary>
-        <ManagerDashboard />
+        <ProtectedRoute
+          element={<ManagerDashboard />}
+          allowedRoles={["store manager"]}
+        />
       </ErrorBoundary>
     ),
     children: [
       {
-        path: "staff-management", // This will be /manager/staff-management
+        path: "staff-management",
         element: <StaffManagement />,
       },
       {
@@ -106,8 +110,6 @@ export const routes = [
         path: "shipment",
         element: <ShipmentTracker />,
       },
-
-      // Add other children routes here if needed
     ],
   },
   {
@@ -120,15 +122,20 @@ export const routes = [
   },
   {
     path: "/tailor",
-    element: <TailorDashboard />,
+    element: (
+      <ProtectedRoute
+        element={<TailorDashboard />}
+        allowedRoles={["tailor partner"]}
+      />
+    ),
   },
   {
     path: "/booking",
     element: (
       <ProtectedRoute
         element={<BookingPage />}
-        allowedRoles={["customer"]} // Specify allowed roles for logged-in users
-        allowGuestAccess={true} // Custom prop to allow guest access
+        allowedRoles={["customer"]}
+        allowGuestAccess={true}
       />
     ),
   },
@@ -136,17 +143,10 @@ export const routes = [
     path: "/booking-thanks",
     element: <BookingThanks />,
   },
-  // {
-  //   path: "/cart",
-  //   element: <Cart />,
-  // },
   {
     path: "/profile",
     element: (
-      <ProtectedRoute
-        element={<UserProfile />}
-        allowedRoles={["customer"]} // Specify allowed roles
-      />
+      <ProtectedRoute element={<UserProfile />} allowedRoles={["customer"]} />
     ),
     children: [
       {
@@ -203,7 +203,6 @@ export const routes = [
     path: "/signup",
     element: <SignUp />,
   },
-
   {
     path: "/staff",
     element: <StaffDashboard />,
@@ -227,47 +226,6 @@ export const routes = [
       {
         path: "measurement",
         element: <MeasureList />,
-      },
-    ],
-  },
-  // {
-  //   path: "/custom-suits",
-  //   element: <CustomSuit />,
-  //   children: [
-  //     {
-  //       path: "fabric",
-  //       element: <CustomFabric />,
-  //     },
-  //     {
-  //       path: "style",
-  //       element: <CustomStyle />,
-  //     },
-  //     {
-  //       path: "lining",
-  //       element: <CustomLining />,
-  //     },
-  //   ],
-  // },
-
-  {
-    path: "/staff",
-    element: <StaffDashboard />,
-    children: [
-      {
-        path: "",
-        element: <StaffDashboard />,
-      },
-      {
-        path: "order",
-        element: <OrderList />,
-      },
-      {
-        path: "booking",
-        element: <BookingList />,
-      },
-      {
-        path: "shipment",
-        element: <ShipmentList />,
       },
     ],
   },
