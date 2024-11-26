@@ -19,7 +19,7 @@ const VoucherManagement = () => {
   const [voucherData, setVoucherData] = useState([]);
   const [newVoucher, setNewVoucher] = useState({
     voucherId: null,
-    status: "OnGoing",
+    status: "Pending",
     voucherCode: "",
     description: "",
     discountNumber: 0,
@@ -49,19 +49,49 @@ const VoucherManagement = () => {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       const currentDate = new Date();
-      const updatedVouchers = voucherData.map((voucher) => {
-        if (
-          voucher.status === "OnGoing" &&
-          new Date(voucher.dateEnd) < currentDate
-        ) {
-          return { ...voucher, status: "Expired" };
-        }
-        return voucher;
-      });
+      const updatedVouchers = await Promise.all(
+        voucherData.map(async (voucher) => {
+          const startDate = new Date(voucher.dateStart);
+          const endDate = new Date(voucher.dateEnd);
+          let newStatus = voucher.status;
+
+          if (currentDate < startDate) {
+            newStatus = "Pending";
+          } else if (currentDate >= startDate && currentDate <= endDate) {
+            newStatus = "OnGoing";
+          } else if (currentDate > endDate) {
+            newStatus = "Expired";
+          }
+
+          if (newStatus !== voucher.status) {
+            const updatedVoucher = { ...voucher, status: newStatus };
+            try {
+              const response = await fetch(
+                `https://localhost:7194/api/Voucher/${voucher.voucherId}`,
+                {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(updatedVoucher),
+                }
+              );
+              if (!response.ok) {
+                throw new Error("Failed to update voucher status");
+              }
+              return updatedVoucher;
+            } catch (error) {
+              console.error("Error updating voucher status:", error);
+              return voucher;
+            }
+          }
+          return voucher;
+        })
+      );
       setVoucherData(updatedVouchers);
-    }, 10000); // Check every minute
+    }, 10000); // Check every 10 seconds
 
     return () => clearInterval(interval);
   }, [voucherData]);
@@ -138,7 +168,7 @@ const VoucherManagement = () => {
       setShowSuccessMessage(true);
       setNewVoucher({
         voucherId: null,
-        status: "OnGoing",
+        status: "Pending",
         voucherCode: "",
         description: "",
         discountNumber: 0,
@@ -221,7 +251,7 @@ const VoucherManagement = () => {
       setVoucherData(updatedVouchers);
       setNewVoucher({
         voucherId: null,
-        status: "OnGoing",
+        status: "Pending",
         voucherCode: "",
         description: "",
         discountNumber: 0,
@@ -267,6 +297,8 @@ const VoucherManagement = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
+      case "Pending":
+        return "orange";
       case "OnGoing":
         return "green";
       case "Expired":
