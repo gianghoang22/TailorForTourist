@@ -10,6 +10,10 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import MuiCard from "@mui/material/Card";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import { createTheme, ThemeProvider, styled } from "@mui/material/styles";
 import getSignUpTheme from "./theme/getSignUpTheme";
 import { GoogleIcon, FacebookIcon } from "./CustomIcons";
@@ -17,7 +21,7 @@ import TemplateFrame from "./TemplateFrame";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import { useNavigate } from "react-router-dom";
-
+import IMG from "./../../assets/img/icon/matcha.png";
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
@@ -66,6 +70,9 @@ export default function SignUp() {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [name, setName] = React.useState("");
+
+  const [otp, setOtp] = React.useState("");
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
   const navigate = useNavigate();
 
@@ -139,6 +146,37 @@ export default function SignUp() {
     return isValid;
   };
 
+  const handleOtpValidation = async () => {
+    try {
+      const response = await fetch(
+        "https://localhost:7194/api/Register/confirm-email",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            otp,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert("Invalid OTP. Please try again.");
+        return;
+      }
+
+      alert("Email confirmed successfully!");
+      navigate("/signin", { state: { alert: "Registered Successfully!" } });
+    } catch (error) {
+      console.error("Error validating OTP:", error);
+      alert("An error occurred. Please try again.");
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -146,7 +184,6 @@ export default function SignUp() {
     if (!validateInputs()) return;
 
     const dobValue = data.get("dob");
-    console.log("Date of birth value:", dobValue);
     const requestBody = {
       name: name,
       gender: gender,
@@ -154,7 +191,7 @@ export default function SignUp() {
       dob: dobValue,
       email: email,
       password: password,
-      roleID: 3, // Directly set roleID to 3
+      roleID: 3,
       Phone: phone,
     };
 
@@ -167,20 +204,26 @@ export default function SignUp() {
         body: JSON.stringify(requestBody),
       });
 
-      const text = await response.text();
-      console.log("Raw response text:", text);
+      const data = await response.text();
 
       if (!response.ok) {
-        console.error("Registration failed:", text);
+        // Try to parse as JSON first
+        try {
+          const errorData = JSON.parse(data);
+          alert(errorData.message || data);
+        } catch {
+          // If not JSON, show the raw text
+          alert(data);
+        }
         return;
       }
 
-      navigate("/signin", { state: { alert: "Registered Successfully!" } });
+      setIsDialogOpen(true);
     } catch (error) {
       console.error("Error during registration:", error);
+      alert("An error occurred during registration. Please try again.");
     }
   };
-
   return (
     <TemplateFrame
       toggleCustomTheme={toggleCustomTheme}
@@ -198,7 +241,19 @@ export default function SignUp() {
               p: 2,
             }}
           >
-            <Card variant="outlined">
+            <Card variant="outlined" sx={{ position: "relative" }}>
+              <img
+                src={IMG}
+                alt="Icon"
+                style={{
+                  position: "absolute",
+                  top: "16px", // Adjust vertical positioning
+                  right: "16px", // Adjust horizontal positioning
+                  width: "80px", // Adjust size as needed
+                  height: "auto",
+                  zIndex: 1, // Ensure the image is above other elements
+                }}
+              />
               <Typography
                 component="h1"
                 variant="h4"
@@ -238,19 +293,6 @@ export default function SignUp() {
                     <MenuItem value="Male">Male</MenuItem>
                     <MenuItem value="Female">Female</MenuItem>
                   </Select>
-                  {genderError && (
-                    <Typography color="error">{genderError}</Typography>
-                  )}
-                </FormControl>
-                <FormControl>
-                  <FormLabel htmlFor="address">Address</FormLabel>
-                  <TextField
-                    required
-                    fullWidth
-                    id="address"
-                    name="address"
-                    autoComplete="address"
-                  />
                 </FormControl>
                 <FormControl>
                   <FormLabel htmlFor="dob">Date of Birth</FormLabel>
@@ -263,7 +305,21 @@ export default function SignUp() {
                   />
                 </FormControl>
                 <FormControl>
-                  <FormLabel htmlFor="email">Email Address</FormLabel>
+                  <FormLabel htmlFor="phone">Phone</FormLabel>
+                  <TextField
+                    required
+                    fullWidth
+                    id="phone"
+                    name="phone"
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    error={!!phoneError}
+                    helperText={phoneError}
+                  />
+                </FormControl>
+                <FormControl>
+                  <FormLabel htmlFor="email">Email address</FormLabel>
                   <TextField
                     required
                     fullWidth
@@ -284,7 +340,6 @@ export default function SignUp() {
                     id="password"
                     name="password"
                     type="password"
-                    autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     error={!!passwordError}
@@ -292,54 +347,57 @@ export default function SignUp() {
                   />
                 </FormControl>
                 <FormControl>
-                  <FormLabel htmlFor="phone">Phone</FormLabel>
+                  <FormLabel htmlFor="address">Address</FormLabel>
                   <TextField
                     required
                     fullWidth
-                    id="phone"
-                    name="phone"
-                    autoComplete="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    error={!!phoneError}
-                    helperText={phoneError}
+                    id="address"
+                    name="address"
+                    autoComplete="street-address"
                   />
                 </FormControl>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  sx={{
-                    textTransform: "none",
-                    backgroundImage:
-                      "linear-gradient(135deg, hsl(220, 75%, 60%), hsl(210, 100%, 50%))",
-                  }}
-                >
+                <Button type="submit" variant="contained" size="large">
                   Sign up
                 </Button>
-                <Divider sx={{ my: 2, alignSelf: "center", width: "100%" }}>
-                  <Typography variant="caption">Or sign up with</Typography>
-                </Divider>
-                <Button
-                  startIcon={<GoogleIcon />}
-                  variant="outlined"
-                  sx={{ textTransform: "none" }}
-                >
-                  Sign up with Google
-                </Button>
-                <Button
-                  startIcon={<FacebookIcon />}
-                  variant="outlined"
-                  sx={{ textTransform: "none" }}
-                >
-                  Sign up with Facebook
-                </Button>
-                <Link href="/signin" variant="body2" textAlign="center">
-                  Already have an account? Sign in
-                </Link>
               </Box>
+              <Divider />
+              <Typography>
+                Already have an account?{" "}
+                <Link href="/signin" variant="body1">
+                  Log in here
+                </Link>
+              </Typography>
             </Card>
           </Stack>
         </SignUpContainer>
+
+        {/* OTP Dialog */}
+        <Dialog
+          open={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          aria-labelledby="otp-dialog-title"
+        >
+          <DialogTitle id="otp-dialog-title">Email Verification</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Please enter the OTP sent to your email to verify your account.
+            </Typography>
+            <TextField
+              required
+              fullWidth
+              label="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              sx={{ mt: 2 }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleOtpValidation} variant="contained">
+              Submit
+            </Button>
+          </DialogActions>
+        </Dialog>
       </ThemeProvider>
     </TemplateFrame>
   );

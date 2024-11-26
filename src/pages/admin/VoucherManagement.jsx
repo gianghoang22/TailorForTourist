@@ -19,7 +19,7 @@ const VoucherManagement = () => {
   const [voucherData, setVoucherData] = useState([]);
   const [newVoucher, setNewVoucher] = useState({
     voucherId: null,
-    status: "OnGoing",
+    status: "Pending",
     voucherCode: "",
     description: "",
     discountNumber: 0,
@@ -48,13 +48,106 @@ const VoucherManagement = () => {
     fetchVoucherData();
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const currentDate = new Date();
+      const updatedVouchers = await Promise.all(
+        voucherData.map(async (voucher) => {
+          const startDate = new Date(voucher.dateStart);
+          const endDate = new Date(voucher.dateEnd);
+          let newStatus = voucher.status;
+
+          if (currentDate < startDate) {
+            newStatus = "Pending";
+          } else if (currentDate >= startDate && currentDate <= endDate) {
+            newStatus = "OnGoing";
+          } else if (currentDate > endDate) {
+            newStatus = "Expired";
+          }
+
+          if (newStatus !== voucher.status) {
+            const updatedVoucher = { ...voucher, status: newStatus };
+            try {
+              const response = await fetch(
+                `https://localhost:7194/api/Voucher/${voucher.voucherId}`,
+                {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(updatedVoucher),
+                }
+              );
+              if (!response.ok) {
+                throw new Error("Failed to update voucher status");
+              }
+              return updatedVoucher;
+            } catch (error) {
+              console.error("Error updating voucher status:", error);
+              return voucher;
+            }
+          }
+          return voucher;
+        })
+      );
+      setVoucherData(updatedVouchers);
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [voucherData]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setNewVoucher({ ...newVoucher, [name]: value });
   };
 
+  const validateForm = () => {
+    const { voucherCode, description, discountNumber, dateStart, dateEnd } =
+      newVoucher;
+
+    if (
+      !voucherCode ||
+      !description ||
+      !discountNumber ||
+      !dateStart ||
+      !dateEnd
+    ) {
+      setError(
+        "All fields must be filled in. Please complete all fields before proceeding."
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  const isDuplicateVoucherCode = (code) => {
+    return voucherData.some((voucher) => voucher.voucherCode === code);
+  };
+
+  const isValidDateStart = (date) => {
+    const selectedDate = new Date(date);
+    const currentDate = new Date(today);
+    return selectedDate >= currentDate;
+  };
+
+  const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
+
   const handleAdd = async () => {
-    console.log("Sending voucher data:", newVoucher);
+    if (!validateForm()) return;
+
+    if (!isValidDateStart(newVoucher.dateStart)) {
+      setError(
+        "Start date cannot be in the past. Please select today or a future date."
+      );
+      return;
+    }
+
+    if (isDuplicateVoucherCode(newVoucher.voucherCode)) {
+      setError("Voucher code already exists. Please use a unique code.");
+      return;
+    }
+
     try {
       const response = await fetch("http://157.245.50.125:8080/api/Voucher", {
         method: "POST",
@@ -65,7 +158,7 @@ const VoucherManagement = () => {
       });
 
       if (!response.ok) {
-        const error = await response.json(); // Attempt to parse the error response
+        const error = await response.json();
         throw new Error(error.message || "Error adding new voucher");
       }
 
@@ -75,7 +168,7 @@ const VoucherManagement = () => {
       setShowSuccessMessage(true);
       setNewVoucher({
         voucherId: null,
-        status: "OnGoing",
+        status: "Pending",
         voucherCode: "",
         description: "",
         discountNumber: 0,
@@ -92,15 +185,37 @@ const VoucherManagement = () => {
     setNewVoucher(voucher);
     setEditIndex(voucher.voucherId);
   };
+
   const validateVoucherCode = (code) => {
     const bigSalePattern = /^BIGSALE\d{2}$/;
     const freeShipPattern = /^FREESHIP\d{2}$/;
     return bigSalePattern.test(code) || freeShipPattern.test(code);
   };
+
   const handleUpdate = async () => {
+    if (!validateForm()) return;
+
     if (!validateVoucherCode(newVoucher.voucherCode)) {
       setError(
         "Voucher code must be in the format 'BIGSALExx' or 'FREESHIPxx', where 'xx' is two digits."
+      );
+      return;
+    }
+
+    if (
+      voucherData.some(
+        (voucher) =>
+          voucher.voucherCode === newVoucher.voucherCode &&
+          voucher.voucherId !== editIndex
+      )
+    ) {
+      setError("Voucher code already exists. Please use a unique code.");
+      return;
+    }
+
+    if (!isValidDateStart(newVoucher.dateStart)) {
+      setError(
+        "Start date cannot be in the past. Please select today or a future date."
       );
       return;
     }
@@ -123,7 +238,6 @@ const VoucherManagement = () => {
           const errorData = await response.json();
           errorMessage = errorData.message || errorMessage;
         } catch (jsonError) {
-          // Fallback to text if JSON parsing fails
           const errorText = await response.text();
           errorMessage = errorText || errorMessage;
         }
@@ -137,7 +251,7 @@ const VoucherManagement = () => {
       setVoucherData(updatedVouchers);
       setNewVoucher({
         voucherId: null,
-        status: "OnGoing",
+        status: "Pending",
         voucherCode: "",
         description: "",
         discountNumber: 0,
@@ -152,6 +266,7 @@ const VoucherManagement = () => {
       setError(error.message);
     }
   };
+
   const handleDelete = async (voucherId) => {
     try {
       const response = await fetch(
@@ -179,6 +294,19 @@ const VoucherManagement = () => {
   const filteredVouchers = voucherData.filter((v) =>
     v.voucherCode.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Pending":
+        return "orange";
+      case "OnGoing":
+        return "green";
+      case "Expired":
+        return "red";
+      default:
+        return "inherit";
+    }
+  };
 
   return (
     <div className="voucher-management">
@@ -281,7 +409,9 @@ const VoucherManagement = () => {
                 <TableCell>{v.voucherCode}</TableCell>
                 <TableCell>{v.description}</TableCell>
                 <TableCell>{v.discountNumber}%</TableCell>
-                <TableCell>{v.status}</TableCell>
+                <TableCell style={{ color: getStatusColor(v.status) }}>
+                  {v.status}
+                </TableCell>
                 <TableCell>
                   {new Date(v.dateStart).toLocaleDateString()}
                 </TableCell>

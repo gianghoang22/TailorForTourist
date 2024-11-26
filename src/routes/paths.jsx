@@ -6,6 +6,7 @@ import BookingPage from "../pages/booking/BookingPage";
 import Checkout from "../pages/checkout/Checkout";
 import MeasurementGuide from "../pages/measurementGuide/MeasurementGuide";
 import OrderReceive from "../pages/checkout/orderReceive/OrderReceive";
+import ThankYouPage from "../pages/checkout/thankyouOrder/ThankYouPage";
 
 import ProductPage from "../pages/product/ProductPage";
 import ProductDetail from "../pages/product/ProductDetail";
@@ -13,8 +14,8 @@ import Fabric from "../pages/fabric/Fabric";
 
 import UserProfile from "../pages/profile/UserProfile";
 import ChangePassword from "../pages/profile/ChangePassword";
-
-import CustomSuit from "../pages/customsuit/CustomSuit";
+import Appointment from "../pages/profile/Appointment";
+import CustomSuit from "../pages/customSuit/CustomSuit";
 import CustomStyle from "../pages/customSuit/custom/CustomStyle";
 import CustomLining from "../pages/customSuit/custom/CustomLining";
 import CustomFabric from "../pages/customSuit/custom/CustomFabric";
@@ -51,6 +52,7 @@ import Payment from "../pages/payment/payment";
 import ContactUs from "../pages/contact/ContactUs";
 import OrderDetails from "../pages/orderDetails/OrderDetails";
 import CreatePassword from "../pages/signIn/CreatePassword";
+import { element } from "prop-types";
 
 export const routes = [
   {
@@ -143,6 +145,10 @@ export const routes = [
         path: "measurement", // This will be /profile/change-password
         element: <Measurement />,
       },
+      {
+        path: "appointment",
+        element: <Appointment />,
+      },
       // Add other profile-related children routes here if needed
     ],
   },
@@ -161,6 +167,10 @@ export const routes = [
   {
     path: "/checkout",
     element: <Checkout />,
+  },
+  {
+    path: "/checkout/order-confirm",
+    element: <ThankYouPage/>,
   },
   {
     path: "/checkout/order-receive",

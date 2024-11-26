@@ -38,6 +38,14 @@ const ProfileNav = () => {
             <FaShoppingBag /> Orders
           </Link>
         </li>
+        <li>
+          <Link
+            to="/profile/appointment"
+            className={activeLink("/profile/appointment")}
+          >
+            <FaShoppingBag /> Appointments
+          </Link>
+        </li>
       </ul>
     </nav>
   );

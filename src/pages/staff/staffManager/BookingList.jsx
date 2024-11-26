@@ -1,50 +1,53 @@
-import React, { useEffect, useState } from 'react';
-import { List, ListItem, ListItemText, Button } from '@mui/material';
+import React, { useEffect, useState } from "react";
+import { List, ListItem, ListItemText, Button } from "@mui/material";
 
-const BASE_URL = 'http://157.245.50.125:8080/api';
+const BASE_URL = "https://localhost:7194/api";
 
 const fetchAllBookings = async () => {
   const response = await fetch(`${BASE_URL}/Booking`);
   if (!response.ok) {
-    throw new Error('Failed to fetch bookings');
+    throw new Error("Failed to fetch bookings");
   }
   return response.json();
 };
 
 const deleteBooking = async (id) => {
   const response = await fetch(`${BASE_URL}/Booking/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
   if (!response.ok) {
-    throw new Error('Failed to delete booking');
+    throw new Error("Failed to delete booking");
   }
   return response.json();
 };
 
-const BookingList = () => {
-  const [bookings, setBookings] = useState([]);
+const BookingList = ({ bookings }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchBookings = async () => {
+    const fetchAndSetBookings = async () => {
       try {
-        const data = await fetchAllBookings();
-        setBookings(data);
+        if (!bookings || bookings.length === 0) {
+          const data = await fetchAllBookings();
+          setBookings(data);
+        } else {
+          setLoading(false);
+        }
       } catch (err) {
         setError(err.message);
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchBookings();
-  }, []);
+    fetchAndSetBookings();
+  }, [bookings]);
 
   const handleDelete = async (id) => {
     try {
       await deleteBooking(id);
-      setBookings(prevBookings => prevBookings.filter(booking => booking.id !== id));
+      setBookings((prevBookings) =>
+        prevBookings.filter((booking) => booking.id !== id)
+      );
     } catch (err) {
       setError(err.message);
     }
@@ -67,7 +70,13 @@ const BookingList = () => {
               primary={`Booking ID: ${booking.id}`}
               secondary={`Customer: ${booking.customerName} - Date: ${new Date(booking.bookingDate).toLocaleDateString()}`}
             />
-            <Button variant="contained" color="secondary" onClick={() => handleDelete(booking.id)}>Delete</Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => handleDelete(booking.id)}
+            >
+              Delete
+            </Button>
           </ListItem>
         ))}
       </List>

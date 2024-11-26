@@ -1,10 +1,9 @@
 import React from "react";
-import "../navigation/Navigation.scss";
+import "../navigation/Navigation.scss"; // Adjust the path as necessary
 import "bootstrap/dist/css/bootstrap.min.css";
-import logo from "../../../assets/img/logo/logo.png";
-import { useNavigate } from "react-router-dom";
-import { Link } from 'react-router-dom';
-
+import logo from "./../../../assets/img/icon/matcha.png"; // Adjust the path as necessary
+import { useNavigate, Link } from "react-router-dom";
+import { FaSignInAlt, FaSignOutAlt, FaCalendarAlt } from "react-icons/fa"; // Import icons
 
 export const Navigation = () => {
   const navigate = useNavigate();
@@ -19,15 +18,24 @@ export const Navigation = () => {
     navigate("/signin");
   };
 
-  const isLoggedIn = !!localStorage.getItem("userID"); // Check if userID exists in localStorage
+  const userID = localStorage.getItem("userID");
+  const roleID = localStorage.getItem("roleID"); // Get the roleID from localStorage
+  const isLoggedIn = !!userID; // Check if userID exists in localStorage
+
+  console.log("Current roleID:", roleID); // Debugging line to check roleID
 
   return (
     <header className="header-area header_area">
       <div className="main-header header-sticky">
         <div className="container-header d-flex justify-content-between align-items-center">
           <div className="logo">
-            <a href="#">
-              <img src={logo} alt="Logo" />
+            <a href="/">
+              <img
+                src={logo}
+                alt="Logo"
+                style={{ width: "160px", height: "auto" }}
+              />{" "}
+              {/* Adjust the width as needed */}
             </a>
           </div>
           <nav className="main-menu d-none d-lg-block">
@@ -63,7 +71,6 @@ export const Navigation = () => {
                 <li>
                   <a href="#">PANTS</a>
                   <ul className="submenu">
-                    
                     <li>
                       <a href="#">PANTS COLLECTIONS</a>
                     </li>
@@ -133,32 +140,37 @@ export const Navigation = () => {
                   </ul>
                 </li>
                 <li>
-                <Link to="/contact-us">CONTACT</Link>
+                  <Link to="/contact-us">CONTACT</Link>
                 </li>
                 <li>
-                <Link to="/cart">YOUR CART</Link>
+                  <Link to="/cart">CART</Link>
                 </li>
-                {isLoggedIn && (
+                {isLoggedIn && roleID === "customer" && (
                   <li>
-                    <a href="/profile">Profile</a>
+                    <Link to="/profile">PROFILE</Link>
                   </li>
                 )}
+                {/* Render Booking button for all users, but restrict access in logic */}
+                {(isLoggedIn && roleID === "customer") || !isLoggedIn ? (
+                  <li>
+                    <Link to="/booking" className="booking-btn">
+                      <FaCalendarAlt /> BOOKING
+                    </Link>
+                  </li>
+                ) : null}
               </ul>
             </div>
           </nav>
           <div className="header-right-btn d-none d-lg-block ml-30">
             {isLoggedIn ? (
-              <button className="header-btn" onClick={handleLogout}>
-                Logout
+              <button className="logout-btn" onClick={handleLogout}>
+                <FaSignOutAlt /> Logout
               </button>
             ) : (
-              <a href="/signin" className="header-btn">
-                Login
-              </a>
+              <Link to="/signin" className="login-btn">
+                <FaSignInAlt /> Login
+              </Link>
             )}
-            <a href="/booking" className="header-btn">
-              Booking
-            </a>
           </div>
           <div className="mobile_menu d-block d-lg-none"></div>
         </div>

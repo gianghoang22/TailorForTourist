@@ -18,12 +18,12 @@ import "./FabricManagement.scss";
 const FabricManagement = () => {
   const [fabricData, setFabricData] = useState([]);
   const [newFabric, setNewFabric] = useState({
-    fabricId: null,
+    fabricID: 0, // Set default ID for new fabric
     fabricName: "",
     price: 0,
     description: "",
-    imageUrl: null,
-    tag: "",
+    imageUrl: "", // Initialize as empty string
+    tag: 0, // Initialize as 0 or null
   });
   const [editIndex, setEditIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,36 +54,74 @@ const FabricManagement = () => {
 
   const handleAdd = async () => {
     try {
-      const response = await fetch("http://157.245.50.125:8080/api/Fabrics", {
+      // Validate required fields
+      if (
+        !newFabric.fabricName ||
+        newFabric.price <= 0 ||
+        !newFabric.description
+      ) {
+        setError(
+          "Fabric name, price (greater than 0), and description are required."
+        );
+        return;
+      }
+
+      // Convert price and tag to numbers
+      const fabricToAdd = {
+        ...newFabric,
+        price: parseFloat(newFabric.price), // Convert price to a float
+        tag: parseInt(newFabric.tag, 10), // Convert tag to an integer
+      };
+
+      console.log("Adding Fabric Data:", JSON.stringify(fabricToAdd));
+
+      const response = await fetch("https://localhost:7194/api/Fabrics", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newFabric),
+        body: JSON.stringify(fabricToAdd),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error adding new fabric");
+        const errorResponse = await response.json();
+        console.error("Error adding new fabric:", errorResponse);
+        setError(errorResponse.message || "Error adding new fabric");
+        return;
       }
 
       const addedFabric = await response.json();
-      setFabricData([...fabricData, addedFabric]); // Update fabric data without needing to refetch
+      setFabricData([...fabricData, addedFabric]); // Update local state without needing to refetch
       setError(null);
       setShowSuccessMessage(true);
     } catch (error) {
       console.error("Error adding new fabric:", error);
-      setError(error.message);
+      setError(
+        error.message || "Unexpected error occurred while adding fabric"
+      );
     }
   };
-
   const handleEdit = (fabric) => {
     setNewFabric(fabric);
-    setEditIndex(fabric.fabricId);
+    setEditIndex(fabric.fabricID);
   };
 
   const handleUpdate = async () => {
     try {
+      // Validate required fields
+      if (
+        !newFabric.fabricName ||
+        newFabric.price <= 0 ||
+        !newFabric.description
+      ) {
+        setError(
+          "Fabric name, price (greater than 0), and description are required."
+        );
+        return;
+      }
+
+      console.log("Updating Fabric Data:", JSON.stringify(newFabric, null, 2)); // Log data before sending
+
       const response = await fetch(
         `http://157.245.50.125:8080/api/Fabrics/${editIndex}`,
         {
@@ -95,23 +133,25 @@ const FabricManagement = () => {
         }
       );
 
-      // Handle the 204 No Content response
-      if (response.status !== 204) {
-        throw new Error("Error updating fabric");
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        console.error("Error updating fabric:", errorResponse);
+        setError(errorResponse.message || "Error updating fabric");
+        return;
       }
 
       // Update local state without needing to refetch
       const updatedFabrics = fabricData.map((f) =>
-        f.fabricId === editIndex ? { ...f, ...newFabric } : f
+        f.fabricID === editIndex ? { ...f, ...newFabric } : f
       );
       setFabricData(updatedFabrics);
       setNewFabric({
-        fabricId: null,
+        fabricID: 0,
         fabricName: "",
         price: 0,
         description: "",
-        imageUrl: null,
-        tag: "",
+        imageUrl: "",
+        tag: 0,
       });
       setEditIndex(null);
       setError(null);
@@ -122,19 +162,21 @@ const FabricManagement = () => {
     }
   };
 
-  const handleDelete = async (fabricId) => {
+  const handleDelete = async (fabricID) => {
     try {
       const response = await fetch(
-        `http://157.245.50.125:8080/api/Fabrics/${fabricId}`,
+        `https://localhost:7194/api/Fabrics/${fabricID}`,
         {
           method: "DELETE",
         }
       );
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error deleting fabric");
+        const errorResponse = await response.json();
+        console.error("Error deleting fabric:", errorResponse);
+        setError(errorResponse.message || "Error deleting fabric");
+        return;
       }
-      setFabricData(fabricData.filter((f) => f.fabricId !== fabricId));
+      setFabricData(fabricData.filter((f) => f.fabricID !== fabricID));
       setError(null);
     } catch (error) {
       console.error("Error deleting fabric:", error);
@@ -182,8 +224,17 @@ const FabricManagement = () => {
             style={{ marginRight: "1rem" }}
           />
           <TextField
+            label="Image URL"
+            name="imageUrl"
+            value={newFabric.imageUrl}
+            onChange={handleChange}
+            variant="outlined"
+            style={{ marginRight: "1rem" }}
+          />
+          <TextField
             label="Tag"
             name="tag"
+            type="number"
             value={newFabric.tag}
             onChange={handleChange}
             variant="outlined"
@@ -227,16 +278,28 @@ const FabricManagement = () => {
               <TableCell>Fabric Name</TableCell>
               <TableCell>Price</TableCell>
               <TableCell>Description</TableCell>
+              <TableCell>Image URL</TableCell>
               <TableCell>Tag</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredFabrics.map((f) => (
-              <TableRow key={f.fabricId}>
+              <TableRow key={f.fabricID}>
                 <TableCell>{f.fabricName}</TableCell>
                 <TableCell>{f.price}</TableCell>
                 <TableCell>{f.description}</TableCell>
+                <TableCell>
+                  <img
+                    src={f.imageUrl}
+                    alt={f.fabricName}
+                    style={{
+                      width: "100px",
+                      height: "auto",
+                      objectFit: "cover",
+                    }}
+                  />
+                </TableCell>
                 <TableCell>{f.tag}</TableCell>
                 <TableCell>
                   <Button
@@ -250,7 +313,7 @@ const FabricManagement = () => {
                   <Button
                     variant="outlined"
                     color="secondary"
-                    onClick={() => handleDelete(f.fabricId)}
+                    onClick={() => handleDelete(f.fabricID)}
                   >
                     Delete
                   </Button>
@@ -262,10 +325,9 @@ const FabricManagement = () => {
       </TableContainer>
 
       {showSuccessMessage && (
-        <div className="success-message">
-          <p>Added/Updated successfully!</p>
-          <button onClick={() => window.location.reload()}>Refresh</button>
-        </div>
+        <Alert severity="success" style={{ marginTop: "1rem" }}>
+          Fabric successfully saved!
+        </Alert>
       )}
     </div>
   );

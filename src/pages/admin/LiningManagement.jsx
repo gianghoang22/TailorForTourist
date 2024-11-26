@@ -51,30 +51,32 @@ const LiningManagement = () => {
 
   const handleAdd = async () => {
     try {
-      const response = await fetch("http://157.245.50.125:8080/api/Linings", {
+      // Prepare the request body without liningId
+      const { liningId, ...liningToAdd } = newLining; // Destructure to remove liningId
+
+      console.log("Request Body:", JSON.stringify(liningToAdd)); // Log request body
+
+      const response = await fetch("https://localhost:7194/api/Linings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newLining),
+        body: JSON.stringify(liningToAdd), // Use the modified object
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error adding new lining");
+        const errorResponse = await response.json();
+        console.error("Error response:", errorResponse); // Log error response
+        throw new Error(errorResponse.message || "Error adding new lining");
       }
 
-      const addedLining = await response.json();
-      setLiningData([...liningData, addedLining]); // Update lining data without needing to refetch
-      setError(null);
-      setShowSuccessMessage(true);
-      setNewLining({ liningId: null, liningName: "", imageUrl: "" }); // Reset form
+      // If the response is OK, refresh the page
+      window.location.reload();
     } catch (error) {
       console.error("Error adding new lining:", error);
       setError(error.message);
     }
   };
-
   const handleEdit = (lining) => {
     setNewLining(lining);
     setEditIndex(lining.liningId);
@@ -99,37 +101,6 @@ const LiningManagement = () => {
         const error = await response.json();
         throw new Error(error.message || "Error updating lining");
       }
-
-      // Handle 204 No Content
-      if (response.status === 204) {
-        // Optionally, you can show a success message here
-        console.log("Lining updated successfully.");
-        // Refresh the page
-        window.location.reload();
-        return; // Successfully updated without needing to parse response
-      }
-
-      // For any other response, you can check if the body is empty
-      const textResponse = await response.text();
-      if (textResponse.trim() === "") {
-        console.warn(
-          "Received empty response body, but update was likely successful"
-        );
-        // Refresh the page
-        window.location.reload();
-        return; // Handle the empty response accordingly, but do nothing further
-      }
-
-      // If there is a non-empty response, parse it
-      const updatedLining = JSON.parse(textResponse);
-      const updatedLinings = liningData.map((l) =>
-        l.liningId === editIndex ? updatedLining : l
-      );
-      setLiningData(updatedLinings);
-      setNewLining({ liningId: null, liningName: "", imageUrl: "" });
-      setEditIndex(null);
-      setError(null);
-      setShowSuccessMessage(true);
 
       // Refresh the page after successful update
       window.location.reload();
@@ -237,7 +208,7 @@ const LiningManagement = () => {
                   <img
                     src={l.imageUrl}
                     alt={l.liningName}
-                    style={{ width: "50px", height: "auto" }}
+                    style={{ width: "100px", height: "auto" }}
                   />
                 </TableCell>
                 <TableCell>
@@ -262,13 +233,6 @@ const LiningManagement = () => {
           </TableBody>
         </Table>
       </TableContainer>
-
-      {showSuccessMessage && (
-        <div className="success-message">
-          <p>Added/Updated successfully!</p>
-          <button onClick={() => window.location.reload()}>Refresh</button>
-        </div>
-      )}
     </div>
   );
 };

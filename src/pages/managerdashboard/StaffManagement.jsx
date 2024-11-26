@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   TextField,
   Button,
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -37,14 +36,31 @@ const StaffManagement = () => {
 
   useEffect(() => {
     const fetchStaffData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("You need to log in first!");
+        window.location.href = "/signin";
+        return;
+      }
+
       try {
-        const response = await fetch("http://157.245.50.125:8080/api/User");
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
+        const response = await fetch("https://localhost:7194/api/User/role/2", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const responseBody = await response.json();
+        console.log("Response Status:", response.status);
+        console.log("Response Body:", responseBody);
+
+        if (response.ok) {
+          setStaffData(responseBody);
+        } else if (response.status === 403) {
+          alert("You do not have permission to access this resource.");
+        } else {
+          throw new Error(responseBody.message || "Unexpected response");
         }
-        const data = await response.json();
-        const filteredData = data.filter((user) => user.roleId === 2);
-        setStaffData(filteredData);
       } catch (error) {
         console.error("Error fetching staff data:", error);
         setError("Error fetching staff data. Please try again later.");
@@ -58,52 +74,77 @@ const StaffManagement = () => {
     setNewStaff({ ...newStaff, [name]: value });
   };
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^\d{10}$/;
+
+  const isUniqueEmail = (email) =>
+    !staffData.some((staff) => staff.email === email);
+  const isUniquePhone = (phone) =>
+    !staffData.some((staff) => staff.phone === phone);
+
   const handleAdd = async () => {
+    if (
+      !newStaff.name ||
+      !newStaff.email ||
+      !newStaff.phone ||
+      !newStaff.address
+    ) {
+      setError("All fields are required.");
+      return;
+    }
+
+    if (!emailRegex.test(newStaff.email)) {
+      setError("Invalid email format");
+      return;
+    }
+    if (!phoneRegex.test(newStaff.phone)) {
+      setError("Phone number must be 10 digits");
+      return;
+    }
+    if (!isUniqueEmail(newStaff.email)) {
+      setError("Email already exists");
+      return;
+    }
+    if (!isUniquePhone(newStaff.phone)) {
+      setError("Phone number already exists");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
     try {
       const response = await fetch("http://157.245.50.125:8080/api/User", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(newStaff),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        console.error("API Error:", error);
-        throw new Error(error.message || "Error adding new staff");
+      const responseBody = await response.json();
+      console.log("Response Status:", response.status);
+      console.log("Response Body:", responseBody);
+
+      if (response.ok) {
+        // Successfully added staff, refresh the page
+        window.location.reload();
+      } else if (response.status === 403) {
+        alert("You do not have permission to add staff.");
+        return;
+      } else {
+        throw new Error(responseBody.message || "Error adding new staff");
       }
-
-      await response.json(); // Wait for the response to be parsed
-
-      // Re-fetch staff data instead of refreshing the page
-      // fetchStaffData(); // Call the function to fetch data again
-
-      // setNewStaff({
-      //   name: "",
-      //   email: "",
-      //   gender: "Male",
-      //   address: "nowhere",
-      //   dob: "2003-12-12",
-      //   isConfirmed: true,
-      //   phone: "0915230240",
-      //   password: "123456",
-      //   roleId: 2,
-      //   status: "Active",
-      // });
-
-      setError(null); // Clear any previous errors
-      setShowSuccessMessage(true); // Show success message
     } catch (error) {
       console.error("Error adding new staff:", error);
-      setError(error.message); // Set the error message
+      setError(error.message);
     }
   };
 
-  const handleEdit = (staffData) => {
-    setNewStaff(staffData);
-    setEditIndex(staffData.userId);
+  const handleEdit = (staff) => {
+    setNewStaff(staff);
+    setEditIndex(staff.userId);
   };
+
   const handleCancel = () => {
     setNewStaff({
       name: "",
@@ -119,7 +160,36 @@ const StaffManagement = () => {
     });
     setEditIndex(null);
   };
+
   const handleUpdate = async () => {
+    if (
+      !newStaff.name ||
+      !newStaff.email ||
+      !newStaff.phone ||
+      !newStaff.address
+    ) {
+      setError("All fields are required.");
+      return;
+    }
+
+    if (!emailRegex.test(newStaff.email)) {
+      setError("Invalid email format");
+      return;
+    }
+    if (!phoneRegex.test(newStaff.phone)) {
+      setError("Phone number must be 10 digits");
+      return;
+    }
+    if (!isUniqueEmail(newStaff.email) && editIndex !== newStaff.userId) {
+      setError("Email already exists");
+      return;
+    }
+    if (!isUniquePhone(newStaff.phone) && editIndex !== newStaff.userId) {
+      setError("Phone number already exists");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
     try {
       const response = await fetch(
         `http://157.245.50.125:8080/api/User/${editIndex}`,
@@ -127,33 +197,36 @@ const StaffManagement = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(newStaff),
         }
       );
 
-      if (!response.ok) {
-        // Check for 204 status to confirm success without content
-        if (response.status !== 204) {
-          const error = await response.json();
-          throw new Error(error.message || "Error updating staff");
-        }
-      }
+      const responseBody = await response.json();
+      console.log("Response Status:", response.status);
+      console.log("Response Body:", responseBody);
 
-      // Update staff data locally after a successful edit
-      const updatedStaff = staffData.map((s) =>
-        s.userId === editIndex ? { ...s, ...newStaff } : s
-      );
-      setStaffData(updatedStaff);
-      setNewStaff({
-        name: "",
-        email: "",
-        password: "123456",
-        roleId: 2,
-        status: "Active",
-      });
-      setEditIndex(null);
-      setError(null);
+      if (response.ok) {
+        const updatedStaff = staffData.map((s) =>
+          s.userId === editIndex ? { ...s, ...newStaff } : s
+        );
+        setStaffData(updatedStaff);
+        setNewStaff({
+          name: "",
+          email: "",
+          password: "123456",
+          roleId: 2,
+          status: "Active",
+        });
+        setEditIndex(null);
+        setError(null);
+      } else if (response.status === 403) {
+        alert("You do not have permission to update staff.");
+        return;
+      } else {
+        throw new Error(responseBody.message || "Error updating staff");
+      }
     } catch (error) {
       console.error("Error updating staff:", error);
       setError(error.message);
@@ -161,19 +234,28 @@ const StaffManagement = () => {
   };
 
   const handleDelete = async (userId) => {
+    const token = localStorage.getItem("token");
     try {
       const response = await fetch(
         `http://157.245.50.125:8080/api/User/${userId}`,
         {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error deleting staff");
+
+      if (response.ok) {
+        setStaffData(staffData.filter((s) => s.userId !== userId));
+        setError(null);
+      } else if (response.status === 403) {
+        alert("You do not have permission to delete staff.");
+        return;
+      } else {
+        const responseBody = await response.json();
+        throw new Error(responseBody.message || "Error deleting staff");
       }
-      setStaffData(staffData.filter((s) => s.userId !== userId));
-      setError(null);
     } catch (error) {
       console.error("Error deleting staff:", error);
       setError(error.message);

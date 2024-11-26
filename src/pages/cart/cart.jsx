@@ -1,193 +1,167 @@
 import React, { useState, useEffect } from 'react';
-import { getCart, removeFromCart as removeCustomProduct } from '../../utils/cartUtil';
+import axios from 'axios';
+import './Cart.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import { Navigation } from '../../layouts/components/navigation/Navigation.jsx';
 import { Footer } from '../../layouts/components/footer/Footer.jsx';
-import { useSelector, useDispatch } from 'react-redux';
-import { removeFromCart as removeNonCustomProduct } from '../../redux/slice/cartSlice.js';
-import ProductInfoModal from './ProductInfoModal.jsx';
-import './Cart.scss';
 
 const Cart = () => {
-  const [customCart, setCustomCart] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null); // State for the selected product
+  const [apiCart, setApiCart] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  const nonCustomCart = useSelector((state) => state.cart.items);
-  const dispatch = useDispatch();
-
-  const refreshCustomCart = () => {
-    setCustomCart(getCart());
-  };
 
   useEffect(() => {
-    refreshCustomCart();
+    const fetchCart = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Bạn chưa đăng nhập');
+          setLoading(false);
+          return;
+        }
+
+        const response = await axios.get('https://localhost:7194/api/AddCart/mycart', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 200) {
+          const cartItems = response.data.cartItems;
+      
+          // Lưu productCode vào localStorage
+          const productCode = cartItems.map(item => item.product?.productCode || item.customProduct?.productCode);
+          localStorage.setItem('productCode', JSON.stringify(productCode));
+
+          setApiCart(response.data);
+        } else {
+          setError('Không thể tải giỏ hàng');
+        }
+      } catch (error) {
+        setError('Đã xảy ra lỗi khi lấy giỏ hàng');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
   }, []);
 
-  const handleRemoveItem = (itemId, isCustom) => {
-    if (isCustom) {
-      removeCustomProduct(itemId);
-      refreshCustomCart();
-    } else {
-      dispatch(removeNonCustomProduct(itemId));
+  const removeFromCart = async (productCodeToRemove) => {
+    const userId = parseInt(localStorage.getItem("userID"));
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Bạn chưa đăng nhập');
+        return;
+      }
+  
+      const response = await axios.delete(
+        'https://localhost:7194/api/AddCart/remove/${productCode}',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          data: { 
+            productCode: productCodeToRemove, 
+            userId: userId || null 
+          },
+        }
+      );
+  
+      if (response.status === 200) {
+        const removedItem = apiCart.cartItems.find(
+          (item) => (item.product?.productCode || item.customProduct?.productCode) === productCodeToRemove
+        );
+  
+        if (removedItem) {
+          const updatedCartItems = apiCart.cartItems.filter(
+            (item) => (item.product?.productCode || item.customProduct?.productCode) !== productCodeToRemove
+          );
+  
+          const updatedCartTotal =
+            apiCart.cartTotal - removedItem.price * removedItem.quantity;
+  
+          setApiCart({
+            ...apiCart,
+            cartItems: updatedCartItems,
+            cartTotal: updatedCartTotal,
+          });
+  
+          const updatedProductCodes = JSON.parse(localStorage.getItem('productCode') || '[]');
+          const newProductCodes = updatedProductCodes.filter(code => code !== productCodeToRemove);
+          localStorage.setItem('productCode', JSON.stringify(newProductCodes));
+        }
+      } else {
+        setError('Không thể xóa sản phẩm khỏi giỏ hàng');
+      }
+    } catch (error) {
+      console.error('Error removing from cart:', error.response?.data || error.message);
+      setError('Đã xảy ra lỗi khi xóa sản phẩm');
     }
   };
-
-  const handleViewInfo = (product) => {
-    setSelectedProduct(product); // Set the selected product for the modal
-  };
-
-  const closeModal = () => {
-    setSelectedProduct(null); // Close the modal
-  };
-
-  const calculateTotal = () => {
-    const customTotal = customCart.reduce((total, item) => item.price ? total + item.price : total, 0);
-    const nonCustomTotal = nonCustomCart.reduce((total, item) => item.price ? total + item.price : total, 0);
-    return customTotal + nonCustomTotal;
-  };
-
-  const handleCheckout = () => {
-    const checkoutCart = [...customCart, ...nonCustomCart];
-    localStorage.setItem('checkoutCart', JSON.stringify(checkoutCart));
-    localStorage.setItem('totalPrice', calculateTotal());
-    navigate('/checkout');
-  };
-
-  const totalPrice = calculateTotal();
-
+  
   return (
     <>
       <Navigation />
-      <div className="page-with-side-bar">
+      <div style={{paddingTop: '120px'}} className="page-with-side-bar">
         <div className="all">
           <div className="left-side">
-            <div className='sec-title'>
+            <div className="sec-title">
               <h1 className="tt-txt">
-                <span className="tt-sub">Cart</span> A Dong Silk
+                <span className="tt-sub">Cart</span>
+                MATCHA Vest
               </h1>
             </div>
           </div>
 
-          {(customCart.length === 0 && nonCustomCart.length === 0) ? (
-            <div className="woocommerce">
-              <p className='cart-empty'>Your cart is currently empty.</p>
-              <p className="return-to-shop">
-                <Link to='/custom-suits'>Return to shop.</Link>
-              </p>
+          {loading ? (
+            <p>Loading cart...</p>
+          ) : error ? (
+            <p style={{ color: 'red' }}>{error}</p>
+          ) : apiCart && apiCart.cartItems && apiCart.cartItems.length > 0 ? (
+            <div>
+              <ul>
+                {apiCart.cartItems.map((item) => (
+                  <li key={item.cartItemId} className="cart-item">
+                    <div className="custom-product-details">
+                      {item.customProduct ? (
+                        <>
+                          <p><strong>Product:</strong> {item.customProduct.productCode}</p>
+                        </>
+                      ) : (
+                        <>
+                          <p><strong>Product:</strong> {item.product.productCode}</p>
+                          <p><strong>Quantity:</strong> {item.quantity}</p>
+                        </>
+                      )}
+                      <p><strong>Price:</strong> ${item.price}</p>
+                    </div>
+                    <button
+                      className="remove-button"
+                      onClick={() => removeFromCart(item.product?.productCode || item.customProduct?.productCode)}
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="cart-total">
+                <p><strong>Total Price:</strong> ${apiCart.cartTotal}</p>
+              </div>
+              <div>
+                <Link to='/checkout'>
+                  Proceed to checkout
+                </Link>
+              </div>
             </div>
           ) : (
-            <>
-              <div className="right-main">
-                <div className="woocommerce">
-                  <table className="cart_table">
-                    <thead>
-                      <tr>
-                        <th className="product-thumbnail"></th>
-                        <th className='product-name'>Product</th>
-                        <th className='product-style'>Style</th>
-                        <th className='product-lining'>Lining</th>
-                        <th className='product-price'>Price</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {customCart.map((item) => (
-                        item.type === 'SUIT' && (
-                          <tr key={item.id}>
-                            <td className='product-thumbnail'>
-                              <img style={{ width: '32px' }} src="https://adongsilk.com/wp-content/uploads/2024/11/1176-custom-181124050914-1-376x1024.png" alt="SUIT" />
-                            </td>
-                            <td className='product-name'>SUIT - {item.fabric ? item.fabric.name : 'N/A'}</td>
-                            <td className='product-style'>
-                              {item.styles && item.styles.length > 0 ? (
-                                item.styles.map((style, index) => (
-                                  <div key={index}>
-                                    {style.optionType}: {style.optionValue}
-                                  </div>
-                                ))
-                              ) : (
-                                'N/A'
-                              )}
-                            </td>
-                            <td className='product-lining'>{item.lining ? item.lining.name : 'N/A'}</td>
-                            <td className='product-price'>${item.price}</td>
-                            <td>
-                              <button className="view-info-btn" onClick={() => handleViewInfo(item)}>View Info</button>
-                            </td>
-                            <td>
-                              <button className="remove-btn" onClick={() => handleRemoveItem(item.id, true)}>Remove</button>
-                            </td>
-                          </tr>
-                        )
-                      ))}
-                      {nonCustomCart.map((item) => (
-  <tr key={item.id}>
-    <td className='product-thumbnail'>
-      <img style={{ width: '32px' }} src={item.image} alt={item.name} />
-    </td>
-    <td className='product-name'>{item.name}</td>
-    <td className='product-style'>{item.style}</td>
-    <td className='product-lining'>{item.lining}</td>
-    <td className='product-price'>${item.price}</td>
-    <td>
-      <button
-        onClick={() => handleRemoveItem(item.id, false)}
-        className="remove-btn"
-      >
-        Remove
-      </button>
-    </td>
-  </tr>
-))}
-
-                    </tbody>
-                  </table>
-
-                  <div className="cart-collaterals" id='total-cart'>
-                    <div className="cart_totals">
-                      <h2>Cart totals</h2>
-                      <table className="cart_table">
-                        <tbody>
-                          <tr className='cart-subtotal'>
-                            <th>Subtotal</th>
-                            <td>
-                              <span className="amount">
-                                {totalPrice}&nbsp;
-                                <span className='currency-symbol'>USD</span>
-                              </span>
-                            </td>
-                          </tr>
-
-                          <tr className="order-total">
-                            <th>Total</th>
-                            <td data-title="Total">
-                              <strong>
-                                <span className="woocommerce-Price-amount amount">
-                                  {totalPrice}&nbsp;
-                                  <span className="woocommerce-Price-currencySymbol">USD</span>
-                                </span>
-                              </strong>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-
-                      <div className="wc-proceed-to-checkout">
-                        <button className="checkout-button" onClick={handleCheckout}>
-                          Proceed to checkout
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
+            <p>Your cart is empty.</p>
           )}
         </div>
       </div>
-      <Footer />
-      {selectedProduct && (
-        <ProductInfoModal product={selectedProduct} onClose={closeModal} />
-      )}
+      <Footer/>
     </>
   );
 };

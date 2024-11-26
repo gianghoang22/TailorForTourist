@@ -1,7 +1,7 @@
 // src/pages/customSuit/CustomSuit.js
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-
+import logo from '../../assets/img/logo/logo_custom.jpg';
 import './CustomSuit.scss';
 import './Header.scss';
 
@@ -17,9 +17,9 @@ const CustomSuit = () => {
               <img
                 width="306"
                 height="81"
-                src="https://adongsilk.com/wp-content/uploads/2024/03/cropped-Logo_ADS-03_2024-final2_edit1-1-1.png"
+                src={logo}
                 className="custom-logo"
-                alt="A DONG SILK I Hoi An Tailor"
+                alt="Matcha Vest"
               />
             </a>
           </div>
