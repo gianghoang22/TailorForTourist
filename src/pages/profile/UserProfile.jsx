@@ -58,7 +58,7 @@ const UserProfile = () => {
 
     try {
       const response = await fetch(
-        `https://localhost:7194/api/User/${userID}`,
+        `http://157.245.50.125:8080/api/User/${userID}`,
         {
           method: "PUT",
           headers: {

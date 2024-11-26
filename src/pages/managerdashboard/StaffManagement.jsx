@@ -112,7 +112,7 @@ const StaffManagement = () => {
 
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch("https://localhost:7194/api/User", {
+      const response = await fetch("http://157.245.50.125:8080/api/User", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -192,7 +192,7 @@ const StaffManagement = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `https://localhost:7194/api/User/${editIndex}`,
+        `http://157.245.50.125:8080/api/User/${editIndex}`,
         {
           method: "PUT",
           headers: {
@@ -237,7 +237,7 @@ const StaffManagement = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `https://localhost:7194/api/User/${userId}`,
+        `http://157.245.50.125:8080/api/User/${userId}`,
         {
           method: "DELETE",
           headers: {

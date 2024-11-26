@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import '../home/HomePageBody1.scss';
 
 
@@ -66,7 +67,7 @@ export const HomePageBody1 = () => {
         </article>
       </li>
     </ul>
-    <a href="https://adongsilk.com/custom-suits/" className="btn w170-btn primary-btn">Get start</a>
+    <Link to='/custom-suits' className="btn w170-btn primary-btn">Get start</Link>
   </div>
 </section>
     

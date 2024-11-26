@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import axios from 'axios';
-import './ProductDetail.scss';
 import { Navigation } from '../../layouts/components/navigation/Navigation.jsx';
 import { Footer } from '../../layouts/components/footer/Footer.jsx';
 import { toast } from 'react-toastify';
-import { addNonCustomSuitToCart } from '../../utils/cartUtil';
+import axios from 'axios';
+import './ProductDetail.scss';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -24,15 +22,66 @@ const ProductDetailPage = () => {
         setLoading(false);
       }
     };
-
+    
     fetchProduct();
   }, [id]);
+  
+  const handleAddToCart = async () => {
+    try {
+      const productID = product.productID;
+      const userId = parseInt(localStorage.getItem("userID"));
+      const isCustom = false;
+  
+      const productToAdd = {
+        userId: userId, 
+        isCustom: isCustom,
+        productId: productID,
+        customProduct: {
+          productCode: "string",
+          categoryID: 0,
+          fabricID: 0,
+          liningID: 0,
+          measurementID: 0,
+          pickedStyleOptions: [
+            { styleOptionID: 0 }
+          ]
+        }
+      };
+  
+      console.log("Sending product to add to cart:", productToAdd);
+// Gửi dữ liệu lên API
+const response = await fetch("https://localhost:7194/api/AddCart/addtocart", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
+  body: JSON.stringify(productToAdd),
+});
 
-  const handleAddToCart = () => {
-    addNonCustomSuitToCart(product);
-    toast.success('Product added to cart!');
-    console.log(product);
+// Kiểm tra mã trạng thái HTTP
+if (!response.ok) {
+  const errorText = await response.text(); // Đọc phản hồi dưới dạng văn bản
+  console.error("API returned error:", errorText); // Log lỗi ra console
+  throw new Error("Failed to add product to cart: " + errorText);
+}
+
+// Nếu API trả về thông báo chuỗi đơn giản (như 'Product added to cart.')
+const resultText = await response.text(); // Đọc phản hồi dưới dạng văn bản
+console.log("API response:", resultText); // Log thông báo trả về từ API
+
+if (resultText.includes("Product added to cart")) {
+  toast.success('Product added to cart.');
+} else {
+  toast.error('Failed to add product to cart.');
+}
+} catch (error) {
+// Xử lý lỗi nếu có
+console.log("error:", error);
+toast.error("Failed to add to cart. Please try again.");
+}
   };
+  
 
   if (loading) return <p className="loading">Loading...</p>;
   if (error) return <p className="error">Error: {error}</p>;
@@ -44,11 +93,14 @@ const ProductDetailPage = () => {
       <main id="main-wrap">
         <div className="product-detail-page pd-single-info">
           <div className="all">
+            <div className="left-gallery">
+              <img src={product.imgURL} style={{width: '321px', height: '422px'}}/>
+            </div>
             <div className="right-pd-info">
               <h1 className="pd-name">{product.productCode}</h1>
               <dl className="pdinfo-dl">
                 <dt>Size:</dt>
-                <dd>{product.measurementID}</dd>
+                <dd>{product.size}</dd>
                 <dt>Fabric:</dt>
                 <dd>{product.fabricName}</dd>
                 <dt>Lining:</dt>
@@ -88,80 +140,7 @@ const ProductDetailPage = () => {
         </div>
 
         {/* Related Products Section */}
-        <section className="sec sec-related">
-          <div className="decor-sec">
-            <img src="https://adongsilk.com/template/images/review-decor.png" alt="Decoration" />
-          </div>
-          <div className="all">
-            <div className="sec-title">
-              <h3 className="tt-txt">
-                <span className="tt-sub">You may also</span> like
-              </h3>
-            </div>
-            <div className="product-list-wrap">
-              <ul className="product-ul">
-                {/* Sample related product items */}
-                <li className="mona-product-type-simple_women">
-                  <article className="product-itembox">
-                    <a className="img" href="https://adongsilk.com/product/suit-ms07/">
-                      <img
-                        src="https://adongsilk.com/wp-content/uploads/2018/06/suit-10-1-lilac-wide-leg-trousers-216x270.jpg"
-                        alt="Related Product"
-                      />
-                    </a>
-                    <div className="info">
-                      <p className="name-alt">
-                        <a href="https://adongsilk.com/lists/women/suit/" rel="tag">SUIT</a>
-                      </p>
-                      <p className="name">
-                        <a href="https://adongsilk.com/product/suit-ms07/">Suit MS07</a>
-                      </p>
-                      <p className="price">From 120 USD</p>
-                    </div>
-                  </article>
-                </li>
-                <li className="mona-product-type-simple_women">
-                  <article className="product-itembox">
-                    <a className="img" href="https://adongsilk.com/product/suit-ms06/">
-                      <img
-                        src="https://adongsilk.com/wp-content/uploads/2018/06/suit-8-1-tall-white-flared-trousers-216x270.jpg"
-                        alt="Related Product"
-                      />
-                    </a>
-                    <div className="info">
-                      <p className="name-alt">
-                        <a href="https://adongsilk.com/lists/women/suit/" rel="tag">SUIT</a>
-                      </p>
-                      <p className="name">
-                        <a href="https://adongsilk.com/product/suit-ms06/">Suit MS06</a>
-                      </p>
-                      <p className="price">From 120 USD</p>
-                    </div>
-                  </article>
-                </li>
-                <li className="mona-product-type-simple_women">
-                  <article className="product-itembox">
-                    <a className="img" href="https://adongsilk.com/product/suit-ms05/">
-                      <img
-                        src="https://adongsilk.com/wp-content/uploads/2018/06/suit-6-1-nude-pleat-front-culotte-trousers-216x270.jpg"
-                        alt="Related Product"
-                      />
-                    </a>
-                    <div className="info">
-                      <p className="name-alt">
-                        <a href="https://adongsilk.com/lists/women/suit/" rel="tag">SUIT</a>
-                      </p>
-                      <p className="name">
-                        <a href="https://adongsilk.com/product/suit-ms05/">Suit MS05</a>
-                      </p>
-                      <p className="price">From 120 USD</p>
-                    </div>
-                  </article>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </section>
+        
       </main>
       <Footer />
     </>

@@ -142,6 +142,9 @@ export const Navigation = () => {
                 <li>
                   <Link to="/contact-us">CONTACT</Link>
                 </li>
+                <li>
+                  <Link to="/cart">CART</Link>
+                </li>
                 {isLoggedIn && roleID === "customer" && (
                   <li>
                     <Link to="/profile">PROFILE</Link>

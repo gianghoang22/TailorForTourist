@@ -1,0 +1,45 @@
+
+.address-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 0 auto;
+  
+    .row {
+      display: flex;
+      gap: 16px;
+      
+      .column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+  
+        label {
+          font-weight: bold;
+          margin-bottom: 8px;
+          display: block;
+        }
+  
+        select,
+        input {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          font-size: 16px;
+  
+          &:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 4px rgba(0, 123, 255, 0.25);
+          }
+        }
+      }
+    }
+  }
+  

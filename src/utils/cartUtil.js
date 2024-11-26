@@ -6,24 +6,20 @@ export const addToCart = (item) => {
   const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
 
   if (item.type === 'fabric') {
-    
     const newSuit = {
-      id: `SUIT-${item.name}-${Date.now()}`,
-      name: `SUIT ${item.name}`,
-      price: item.price,
-      fabric: item,
-      styles: [], 
-      lining: null,
+      id: `SUIT-${item.id}`,
+      fabricId: item.id,
       type: 'SUIT',
-      complete: false, 
+      complete: false,
     };
     cart.push(newSuit);
     toast.success(`Fabric ${item.name} added to a new suit`);
   } else if (item.type === 'style') {
     const lastIncompleteSuit = cart.find(suit => suit.type === 'SUIT' && !suit.complete);
-    
+
     if (lastIncompleteSuit) {
-      lastIncompleteSuit.styles.push(item); 
+      lastIncompleteSuit.styles = lastIncompleteSuit.styles || [];
+      lastIncompleteSuit.styles.push(item);
       toast.success(`Style option added to your suit`);
     } else {
       toast.error('Please select a fabric first to start a new suit');
@@ -31,14 +27,10 @@ export const addToCart = (item) => {
     }
   } else if (item.type === 'lining') {
     const lastIncompleteSuit = cart.find(suit => suit.type === 'SUIT' && !suit.complete);
-    
+
     if (lastIncompleteSuit) {
-      if (!lastIncompleteSuit.lining) {
-        lastIncompleteSuit.lining = item;
-        toast.success(`Lining added to your suit`);
-      } else {
-        toast.info(`Lining is already added to your suit`);
-      }
+      lastIncompleteSuit.lining = item;
+      toast.success(`Lining added to your suit`);
     } else {
       toast.error('Please select a fabric first to start a new suit');
       return;
@@ -47,37 +39,19 @@ export const addToCart = (item) => {
 
   // Mark suit as complete if fabric, style, and lining are selected
   cart.forEach((suit) => {
-    if (suit.type === 'SUIT' && suit.fabric && suit.styles.length > 0 && suit.lining) {
+    if (suit.type === 'SUIT' && suit.fabricId && suit.styles && suit.styles.length > 0 && suit.lining) {
       suit.complete = true;
     }
   });
 
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
-};
-
-export const addNonCustomSuitToCart = (item) => {
-  const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-
-  if (item.type === 'non-custom-suit') {
-    const newSuit = {
-      id: `NONCUSTOM-${item.id}-${Date.now()}`,
-      name: `Non-Custom Suit: ${item.name}`,
-      price: item.price,
-      type: 'NONCUSTOM_SUIT',
-      complete: true,
-    };
-    cart.push(newSuit);
-    toast.success(`${item.name} added to your cart`);
-  } else {
-    toast.error('Invalid item!');
-    return;
-  }
-
-  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  console.log("Cart after adding item:", cart); // Log to check cart contents
 };
 
 export const getCart = () => {
-  return JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+  const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+  console.log("Retrieved Cart:", cart); // Log to check cart retrieval
+  return cart;
 };
 
 export const removeFromCart = (itemId) => {

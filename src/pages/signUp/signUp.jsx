@@ -196,7 +196,7 @@ export default function SignUp() {
     };
 
     try {
-      const response = await fetch("https://localhost:7194/api/Register", {
+      const response = await fetch("http://157.245.50.125:8080/api/Register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

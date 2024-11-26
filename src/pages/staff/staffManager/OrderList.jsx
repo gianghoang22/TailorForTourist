@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
   Button,
   Dialog,
@@ -17,12 +18,14 @@ import {
   IconButton,
   Tooltip,
   Typography,
+  CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Edit, Visibility, Add } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
-import axios from "axios";
 
-const BASE_URL = "https://localhost:7194/api";
+const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
 
 // Custom styling for components using `styled`
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -39,16 +42,11 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const fetchAllOrders = async () => {
-  const response = await fetch(`${BASE_URL}/Orders`);
-  if (!response.ok) throw new Error("Failed to fetch orders");
-  return response.json();
-};
-
-const fetchUserNameById = async (userID) => {
-  const response = await axios.get(`${BASE_URL}/User/${userID}`);
-  return response.data.name;
-};
+// Create an axios instance with default config
+const api = axios.create({
+  baseURL: BASE_URL,
+  withCredentials: true,
+});
 
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
@@ -56,6 +54,9 @@ const OrderList = () => {
   const [error, setError] = useState(null);
   const [open, setOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("info");
   const [formState, setFormState] = useState({
     id: "",
     customerName: "",
@@ -72,37 +73,49 @@ const OrderList = () => {
   });
   const [orderDetails, setOrderDetails] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [userNames, setUserNames] = useState({});
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const data = await fetchAllOrders();
-        setOrders(data);
-
-        // Fetch unique customer names
-        const uniqueUserIDs = [...new Set(data.map((order) => order.userID))];
-        const userNamesMap = {};
-        await Promise.all(
-          uniqueUserIDs.map(async (userID) => {
-            const name = await fetchUserNameById(userID);
-            userNamesMap[userID] = name;
-          })
-        );
-        setUserNames(userNamesMap);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchOrders();
   }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/Orders");
+      setOrders(response.data);
+      setSnackbarMessage("Orders loaded successfully");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      setError("Failed to load orders. Please try again later.");
+      setSnackbarMessage("Failed to load orders");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     setOpen(false);
-    // Add createOrder or updateOrder logic here.
+    try {
+      if (isEditMode) {
+        await api.put(`/Orders/${formState.id}`, formState);
+        setSnackbarMessage("Order updated successfully");
+      } else {
+        await api.post("/Orders", formState);
+        setSnackbarMessage("Order created successfully");
+      }
+      setSnackbarSeverity("success");
+      fetchOrders(); // Refresh the order list
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setSnackbarMessage(`Failed to ${isEditMode ? "update" : "create"} order`);
+      setSnackbarSeverity("error");
+    }
+    setSnackbarOpen(true);
   };
 
   const handleEdit = (order) => {
@@ -112,12 +125,27 @@ const OrderList = () => {
   };
 
   const handleViewDetails = async (orderId) => {
-    // Add fetchOrderDetails logic here
-    setDetailsOpen(true);
+    try {
+      const response = await api.get(`/Orders/${orderId}`);
+      setOrderDetails(response.data);
+      setDetailsOpen(true);
+    } catch (error) {
+      console.error("Error fetching order details:", error);
+      setSnackbarMessage("Failed to fetch order details");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
+  if (loading) return <CircularProgress />;
+  if (error) return <Typography color="error">{error}</Typography>;
 
   return (
     <div>
@@ -129,6 +157,20 @@ const OrderList = () => {
         variant="contained"
         startIcon={<Add />}
         onClick={() => {
+          setFormState({
+            id: "",
+            customerName: "",
+            status: "",
+            paymentId: "",
+            storeId: "",
+            voucherId: "",
+            shipperPartnerId: "",
+            orderDate: "",
+            shippedDate: "",
+            note: "",
+            paid: false,
+            totalPrice: "",
+          });
           setOpen(true);
           setIsEditMode(false);
         }}
@@ -153,14 +195,20 @@ const OrderList = () => {
           </TableHead>
           <TableBody>
             {orders.map((order) => (
-              <TableRow key={order.orderId} hover>
-                <TableCell>{order.orderId}</TableCell>
-                <TableCell>{userNames[order.userID] || "Loading..."}</TableCell>
+              <TableRow key={order.id} hover>
+                <TableCell>{order.id}</TableCell>
+                <TableCell>{order.customerName}</TableCell>
                 <TableCell>{order.status}</TableCell>
                 <TableCell>{order.paymentId}</TableCell>
-                <TableCell>{order.orderDate}</TableCell>
-                <TableCell>{order.shippedDate || "Pending"}</TableCell>
-                <TableCell>${order.totalPrice}</TableCell>
+                <TableCell>
+                  {new Date(order.orderDate).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  {order.shippedDate
+                    ? new Date(order.shippedDate).toLocaleDateString()
+                    : "Pending"}
+                </TableCell>{" "}
+                {order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}$
                 <TableCell>
                   <Tooltip title="Edit Order">
                     <IconButton
@@ -172,7 +220,7 @@ const OrderList = () => {
                   </Tooltip>
                   <Tooltip title="View Details">
                     <IconButton
-                      onClick={() => handleViewDetails(order.orderId)}
+                      onClick={() => handleViewDetails(order.id)}
                       sx={{ color: "primary.main" }}
                     >
                       <Visibility />
@@ -226,7 +274,10 @@ const OrderList = () => {
             variant="outlined"
             value={formState.totalPrice}
             onChange={(e) =>
-              setFormState({ ...formState, totalPrice: e.target.value })
+              setFormState({
+                ...formState,
+                totalPrice: parseFloat(e.target.value),
+              })
             }
           />
           {/* Add other fields as needed */}
@@ -249,11 +300,42 @@ const OrderList = () => {
       <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)}>
         <DialogTitle>Order Details</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            {orderDetails
-              ? JSON.stringify(orderDetails, null, 2)
-              : "Loading details..."}
-          </DialogContentText>
+          {orderDetails ? (
+            <div>
+              <Typography>
+                <strong>Order ID:</strong> {orderDetails.id}
+              </Typography>
+              <Typography>
+                <strong>Customer:</strong> {orderDetails.customerName}
+              </Typography>
+              <Typography>
+                <strong>Status:</strong> {orderDetails.status}
+              </Typography>
+              <Typography>
+                <strong>Payment ID:</strong> {orderDetails.paymentId}
+              </Typography>
+              <Typography>
+                <strong>Order Date:</strong>{" "}
+                {new Date(orderDetails.orderDate).toLocaleString()}
+              </Typography>
+              <Typography>
+                <strong>Shipped Date:</strong>{" "}
+                {orderDetails.shippedDate
+                  ? new Date(orderDetails.shippedDate).toLocaleString()
+                  : "Pending"}
+              </Typography>
+              <Typography>
+                <strong>Total Price:</strong> $
+                {orderDetails.totalPrice.toFixed(2)}
+                console.log(orders); // or the relevant data source
+              </Typography>
+              <Typography>
+                <strong>Note:</strong> {orderDetails.note || "N/A"}
+              </Typography>
+            </div>
+          ) : (
+            <CircularProgress />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDetailsOpen(false)} color="primary">
@@ -261,6 +343,21 @@ const OrderList = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

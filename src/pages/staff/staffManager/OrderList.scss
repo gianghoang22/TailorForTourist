@@ -1,0 +1,36 @@
+.order-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; // Khoảng cách giữa các hàng
+  
+    .order-headers,
+    .order-row {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr); // 8 cột, chia đều
+      align-items: center;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+    }
+  
+    .order-headers {
+      font-weight: bold;
+      background-color: #eee;
+    }
+  
+    .order-row {
+      &:nth-child(odd) {
+        background-color: #fff;
+      }
+      &:nth-child(even) {
+        background-color: #f1f1f1;
+      }
+  
+      .order-actions {
+        display: flex;
+        gap: 10px; // Khoảng cách giữa các nút
+      }
+    }
+  }
+  

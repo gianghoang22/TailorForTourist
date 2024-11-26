@@ -1,43 +1,154 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './MeasureGuest.scss';
 import { Navigation } from '../../../layouts/components/navigation/Navigation';
 import { Footer } from '../../../layouts/components/footer/Footer';
-const MeasureGuest = () => {
-  const [showLoginForm, setShowLoginForm] = useState(false);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
 
-  const toggleLoginForm = (e) => {
-    e.preventDefault();
-    setShowLoginForm(!showLoginForm);
+const MeasureGuest = () => {
+  const [formData, setFormData] = useState({
+    chest: "",
+    waist: "",
+    hip: "",
+    neck: "",
+    armhole: "",
+    biceps: "",
+    shoulder: "",
+    sleeveLength: "",
+    jacketLength: "",
+    pantsWaist: "",
+    crotch: "",
+    thigh: "",
+    pantsLength: "",
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState({});
+  const userID = localStorage.getItem("userID");
+  const measurementId = parseInt(localStorage.getItem('measurementId'), 10);
+  console.log('MeasurementId: ', measurementId);
+
+
+  useEffect(() => {
+    if(userID) {
+      getMeasurementByUserId(userID);
+    }
+  }, [userID]);
+
+  const getMeasurementByUserId = (userId) => {
+    fetch(`https://localhost:7194/api/Measurement/user/${userId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch measurements");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Fetched measurements:", data);
+        setFormData(data); // Populate form with fetched data
+        if (data.measurementId) {
+          localStorage.setItem("measurementId", data.measurementId); // Save measurementId to localStorage
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching measurements:", error);
+      });
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError(''); // Clear any existing error
 
-    try {
-      const response = await fetch('https://localhost:7194/api/Login/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
+  const validateFields = () => {
+    const newErrors = {};
+    const numberFields = [
+      "chest",
+      "waist",
+      "hip",
+      "neck",
+      "armhole",
+      "biceps",
+      "shoulder",
+      "sleeveLength",
+      "jacketLength",
+      "pantsWaist",
+      "crotch",
+      "thigh",
+      "pantsLength",
+    ];
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('authToken', data.token); // Store the token securely
-        console.log('Login successful!');
-      } else {
-        setError('Invalid username or password');
+    numberFields.forEach((field) => {
+      if (!formData[field]) {
+        newErrors[field] = "This field is required";
+      } else if (isNaN(formData[field]) || formData[field] < 0 || formData[field] > 200) {
+        newErrors[field] = "Please enter a valid number (0-200)";
       }
-    } catch (error) {
-      console.error('Error logging in:', error);
-      setError('An error occurred. Please try again.');
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0; // return true if no errors
+  };
+
+  const handleUpdate = () => {
+    if (validateFields()) {
+      console.log("Form data being updated:", {
+        ...formData,
+        measurementId: measurementId,
+      });
+  
+      fetch(`https://localhost:7194/api/Measurement/${measurementId}`, {
+        method: "PUT", // Use PUT for updates
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          measurementId: measurementId,
+          userId: userID,
+        }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Measurement updated successfully:", data);
+          setIsEditing(false); // Thoát chế độ chỉnh sửa sau khi cập nhật thành công
+        })
+        .catch((error) => {
+          console.error("Error updating measurement:", error);
+        });
     }
+  };
+
+  const handleEdit = () => {
+    if(isEditing){
+      handleUpdate();
+    }
+    setIsEditing(!isEditing);
+  }
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+  
+    // Kiểm tra nếu input là số, chuyển đổi sang số nguyên
+    const numberFields = [
+      "chest",
+      "waist",
+      "hip",
+      "neck",
+      "armhole",
+      "biceps",
+      "shoulder",
+      "sleeveLength",
+      "jacketLength",
+      "pantsWaist",
+      "crotch",
+      "thigh",
+      "pantsLength",
+    ];
+  
+    setFormData({
+      ...formData,
+      [name]: numberFields.includes(name) ? parseInt(value, 10) || "" : value,
+    });
   };
 
   return (
@@ -52,162 +163,180 @@ const MeasureGuest = () => {
           </div>
 
           <div className="form-get-measures">
-            <div className="woocommerce">
-
-                {/* login form */}
-              <div className="woocommerce-form-login-toggle">
-                <div className="woocommerce-info">
-                  Returning customer?&nbsp;
-                  <a
-                    href="#"
-                    className="showlogin"
-                    id="mona-mesua-form-login"
-                    onClick={toggleLoginForm}
-                  >
-                    Click here to login
-                  </a>
-                </div>
-              </div>
-
-              {showLoginForm && (
-                <form className="woocommerce-form woocommerce-form-login login" method="post" style={{}}>
-                <a
-                  className="social-login-url main-btn btn facebook"
-                  href="https://www.facebook.com/dialog/oauth?client_id=1088861731264410&redirect_uri=https://adongsilk.com/social-hook&scope=public_profile,email"
-                  data-type="facebook"
-                >
-                  <i className="fa fa-facebook"></i> &nbsp; Đăng nhập bằng Facebook
-                </a>
-              
-                <a
-                  className="social-login-url main-btn btn google"
-                  href="https://accounts.google.com/o/oauth2/v2/auth?client_id=165347575294-mfu24qrf7enb6bmsd6sqma2s4bpipfc3.apps.googleusercontent.com&response_type=code&scope=openid%20email&redirect_uri=https://adongsilk.com/social-hook/"
-                  data-type="google"
-                >
-                  <i className="fa fa-google-plus"></i>
-                  <span className="txt">&nbsp; Đăng nhập bằng Google</span>
-                </a>
-              
-                <p className="form-row form-row-first">
-                  <label htmlFor="username">
-                    Username or email&nbsp;<span className="required">*</span>
-                  </label>
-                  <input type="text" className="input-text" name="username" id="username" autoComplete="username" />
-                </p>
-              
-                <p className="form-row form-row-last">
-                  <label htmlFor="password">
-                    Password&nbsp;<span className="required">*</span>
-                  </label>
-                  <input type="password" className="input-text" name="password" id="password" autoComplete="current-password" />
-                </p>
-              
-                <div className="clear"></div>
-              
-                <p className="form-row">
-                  <input type="hidden" id="woocommerce-login-nonce" name="woocommerce-login-nonce" value="92fca06c42" />
-                  <input type="hidden" name="_wp_http_referer" value="/measures/" />
-                  <button type="submit" className="button" name="login" value="Login">
-                    Login
-                  </button>
-                  <input type="hidden" name="redirect" value="https://adongsilk.com/measures/" />
-                  <label className="woocommerce-form__label woocommerce-form__label-for-checkbox inline">
-                    <input
-                      className="woocommerce-form__input woocommerce-form__input-checkbox"
-                      name="rememberme"
-                      type="checkbox"
-                      id="rememberme"
-                      value="forever"
-                    />{" "}
-                    <span>Remember me</span>
-                  </label>
-                </p>
-              
-                <div className="clear"></div>
-              </form>
-              
-              )}
-            </div>
 
             {/* measure form */}
 
-            <form action="" method="post" id="mona-submit-mesuares">
-  <div className="frow">
-    <input name="your_name" type="text" className="fcontrol" placeholder="Name" />
-  </div>
-  
-  <div className="frow">
-    <div className="inline-controls">
-      <input name="your_height" type="text" className="fcontrol" placeholder="Height(Cm)" />
-      <input name="your_weight" type="text" className="fcontrol" placeholder="Weight(Kg)" />
-      <input name="your_age" type="text" className="fcontrol" placeholder="Age" />
-    </div>
-  </div>
-  
+            {/* <form action="" method="post" id="mona-submit-mesuares"> */}
   <div className="frow col2row">
     <div className="mona-row1">
       <div className="inline-controls">
         <label className="lb">Chest</label>
-        <div className="ipgr"><input name="your_chest" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr">
+          <input
+                      name="chest"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.chest || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "}
+                    cm
+                    </div>
       </div>
       <div className="inline-controls">
         <label className="lb">Waist</label>
-        <div className="ipgr"><input name="your_waist" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr"><input
+                      name="waist"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.waist || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "} cm</div>
       </div>
       <div className="inline-controls">
         <label className="lb">Hip</label>
-        <div className="ipgr"><input name="your_hip" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr"><input
+                      name="hip"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.hip || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "} cm</div>
       </div>
       <div className="inline-controls">
         <label className="lb">Neck</label>
-        <div className="ipgr"><input name="your_nek" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr"><input
+                      name="neck"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.neck || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "} cm</div>
       </div>
       <div className="inline-controls">
         <label className="lb">Armhole</label>
-        <div className="ipgr"><input name="your_armhole" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr"><input
+                      name="armhole"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.armhole || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "} cm</div>
       </div>
       <div className="inline-controls">
         <label className="lb">Biceps</label>
-        <div className="ipgr"><input name="your_biceps" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr"><input
+                      name="biceps"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.biceps || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "} cm</div>
       </div>
       <div className="inline-controls">
         <label className="lb">Shoulder</label>
-        <div className="ipgr"><input name="your_showder" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr"><input
+                      name="shoulder"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.shoulder || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "} cm</div>
       </div>
       <div className="inline-controls">
         <label className="lb">Sleeve length</label>
-        <div className="ipgr"><input name="your_sleeve_length" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr"><input
+                      name="sleeveLength"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.sleeveLength || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "} cm</div>
       </div>
       <div className="inline-controls">
         <label className="lb">Jaket length</label>
-        <div className="ipgr"><input name="your_jaket_length" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr"><input
+                      name="jacketLength"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.jacketLength || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "} cm</div>
       </div>
     </div>
 
     <div className="mona-row2">
       <div className="inline-controls">
         <label className="lb">Pants Waist</label>
-        <div className="ipgr"><input name="your_pant_waist" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr"><input
+                      name="pantsWaist"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.pantsWaist || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "} cm</div>
       </div>
       <div className="inline-controls">
         <label className="lb">Crotch</label>
-        <div className="ipgr"><input name="your_crotch" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr"><input
+                      name="crotch"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.crotch || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "} cm</div>
       </div>
       <div className="inline-controls">
         <label className="lb">Thigh</label>
-        <div className="ipgr"><input name="your_thigh" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr"><input
+                      name="thigh"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.thigh || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "} cm</div>
       </div>
       <div className="inline-controls">
         <label className="lb">Pants length</label>
-        <div className="ipgr"><input name="your_pant_length" type="text" className="fcontrol" /> cm</div>
+        <div className="ipgr"><input
+                      name="pantsLength"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.pantsLength || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />{" "} cm</div>
       </div>
     </div>
   </div>
   
+  <div className="button">
+      
   <p className="center-txt">
-    <button type="submit" className="primary-btn btn">Confirm</button>
+    <Link to='/cart'>
+    <button className="primary-btn btn">Confirm</button>
+    </Link>
   </p>
-</form>
+
+  <p className="center-txt">
+  <button className="primary-btn btn" type="button" onClick={handleEdit}>
+          {isEditing ? "Save" : "Edit"}
+        </button>
+        </p>
+  </div>
+
+{/* </form> */}
 
           </div>
 
@@ -347,14 +476,6 @@ const MeasureGuest = () => {
 
 
         </div>
-      </div>
-
-
-
-      <div className="next-btn">
-        <Link to="/cart">
-          <button className="navigation-button">Next</button>
-        </Link>
       </div>
       <Footer/>
     </>
