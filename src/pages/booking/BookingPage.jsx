@@ -293,10 +293,10 @@ const BookingPage = () => {
           <div className="about-section">
             <h3>About</h3>
             <p>
-              Our team at Alts (Alteration Specialists) Court St offers standard
-              services, bridal services, and specialty services. The studio is
-              conveniently located on Court Street between President St and
-              Union St. Tour our studio.
+              "Our team at Matcha specializes in crafting premium vests tailored
+              to your unique needs. Located in the heart of the city, our studio
+              provides a personalized experience, blending expert craftsmanship
+              with exceptional service. Visit us and explore our collection."
             </p>
           </div>
           <div className="contact-info">
@@ -315,16 +315,7 @@ const BookingPage = () => {
             <h3>Hours</h3>
             <ul>
               <li>
-                <span>Monday:</span> Closed
-              </li>
-              <li>
-                <span>Tuesday - Friday:</span> 10:00 am - 7:00 pm
-              </li>
-              <li>
-                <span>Saturday:</span> 10:00 am - 6:00 pm
-              </li>
-              <li>
-                <span>Sunday:</span> Closed
+                <span>Monday - Sunday:</span> 10:00 am - 7:00 pm
               </li>
             </ul>
           </div>

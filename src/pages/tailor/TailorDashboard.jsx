@@ -8,18 +8,21 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  Scissors,
+  Package,
+  Ruler,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "./TailorDashboard.scss";
 
 const statusColors = {
-  "Not Start": "bg-yellow-200 text-yellow-800",
-  Doing: "bg-blue-200 text-blue-800",
-  Finish: "bg-green-200 text-green-800",
-  Due: "bg-orange-200 text-orange-800",
-  Cancel: "bg-red-200 text-red-800",
-  Pending: "bg-gray-200 text-gray-800",
-  Processing: "bg-purple-200 text-purple-800",
+  "Not Start": "bg-yellow-300 text-yellow-800",
+  Doing: "bg-blue-300 text-blue-800",
+  Finish: "bg-green-300 text-green-800",
+  Due: "bg-orange-300 text-orange-800",
+  Cancel: "bg-red-300 text-red-800",
+  Pending: "bg-gray-300 text-gray-800",
+  Processing: "bg-purple-300 text-purple-800",
 };
 
 const TailorDashboard = () => {
@@ -42,6 +45,7 @@ const TailorDashboard = () => {
       ? STAGE_ORDER[currentIndex + 1]
       : null;
   };
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -79,6 +83,8 @@ const TailorDashboard = () => {
 
   const fetchOrderDetails = async (orderId) => {
     try {
+      console.log(`Fetching order details for orderId: ${orderId}`);
+      // Step 1: Fetch order details to get productId
       const orderResponse = await fetch(
         `https://localhost:7194/api/Orders/${orderId}/details`,
         {
@@ -97,15 +103,18 @@ const TailorDashboard = () => {
 
       if (!orderData.orderDetails || orderData.orderDetails.length === 0) {
         console.log(`No order details found for order ${orderId}`);
-        return null;
+        return { error: `No order details found for order ${orderId}` };
       }
 
       const { productId } = orderData.orderDetails[0];
       if (!productId) {
         console.log(`No productId found in order details for order ${orderId}`);
-        return null;
+        return { error: `No productId found for order ${orderId}` };
       }
 
+      console.log(`Order details fetched. ProductId: ${productId}`);
+
+      // Step 2: Fetch product details to get measurementId
       const productResponse = await fetch(
         `https://localhost:7194/api/Product/details/${productId}`,
         {
@@ -123,37 +132,89 @@ const TailorDashboard = () => {
       const productData = await productResponse.json();
       if (!productData || !productData.productID) {
         console.log(`No product data found for productId ${productId}`);
-        return null;
+        return { error: `No product data found for productId ${productId}` };
       }
+
+      console.log(
+        `Product details fetched. MeasurementId: ${productData.measurementID}`
+      );
 
       // Fetch style name for each style option
       const styleOptionsWithNames = await Promise.all(
         productData.styleOptions.map(async (option) => {
-          const styleName = await fetchStyleName(option.styleId);
-          return { ...option, styleName };
+          try {
+            const styleName = await fetchStyleName(option.styleId);
+            return { ...option, styleName };
+          } catch (error) {
+            console.error(
+              `Error fetching style name for styleId ${option.styleId}:`,
+              error
+            );
+            return { ...option, styleName: "N/A" };
+          }
         })
       );
 
+      // Step 3: Fetch measurement data
+      let measurementData = null;
+      let measurementError = null;
+      if (productData.measurementID) {
+        try {
+          console.log(
+            `Fetching measurement data for measurementId: ${productData.measurementID}`
+          );
+          const measurementResponse = await fetch(
+            `https://localhost:7194/api/Measurement/${productData.measurementID}`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (measurementResponse.ok) {
+            measurementData = await measurementResponse.json();
+            console.log(
+              "Measurement data fetched successfully:",
+              measurementData
+            );
+          } else {
+            measurementError = `Error fetching measurement data: ${measurementResponse.status}`;
+            console.error(measurementError);
+          }
+        } catch (error) {
+          measurementError = `Error fetching measurement data: ${error.message}`;
+          console.error(measurementError);
+        }
+      } else {
+        measurementError = "No measurementId found in product data";
+        console.log(measurementError);
+      }
+
       return {
         productId,
-        productCode: productData.productCode,
         fabricName: productData.fabricName,
         liningName: productData.liningName,
         styleOptions: styleOptionsWithNames,
         orderInfo: {
-          totalPrice: orderData.totalPrice,
-          deposit: orderData.deposit,
+          //totalPrice: orderData.totalPrice,
+          //deposit: orderData.deposit,
           status: orderData.status,
           guestName: orderData.guestName,
           orderDate: orderData.orderDate,
         },
+        measurement: measurementData,
+        measurementError: measurementError,
       };
     } catch (error) {
       console.error(
-        `Error fetching order details for orderId ${orderId}:`,
+        `Error in fetchOrderDetails for orderId ${orderId}:`,
         error
       );
-      return null;
+      return {
+        error: `Error fetching details for order ${orderId}: ${error.message}`,
+      };
     }
   };
 
@@ -234,6 +295,7 @@ const TailorDashboard = () => {
         detailsResults.filter(([, details]) => details != null)
       );
       setOrderDetails(detailsMap);
+      console.log("Order details:", detailsMap);
     } catch (error) {
       console.error("Error fetching orders:", error);
       setError("Error fetching orders. Please try again later.");
@@ -244,6 +306,7 @@ const TailorDashboard = () => {
     // Implement edit functionality
     console.log("Edit order:", order);
   };
+
   const handleUpdate = async (order) => {
     try {
       const token = localStorage.getItem("token");
@@ -464,6 +527,7 @@ const TailorDashboard = () => {
       setError(error.message);
     }
   };
+
   const toggleOrderDetails = (orderId) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
@@ -520,7 +584,6 @@ const TailorDashboard = () => {
               <tr>
                 <th>Stage Name</th>
                 <th>Order Status</th>
-                <th>Product Code</th>
                 <th>Note</th>
                 <th>Date Sample</th>
                 <th>Date Fix</th>
@@ -537,23 +600,19 @@ const TailorDashboard = () => {
                       <td>{order.stageName}</td>
                       <td>
                         <span
-                          className={`px-2 py-1 rounded-full ${statusColors[order.status]}`}
+                          className={`px-2 py-1 rounded-full ${
+                            statusColors[order.status] ||
+                            "bg-gray-200 text-gray-800"
+                          }`}
                         >
                           {order.status}
                         </span>
                       </td>
-                      <td>{details.productCode}</td>
                       <td>{order.note}</td>
                       <td>{order.dateSample}</td>
                       <td>{order.dateFix}</td>
                       <td>{order.dateDelivery}</td>
                       <td>
-                        <button
-                          className="edit-button"
-                          onClick={() => handleEdit(order)}
-                        >
-                          Edit
-                        </button>
                         <button
                           onClick={() => handleUpdate(order)}
                           disabled={order.status === "Finish"}
@@ -573,24 +632,110 @@ const TailorDashboard = () => {
                     </tr>
                     {expandedOrder === order.orderId && (
                       <tr>
-                        <td colSpan="8">
-                          <div className="order-details">
-                            <h4>Order Details</h4>
-                            <p>Fabric Name: {details.fabricName || "N/A"}</p>
-                            <p>Lining Name: {details.liningName || "N/A"}</p>
-                            {details.styleOptions &&
-                              details.styleOptions.map((option, index) => (
-                                <div key={index}>
-                                  <h5>Style Option {index + 1}</h5>
-                                  <p>Style Name: {option.styleName || "N/A"}</p>
-                                  <p>
-                                    Option Type: {option.optionType || "N/A"}
+                        <td colSpan="7">
+                          <div className="order-details bg-white shadow-lg rounded-lg p-6 mt-4">
+                            <div className="grid grid-cols-2 gap-8">
+                              <div className="order-info">
+                                <h4 className="text-xl font-semibold mb-4 flex items-center">
+                                  <Package className="mr-2" /> Order Details
+                                </h4>
+                                <div className="bg-gray-100 p-4 rounded-md">
+                                  <p className="mb-2">
+                                    <span className="font-semibold">
+                                      Order ID:
+                                    </span>{" "}
+                                    {order.orderId}
                                   </p>
-                                  <p>
-                                    Option Value: {option.optionValue || "N/A"}
+                                  <p className="mb-2">
+                                    <span className="font-semibold">
+                                      Guest Name:
+                                    </span>{" "}
+                                    {details.orderInfo?.guestName || "N/A"}
+                                  </p>
+                                  <p className="mb-2">
+                                    <span className="font-semibold">
+                                      Order Date:
+                                    </span>{" "}
+                                    {details.orderInfo?.orderDate || "N/A"}
+                                  </p>
+                                  {/* Total price and deposit removed */}
+                                </div>
+                                <h5 className="text-lg font-semibold mt-4 mb-2 flex items-center">
+                                  <Scissors className="mr-2" /> Product Details
+                                </h5>
+                                <div className="bg-gray-100 p-4 rounded-md">
+                                  <p className="mb-2">
+                                    <span className="font-semibold">
+                                      Fabric:
+                                    </span>{" "}
+                                    {details.fabricName || "N/A"}
+                                  </p>
+                                  <p className="mb-2">
+                                    <span className="font-semibold">
+                                      Lining:
+                                    </span>{" "}
+                                    {details.liningName || "N/A"}
                                   </p>
                                 </div>
-                              ))}
+                                <h6 className="text-md font-semibold mt-4 mb-2">
+                                  Style Options
+                                </h6>
+                                <div className="bg-gray-100 p-4 rounded-md">
+                                  {details.styleOptions &&
+                                    details.styleOptions.map(
+                                      (option, index) => (
+                                        <div key={index} className="mb-2">
+                                          <p>
+                                            <span className="font-semibold">
+                                              Style:
+                                            </span>{" "}
+                                            {option.styleName || "N/A"}
+                                          </p>
+                                          <p>
+                                            <span className="font-semibold">
+                                              Type:
+                                            </span>{" "}
+                                            {option.optionType || "N/A"}
+                                          </p>
+                                          <p>
+                                            <span className="font-semibold">
+                                              Value:
+                                            </span>{" "}
+                                            {option.optionValue || "N/A"}
+                                          </p>
+                                        </div>
+                                      )
+                                    )}
+                                </div>
+                              </div>
+                              <div className="measurements">
+                                <h4 className="text-xl font-semibold mb-4 flex items-center">
+                                  <Ruler className="mr-2" /> Measurements
+                                </h4>
+                                {details.measurementError ? (
+                                  <p className="text-red-500 bg-red-100 p-4 rounded-md">
+                                    {details.measurementError}
+                                  </p>
+                                ) : details.measurement ? (
+                                  <div className="grid grid-cols-2 gap-4 bg-gray-100 p-4 rounded-md">
+                                    {Object.entries(details.measurement).map(
+                                      ([key, value]) => (
+                                        <p key={key} className="capitalize">
+                                          <span className="font-semibold">
+                                            {key}:
+                                          </span>{" "}
+                                          {value || "N/A"}
+                                        </p>
+                                      )
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="bg-yellow-100 p-4 rounded-md text-yellow-700">
+                                    No measurement data available.
+                                  </p>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </td>
                       </tr>

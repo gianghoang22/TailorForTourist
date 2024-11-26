@@ -22,7 +22,7 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import "./ManagerDashboard.scss";
-
+import logo from "./../../assets/img/icon/matcha.png";
 const ManagerDashboard = () => {
   const location = useLocation();
   const [orders, setOrders] = useState([]);
@@ -379,8 +379,9 @@ const ManagerDashboard = () => {
         <div className="sidebar">
           <div className="logo">
             <img
+              src={logo}
               alt="Logo"
-              src="https://storage.googleapis.com/a1aa/image/gimjwrHlSw4UP9hcEjhGo9Z6muOrLa7CNlrjRKBB9eDhgjyJA.jpg"
+              style={{ width: "160px", height: "auto" }}
             />
             <span className="title">M.</span>
           </div>

@@ -21,7 +21,7 @@ import TemplateFrame from "./TemplateFrame";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import { useNavigate } from "react-router-dom";
-
+import IMG from "./../../assets/img/icon/matcha.png";
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
@@ -241,7 +241,19 @@ export default function SignUp() {
               p: 2,
             }}
           >
-            <Card variant="outlined">
+            <Card variant="outlined" sx={{ position: "relative" }}>
+              <img
+                src={IMG}
+                alt="Icon"
+                style={{
+                  position: "absolute",
+                  top: "16px", // Adjust vertical positioning
+                  right: "16px", // Adjust horizontal positioning
+                  width: "80px", // Adjust size as needed
+                  height: "auto",
+                  zIndex: 1, // Ensure the image is above other elements
+                }}
+              />
               <Typography
                 component="h1"
                 variant="h4"

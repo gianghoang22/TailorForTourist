@@ -1,7 +1,7 @@
 import React from "react";
 import "../navigation/Navigation.scss"; // Adjust the path as necessary
 import "bootstrap/dist/css/bootstrap.min.css";
-import logo from "../../../assets/img/logo/logo.png"; // Adjust the path as necessary
+import logo from "./../../../assets/img/icon/matcha.png"; // Adjust the path as necessary
 import { useNavigate, Link } from "react-router-dom";
 import { FaSignInAlt, FaSignOutAlt, FaCalendarAlt } from "react-icons/fa"; // Import icons
 
@@ -29,8 +29,13 @@ export const Navigation = () => {
       <div className="main-header header-sticky">
         <div className="container-header d-flex justify-content-between align-items-center">
           <div className="logo">
-            <a href="#">
-              <img src={logo} alt="Logo" />
+            <a href="/">
+              <img
+                src={logo}
+                alt="Logo"
+                style={{ width: "160px", height: "auto" }}
+              />{" "}
+              {/* Adjust the width as needed */}
             </a>
           </div>
           <nav className="main-menu d-none d-lg-block">

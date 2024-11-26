@@ -48,10 +48,29 @@ const VoucherManagement = () => {
     fetchVoucherData();
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentDate = new Date();
+      const updatedVouchers = voucherData.map((voucher) => {
+        if (
+          voucher.status === "OnGoing" &&
+          new Date(voucher.dateEnd) < currentDate
+        ) {
+          return { ...voucher, status: "Expired" };
+        }
+        return voucher;
+      });
+      setVoucherData(updatedVouchers);
+    }, 10000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [voucherData]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setNewVoucher({ ...newVoucher, [name]: value });
   };
+
   const validateForm = () => {
     const { voucherCode, description, discountNumber, dateStart, dateEnd } =
       newVoucher;
@@ -71,15 +90,19 @@ const VoucherManagement = () => {
 
     return true;
   };
+
   const isDuplicateVoucherCode = (code) => {
     return voucherData.some((voucher) => voucher.voucherCode === code);
   };
+
   const isValidDateStart = (date) => {
     const selectedDate = new Date(date);
     const currentDate = new Date(today);
     return selectedDate >= currentDate;
   };
+
   const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
+
   const handleAdd = async () => {
     if (!validateForm()) return;
 
@@ -132,11 +155,13 @@ const VoucherManagement = () => {
     setNewVoucher(voucher);
     setEditIndex(voucher.voucherId);
   };
+
   const validateVoucherCode = (code) => {
     const bigSalePattern = /^BIGSALE\d{2}$/;
     const freeShipPattern = /^FREESHIP\d{2}$/;
     return bigSalePattern.test(code) || freeShipPattern.test(code);
   };
+
   const handleUpdate = async () => {
     if (!validateForm()) return;
 
@@ -211,6 +236,7 @@ const VoucherManagement = () => {
       setError(error.message);
     }
   };
+
   const handleDelete = async (voucherId) => {
     try {
       const response = await fetch(
@@ -238,6 +264,17 @@ const VoucherManagement = () => {
   const filteredVouchers = voucherData.filter((v) =>
     v.voucherCode.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "OnGoing":
+        return "green";
+      case "Expired":
+        return "red";
+      default:
+        return "inherit";
+    }
+  };
 
   return (
     <div className="voucher-management">
@@ -340,7 +377,9 @@ const VoucherManagement = () => {
                 <TableCell>{v.voucherCode}</TableCell>
                 <TableCell>{v.description}</TableCell>
                 <TableCell>{v.discountNumber}%</TableCell>
-                <TableCell>{v.status}</TableCell>
+                <TableCell style={{ color: getStatusColor(v.status) }}>
+                  {v.status}
+                </TableCell>
                 <TableCell>
                   {new Date(v.dateStart).toLocaleDateString()}
                 </TableCell>
