@@ -15,7 +15,7 @@ const Cart = () => {
   const [apiCart, setApiCart] = useState(null);
   const [customDetails, setCustomDetails] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const [isGuest, setIsGuest] = useState(!localStorage.getItem('token'));
 
@@ -116,7 +116,7 @@ const Cart = () => {
           setCustomDetails(details);
         }
       } catch (error) {
-        setError('Đã xảy ra lỗi khi lấy giỏ hàng');
+        setError("Đã xảy ra lỗi khi lấy giỏ hàng");
       } finally {
         setLoading(false);
       }
@@ -291,7 +291,7 @@ const Cart = () => {
           {loading ? (
             <p>Loading cart...</p>
           ) : error ? (
-            <p style={{ color: 'red' }}>{error}</p>
+            <p style={{ color: "red" }}>{error}</p>
           ) : apiCart && apiCart.cartItems && apiCart.cartItems.length > 0 ? (
             // right info
             <div className='right-main'>
@@ -399,7 +399,7 @@ const Cart = () => {
           )}
         </div>
       </div>
-      <Footer/>
+      <Footer />
     </>
   );
 };

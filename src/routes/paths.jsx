@@ -60,7 +60,9 @@ export const routes = [
   },
   {
     path: "/admin",
-    element: <AdminDashboard />,
+    element: (
+      <ProtectedRoute element={<AdminDashboard />} allowedRoles={["admin"]} />
+    ),
     children: [
       {
         path: "user-management",
@@ -88,12 +90,15 @@ export const routes = [
     path: "/manager",
     element: (
       <ErrorBoundary>
-        <ManagerDashboard />
+        <ProtectedRoute
+          element={<ManagerDashboard />}
+          allowedRoles={["store manager"]}
+        />
       </ErrorBoundary>
     ),
     children: [
       {
-        path: "staff-management", // This will be /manager/staff-management
+        path: "staff-management",
         element: <StaffManagement />,
       },
       {
@@ -104,8 +109,6 @@ export const routes = [
         path: "shipment",
         element: <ShipmentTracker />,
       },
-
-      // Add other children routes here if needed
     ],
   },
   {
@@ -117,31 +120,48 @@ export const routes = [
     element: <CreatePassword />,
   },
   {
-    path: "/booking",
-    element: <BookingPage />,
+    path: "/tailor",
+    element: (
+      <ProtectedRoute
+        element={<TailorDashboard />}
+        allowedRoles={["tailor partner"]}
+      />
+    ),
   },
   {
-    path: "/booking-thanks",
-    element: <BookingThanks />,
+    path: "/booking",
+    element: (
+      <ProtectedRoute
+        element={<BookingPage />}
+        allowedRoles={["customer"]}
+        allowGuestAccess={true}
+      />
+    ),
   },
   {
     path: "/cart",
     element: <Cart />,
   },
   {
+    path: "/booking-thanks",
+    element: <BookingThanks />,
+  },
+  {
     path: "/profile",
-    element: <UserProfile />,
+    element: (
+      <ProtectedRoute element={<UserProfile />} allowedRoles={["customer"]} />
+    ),
     children: [
       {
-        path: "change-password", // This will be /profile/change-password
+        path: "change-password",
         element: <ChangePassword />,
       },
       {
-        path: "order-history", // This will be /profile/change-password
+        path: "order-history",
         element: <OrderHistory />,
       },
       {
-        path: "measurement", // This will be /profile/change-password
+        path: "measurement",
         element: <Measurement />,
       },
       {
@@ -169,7 +189,7 @@ export const routes = [
   },
   {
     path: "/checkout/order-confirm",
-    element: <ThankYouPage/>,
+    element: <ThankYouPage />,
   },
   {
     path: "/checkout/order-receive",
@@ -191,7 +211,6 @@ export const routes = [
     path: "/signup",
     element: <SignUp />,
   },
-
   {
     path: "/staff",
     element: <StaffDashboard />,
@@ -215,47 +234,6 @@ export const routes = [
       {
         path: "measurement",
         element: <MeasureList />,
-      },
-    ],
-  },
-  // {
-  //   path: "/custom-suits",
-  //   element: <CustomSuit />,
-  //   children: [
-  //     {
-  //       path: "fabric",
-  //       element: <CustomFabric />,
-  //     },
-  //     {
-  //       path: "style",
-  //       element: <CustomStyle />,
-  //     },
-  //     {
-  //       path: "lining",
-  //       element: <CustomLining />,
-  //     },
-  //   ],
-  // },
-
-  {
-    path: "/staff",
-    element: <StaffDashboard />,
-    children: [
-      {
-        path: "",
-        element: <StaffDashboard />,
-      },
-      {
-        path: "order",
-        element: <OrderList />,
-      },
-      {
-        path: "booking",
-        element: <BookingList />,
-      },
-      {
-        path: "shipment",
-        element: <ShipmentList />,
       },
     ],
   },
@@ -292,5 +270,5 @@ export const routes = [
   {
     path: "/contact-us",
     element: <ContactUs />,
-  }
+  },
 ];
