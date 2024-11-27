@@ -157,6 +157,8 @@ const CustomStyle = () => {
   const [selectedOptionValues, setSelectedOptionValues] = useState({});
   const [selectedStyle, setSelectedStyle] = useState(null);
   const [fabricId, setFabricId] = useState(null);
+  const [selectedOptions, setSelectedOptions] = useState({});
+  const [selectedImages, setSelectedImages] = useState({});
 
   // Fetch both styles and options in parallel
   useEffect(() => {
@@ -190,29 +192,32 @@ const CustomStyle = () => {
   };
   
   const handleOptionValueClick = (styleOption) => {
-    // Lấy dữ liệu từ localStorage và đảm bảo nó là mảng
-    let styleOptionIds = JSON.parse(localStorage.getItem('styleOptionId')) || [];
-  
-    // Nếu không phải là mảng, chuyển về mảng rỗng
-    if (!Array.isArray(styleOptionIds)) {
-      styleOptionIds = [];
+    setSelectedOptions(prev => ({
+      ...prev,
+      [styleOption.optionType]: styleOption.styleOptionId
+    }));
+
+    setSelectedImages(prev => ({
+      ...prev,
+      [styleOption.optionType]: optionTypeImages[styleOption.optionValue]
+    }));
+
+    const selections = Object.values(selectedOptions);
+    if (!selections.includes(styleOption.styleOptionId)) {
+      selections.push(styleOption.styleOptionId);
     }
-  
-    // Thêm styleOptionId mới nếu chưa có trong danh sách
-    if (!styleOptionIds.includes(styleOption.styleOptionId)) {
-      styleOptionIds.push(styleOption.styleOptionId);
-      toast.success("Style option added to your suit");
-    }
-  
-    // Lưu lại vào localStorage
-    localStorage.setItem('styleOptionId', JSON.stringify(styleOptionIds));
-  
-    console.log('Updated styleOptionIds:', styleOptionIds);
+    
+    localStorage.setItem('styleOptionId', JSON.stringify(selections));
+    toast.success(`${styleOption.optionType} updated to ${styleOption.optionValue}`);
+    console.log('Selected options:', selectedOptions);
   };
 
-  // Lấy các optionValues thuộc về styleId và optionType cụ thể
   const getOptionValues = (styleId, optionType) => {
     return styleOptions.filter(option => option.styleId === styleId && option.optionType === optionType);
+  };
+
+  const isOptionSelected = (styleOption) => {
+    return selectedOptions[styleOption.optionType] === styleOption.styleOptionId;
   };
 
   if (loading) {
@@ -255,10 +260,8 @@ const CustomStyle = () => {
                         {getOptionValues(style.styleId, optionType).map(styleOption => (
                           <li
                             key={styleOption.styleOptionId}
-                            className={`option-value ${
-                              selectedOptionValues[optionType] === styleOption.optionValue ? 'selected' : ''
-                            }`}
-                            onClick={() => handleOptionValueClick(styleOption, style, optionType)} // Truyền cả đối tượng styleOption
+                            className={`option-value ${isOptionSelected(styleOption) ? 'selected' : ''}`}
+                            onClick={() => handleOptionValueClick(styleOption)}
                           >
                             <img
                               src={optionTypeImages[styleOption.optionValue]}
@@ -282,22 +285,29 @@ const CustomStyle = () => {
       
       {/* right content */}
       <div className='right-content'>
-        {selectedStyle && (
-          <div className='selected-style-details'>
-            <div className="product-info" id="pd_info">
-              <h1 className="pd-name">
-                CUSTOM 
-                <span>SUIT</span>
-              </h1>
-              <h3>Selected Style:</h3>
-              <img src={optionTypeImages[selectedStyle.optionValue]} alt="Selected option" />
-              <p><strong>Style:</strong> {selectedStyle.styleName}</p>
-              <p><strong>Option:</strong> {selectedStyle.optionValue}</p>
+        <div className='selected-style-details'>
+          <div className="product-info" id="pd_info">
+            <h1 className="pd-name">
+              CUSTOM 
+              <span>SUIT</span>
+            </h1>
+            
+            {/* Display selected options and their images */}
+            <div className="selected-options-preview">
+              {Object.entries(selectedImages).map(([optionType, imageUrl]) => (
+                <div key={optionType} className="selected-option">
+                  <h3>{optionType}</h3>
+                  <img 
+                    src={imageUrl} 
+                    alt={`Selected ${optionType}`}
+                    className="selected-option-image"
+                  />
+                </div>
+              ))}
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Nút chuyển tới bước Lining */}
         <div className='next-btn'>
           <Link to="/custom-suits/lining">
             <button className='navigation-button'>Go to Lining</button>

@@ -1,6 +1,7 @@
 import { toast } from 'react-toastify';
 
 const CART_KEY = 'shopping_cart';
+const GUEST_CART_KEY = 'guestCart';
 
 export const addToCart = (item) => {
   const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
@@ -59,4 +60,72 @@ export const removeFromCart = (itemId) => {
   const updatedCart = cart.filter(item => item.id !== itemId);
   localStorage.setItem(CART_KEY, JSON.stringify(updatedCart));
   toast.info('Item removed from cart');
+};
+
+export const addToGuestCart = (product, isCustom = false) => {
+  const guestCart = JSON.parse(localStorage.getItem(GUEST_CART_KEY)) || {
+    cartItems: [],
+    cartTotal: 0
+  };
+
+  const cartItemId = Date.now(); // Generate unique ID
+  const newItem = {
+    cartItemId,
+    quantity: 1,
+    price: product.price,
+    isCustom,
+    product: isCustom ? null : product,
+    customProduct: isCustom ? {
+      ...product,
+      productCode: `CUSTOM${Date.now()}`
+    } : null
+  };
+
+  guestCart.cartItems.push(newItem);
+  guestCart.cartTotal = guestCart.cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+
+  localStorage.setItem(GUEST_CART_KEY, JSON.stringify(guestCart));
+  toast.success(isCustom ? 'Custom product added to cart' : 'Product added to cart');
+};
+
+export const getGuestCart = () => {
+  return JSON.parse(localStorage.getItem(GUEST_CART_KEY)) || {
+    cartItems: [],
+    cartTotal: 0
+  };
+};
+
+export const updateGuestCartQuantity = (productCode, action) => {
+  const guestCart = getGuestCart();
+  const item = guestCart.cartItems.find(item => 
+    (item.isCustom ? item.customProduct.productCode : item.product.productCode) === productCode
+  );
+
+  if (item) {
+    if (action === 'increase') {
+      item.quantity += 1;
+    } else if (action === 'decrease' && item.quantity > 1) {
+      item.quantity -= 1;
+    }
+
+    guestCart.cartTotal = guestCart.cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(guestCart));
+    return guestCart;
+  }
+};
+
+export const removeFromGuestCart = (productCode) => {
+  const guestCart = getGuestCart();
+  guestCart.cartItems = guestCart.cartItems.filter(item => 
+    (item.isCustom ? item.customProduct.productCode : item.product.productCode) !== productCode
+  );
+  guestCart.cartTotal = guestCart.cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  
+  localStorage.setItem(GUEST_CART_KEY, JSON.stringify(guestCart));
+  toast.success('Product removed from cart');
+  return guestCart;
+};
+
+export const clearGuestCart = () => {
+  localStorage.removeItem(GUEST_CART_KEY);
 };

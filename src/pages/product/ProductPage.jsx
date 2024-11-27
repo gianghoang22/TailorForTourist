@@ -102,11 +102,11 @@ const ProductPage = () => {
 
       {/* Banner Section */}
       <div className="banner-container">
-        <img src="https://owen.vn/media/catalog/category/veston_2.jpg" className="banner-image" alt="Áo Vest Nam" />
+        <img src="https://owen.vn/media/catalog/category/veston_2.jpg" className="banner-image" alt="Men's Suit" />
         <div className="banner-category">
-          <h1 className="banner-title">Áo Vest Nam</h1>
+          <h1 className="banner-title">Men's Suit</h1>
           <div className="banner-description">
-            Áo vest nam đẹp, cập nhật phong cách theo xu hướng mới nhất, được sản xuất từ những chất liệu cao cấp của OWEN mang đến cho các quý ông một phong cách lịch lãm
+            Beautiful men's suits, updated with the latest trend styles, made from OWEN's premium materials, giving gentlemen a sophisticated look
           </div>
         </div>
       </div>

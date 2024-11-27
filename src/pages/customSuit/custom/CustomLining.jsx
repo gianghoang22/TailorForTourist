@@ -1,12 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addToCart, getCart } from '../../../utils/cartUtil';
+import { addToCart, getCart, addToGuestCart } from '../../../utils/cartUtil';
 import './CustomLining.scss';
 import lining_icon from '../../../assets/img/iconCustom/icon-accent-vailot.jpg';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const API_URL = "https://localhost:7194/api/AddCart/addtocart";
+
+const calculateCustomPrice = async () => {
+  try {
+    // Get the selected IDs from localStorage
+    const fabricId = parseInt(localStorage.getItem('selectedFabricID'));
+    const liningId = parseInt(localStorage.getItem('liningId'));
+    const styleOptionIds = JSON.parse(localStorage.getItem('styleOptionId')) || [];
+
+    // Fetch fabric price
+    const fabricResponse = await axios.get(`https://localhost:7194/api/Fabrics/${fabricId}`);
+    const fabricPrice = fabricResponse.data.price || 0;
+
+    // Fetch lining price
+    const liningResponse = await axios.get(`https://localhost:7194/api/Linings/${liningId}`);
+    const liningPrice = liningResponse.data.price || 0;
+
+    // Fetch style option prices
+    const styleOptionPrices = await Promise.all(
+      styleOptionIds.map(async (id) => {
+        const response = await axios.get(`https://localhost:7194/api/StyleOption/${id}`);
+        return response.data.price || 0;
+      })
+    );
+
+    // Calculate total price
+    const basePrice = 500; // Base price for a custom suit
+    const totalStyleOptionsPrice = styleOptionPrices.reduce((sum, price) => sum + price, 0);
+    const totalPrice = basePrice + fabricPrice + liningPrice + totalStyleOptionsPrice;
+
+    return totalPrice;
+  } catch (error) {
+    console.error('Error calculating custom price:', error);
+    return 0; // Return 0 or some default price if calculation fails
+  }
+};
 
 const CustomLining = () => {
   const [linings, setLinings] = useState([]);
@@ -47,32 +82,55 @@ const CustomLining = () => {
   };
   
   const handleNextClick = async () => {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      try {
+        // Calculate price for guest custom product
+        const price = await calculateCustomPrice();
+        
+        // Guest user - add custom product to localStorage
+        const customProduct = {
+          productCode: `CUSTOM${Date.now()}`,
+          fabricID: parseInt(localStorage.getItem('selectedFabricID')),
+          liningID: parseInt(localStorage.getItem('liningId')),
+          styleOptionIds: JSON.parse(localStorage.getItem('styleOptionId')) || [],
+          price: price
+        };
+        
+        addToGuestCart(customProduct, true);
+        toast.success('Custom product added to cart');
+        navigate("/measure");
+      } catch (error) {
+        console.error('Error adding custom product to cart:', error);
+        toast.error('Failed to add custom product to cart');
+      }
+      return;
+    }
+
     try {
-      // Lấy dữ liệu từ localStorage
       const fabricId = parseInt(localStorage.getItem('selectedFabricID')); 
       const styleOptionIds = JSON.parse(localStorage.getItem('styleOptionId')) || [];
       const liningId = parseInt(localStorage.getItem('liningId'));
       const measurementId = parseInt(localStorage.getItem('measurementId'), 10);
       const userID = parseInt(localStorage.getItem("userID"));
+      
+      // Get fabric name from your fabric data
+      const fabricResponse = await axios.get(`https://localhost:7194/api/Fabrics/${fabricId}`);
+      const fabricName = fabricResponse.data.fabricName;
 
-      console.log('fabricId ', fabricId);
-      console.log('styleOptionIds ', styleOptionIds);
-      console.log('liningId ', liningId);
-      console.log('measurementId ', measurementId);
-      console.log('userID ', userID);
-  
-      // Kiểm tra thông tin đã đủ chưa
+      // Generate a simple product code
+      const productCode = `SUIT${fabricName}`;
+
       if (!fabricId || styleOptionIds.length === 0 || !liningId || !measurementId) {
         toast.error('Please complete all selections before proceeding.');
         return;
       }
-  
-      // Chuyển đổi styleOptionIds sang mảng đối tượng [{styleOptionID: x}]
+
       const pickedStyleOptions = styleOptionIds.map((id) => ({
         styleOptionID: id
       }));
-  
-      // Tạo payload gửi lên API
+
       const payload = {
         userId: userID,
         isCustom: true,
@@ -82,27 +140,22 @@ const CustomLining = () => {
           liningID: liningId,
           measurementID: measurementId,
           pickedStyleOptions: pickedStyleOptions,
+          productCode: productCode  // Simple product code
         },
       };
-  
-      // Log payload để kiểm tra
-      console.log('Payload gửi lên API:', JSON.stringify(payload, null, 2));
-  
-      // Gửi request
+
+      console.log('Payload:', payload);
+
       const response = await axios.post(API_URL, payload, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-  
-      // Xử lý response
+
       if (response.status === 200 || response.status === 201) {
-        console.log('API Response:', response.data);
         toast.success('Successfully added to cart!');
         navigate("/measure");
-      } else {
-        throw new Error('Failed to add to cart');
       }
     } catch (error) {
       console.error('Error:', error);

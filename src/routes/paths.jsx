@@ -52,7 +52,6 @@ import Payment from "../pages/payment/payment";
 import ContactUs from "../pages/contact/ContactUs";
 import OrderDetails from "../pages/orderDetails/OrderDetails";
 import CreatePassword from "../pages/signIn/CreatePassword";
-import { element } from "prop-types";
 
 export const routes = [
   {
