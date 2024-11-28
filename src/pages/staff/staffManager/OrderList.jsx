@@ -21,8 +21,13 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  MenuItem,
+  Select,
+  Box,
+  Chip,
+  Menu,
 } from "@mui/material";
-import { Edit, Visibility, Add } from "@mui/icons-material";
+import { Edit, Visibility, Add, KeyboardArrowDown } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 
 const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
@@ -47,6 +52,17 @@ const api = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
 });
+
+// Thêm object để quản lý màu sắc của status
+const statusColors = {
+  Pending: '#ffd700',    // Vàng
+  Processing: '#1976d2', // Xanh dương
+  Finish: '#4caf50',     // Xanh lá
+  Cancel: '#f44336',     // Đỏ
+  Ready: '#ff9800'       // Cam
+};
+
+const ORDER_STATUSES = ["Pending", "Processing", "Finish", "Cancel", "Ready"];
 
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
@@ -73,6 +89,10 @@ const OrderList = () => {
   });
   const [orderDetails, setOrderDetails] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
 
   useEffect(() => {
     fetchOrders();
@@ -82,7 +102,27 @@ const OrderList = () => {
     try {
       setLoading(true);
       const response = await api.get("/Orders");
-      setOrders(response.data);
+      
+      // Fetch user details for each order
+      const ordersWithUserNames = await Promise.all(
+        response.data.map(async (order) => {
+          try {
+            const userResponse = await api.get(`/User/${order.userID}`);
+            return {
+              ...order,
+              customerName: userResponse.data.name
+            };
+          } catch (err) {
+            console.error(`Error fetching user details for ID ${order.userID}:`, err);
+            return {
+              ...order,
+              customerName: 'Guest'
+            };
+          }
+        })
+      );
+
+      setOrders(ordersWithUserNames);
       setSnackbarMessage("Orders loaded successfully");
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
@@ -144,6 +184,51 @@ const OrderList = () => {
     setSnackbarOpen(false);
   };
 
+  const handleStatusUpdate = async (orderId, status) => {
+    try {
+      setAnchorEl(null);
+      setSelectedOrderId(orderId);
+      setSelectedStatus(status);
+      setConfirmDialogOpen(true);
+    } catch (error) {
+      console.error("Lỗi:", error);
+    }
+  };
+
+  const handleConfirmStatusUpdate = async () => {
+    try {
+      const response = await api.patch(
+        `/Orders/updatestatus/${selectedOrderId}`,
+        JSON.stringify(selectedStatus), // selectedStatus sẽ là một trong các giá trị của ORDER_STATUSES
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.status === 200) {
+        setOrders(orders.map(order => 
+          order.orderId === selectedOrderId 
+            ? { ...order, status: selectedStatus }
+            : order
+        ));
+
+        setSnackbarMessage("Cập nhật trạng thái thành công");
+        setSnackbarSeverity("success");
+      }
+    } catch (error) {
+      console.error("Lỗi khi cập nhật trạng thái:", error);
+      setSnackbarMessage("Lỗi khi cập nhật trạng thái");
+      setSnackbarSeverity("error");
+    } finally {
+      setConfirmDialogOpen(false);
+      setSnackbarOpen(true);
+      setSelectedOrderId(null);
+      setSelectedStatus(null);
+    }
+  };
+
   if (loading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
 
@@ -195,10 +280,49 @@ const OrderList = () => {
           </TableHead>
           <TableBody>
             {orders.map((order) => (
-              <TableRow key={order.id} hover>
-                <TableCell>{order.id}</TableCell>
-                <TableCell>{order.customerName}</TableCell>
-                <TableCell>{order.status}</TableCell>
+              <TableRow key={order.orderId} hover>
+                <TableCell>{order.orderId}</TableCell>
+                <TableCell>{order.customerName || 'Không xác định'}</TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip
+                      label={order.status}
+                      sx={{
+                        bgcolor: statusColors[order.status],
+                        color: ['Processing', 'Cancel'].includes(order.status) ? 'white' : 'black',
+                        fontWeight: 'bold'
+                      }}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={(event) => {
+                        event.stopPropagation(); // Ngăn chặn sự kiện nổi bọt
+                        setSelectedOrderId(order.orderId);
+                        setAnchorEl(event.currentTarget);
+                      }}
+                    >
+                      <KeyboardArrowDown />
+                    </IconButton>
+                    <Menu
+                      anchorEl={anchorEl}
+                      open={Boolean(anchorEl) && selectedOrderId === order.orderId}
+                      onClose={() => setAnchorEl(null)}
+                      MenuListProps={{
+                        'aria-labelledby': 'status-button',
+                      }}
+                    >
+                      {ORDER_STATUSES.map((status) => (
+                        <MenuItem 
+                          key={status} 
+                          onClick={() => handleStatusUpdate(order.orderId, status)}
+                          selected={status === order.status}
+                        >
+                          {status}
+                        </MenuItem>
+                      ))}
+                    </Menu>
+                  </Box>
+                </TableCell>
                 <TableCell>{order.paymentId}</TableCell>
                 <TableCell>
                   {new Date(order.orderDate).toLocaleDateString()}
@@ -340,6 +464,30 @@ const OrderList = () => {
         <DialogActions>
           <Button onClick={() => setDetailsOpen(false)} color="primary">
             Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog xác nhận */}
+      <Dialog
+        open={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+        aria-labelledby="confirm-dialog-title"
+      >
+        <DialogTitle id="confirm-dialog-title">
+          Xác nhận thay đổi trạng thái
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Bạn có chắc chắn muốn thay đổi trạng thái đơn hàng thành "{selectedStatus}" không?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDialogOpen(false)}>
+            Hủy
+          </Button>
+          <Button onClick={handleConfirmStatusUpdate} variant="contained">
+            Xác nhận
           </Button>
         </DialogActions>
       </Dialog>

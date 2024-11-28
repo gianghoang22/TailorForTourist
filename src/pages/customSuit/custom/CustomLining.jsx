@@ -176,7 +176,7 @@ const CustomLining = () => {
       });
 
       if (response.status === 200 || response.status === 201) {
-        toast.success('Successfully added to cart!');
+        // toast.success('Successfully added to cart!');
         navigate("/measure");
       }
     } catch (error) {
@@ -237,7 +237,7 @@ const CustomLining = () => {
 
         <div className='next-btn'>
           <button className='navigation-button' onClick={handleNextClick}>
-            Add to Cart
+            Next
           </button>
         </div>
       </div>

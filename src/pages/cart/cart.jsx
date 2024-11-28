@@ -211,7 +211,6 @@ const Cart = () => {
 
         if (updatedCartResponse.status === 200) {
           setApiCart(updatedCartResponse.data);
-          toast.success(action === 'increase' ? 'Quantity increased' : 'Quantity decreased');
         }
       }
     } catch (error) {
