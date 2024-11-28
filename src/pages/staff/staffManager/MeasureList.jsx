@@ -10,18 +10,25 @@ const MeasureList = () => {
   const [measurements, setMeasurements] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editMeasurementId, setEditMeasurementId] = useState(null); // To track editing state
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedMeasurement, setSelectedMeasurement] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [editingMeasurement, setEditingMeasurement] = useState(null);
 
   const API_URL = "https://localhost:7194/api/Measurement";
   const USER_API_URL = "https://localhost:7194/api/User";
 
-  // Fetch all users, filter by roleId === 3
+  // Fetch all users
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await axios.get(`${USER_API_URL}`);
-        const allUsers = response.data;
-        const customers = allUsers.filter((user) => user.roleId === 3);
-        setUsers(customers);
+        const userMap = response.data.reduce((acc, user) => {
+          acc[user.userId] = user;
+          return acc;
+        }, {});
+        setUsers(userMap);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
@@ -29,15 +36,18 @@ const MeasureList = () => {
     fetchUsers();
   }, []);
 
-  // Fetch measurements by userId
-  const fetchMeasurements = async (userId) => {
-    try {
-      const response = await axios.get(`${API_URL}/byUser/${userId}`);
-      setMeasurements(response.data);
-    } catch (error) {
-      console.error("Error fetching measurements:", error);
-    }
-  };
+  // Fetch all measurements
+  useEffect(() => {
+    const fetchMeasurements = async () => {
+      try {
+        const response = await axios.get(API_URL);
+        setMeasurements(response.data);
+      } catch (error) {
+        console.error("Error fetching measurements:", error);
+      }
+    };
+    fetchMeasurements();
+  }, []);
 
   // Function to update a measurement by userId
   const updateMeasurementByUserId = async (userId, measurementId, values) => {
@@ -138,7 +148,9 @@ const MeasureList = () => {
   });
 
   const handleEdit = (measurement) => {
-    formik.setValues({
+    setEditingMeasurement(measurement);
+    setShowCreateModal(true);
+    createFormik.setValues({
       weight: measurement.weight,
       height: measurement.height,
       neck: measurement.neck,
@@ -150,148 +162,493 @@ const MeasureList = () => {
       crotch: measurement.crotch,
       thigh: measurement.thigh,
       pantsLength: measurement.pantsLength,
+      age: measurement.age,
+      chest: measurement.chest,
+      shoulder: measurement.shoulder,
+      sleeveLength: measurement.sleeveLength,
+      jacketLength: measurement.jacketLength
     });
-    setEditMeasurementId(measurement.measurementId);
+    setSelectedUserId(measurement.userId);
   };
 
   const handleDelete = async (measurementId) => {
     try {
-      await axios.delete(`${API_URL}/${measurementId}`);
-      setMeasurements(
-        measurements.filter((m) => m.measurementId !== measurementId)
-      );
+      if (window.confirm('Are you sure you want to delete this measurement?')) {
+        console.log('Deleting measurement:', measurementId);
+        
+        await axios.delete(`${API_URL}/${measurementId}`);
+        
+        setMeasurements(measurements.filter(m => m.measurementId !== measurementId));
+        
+        alert('Measurement deleted successfully!');
+      }
     } catch (error) {
-      console.error("Error deleting measurement:", error);
+      console.error('Error deleting measurement:', error);
+      console.log('Error response data:', error.response?.data);
+      alert('Failed to delete measurement. Please try again.');
     }
   };
 
-  const handleShowMeasurements = (user) => {
-    setSelectedUser(user);
-    fetchMeasurements(user.userId);
+  const handleViewDetail = (measurement) => {
+    setSelectedMeasurement(measurement);
+    setShowDetailModal(true);
   };
 
-  return (
-    <div className="measure-list">
-      <h2>Customer List</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.userId}>
-              <td>{user.name}</td>
-              <td>{user.email}</td>
-              <td>{user.phone}</td>
-              <td className="actions">
-                <button onClick={() => handleShowMeasurements(user)}>
-                  Show Measurements
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  const closeDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedMeasurement(null);
+  };
 
-      {selectedUser && (
-        <>
-          <h3>Measurements for {selectedUser.name}</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Weight</th>
-                <th>Height</th>
-                <th>Neck</th>
-                <th>Hip</th>
-                <th>Waist</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {measurements.map((measurement) => (
+  const createFormik = useFormik({
+    initialValues: {
+      measurementId: 0,
+      userId: 0,
+      weight: 0,
+      height: 0,
+      neck: 0,
+      hip: 0,
+      waist: 0,
+      armhole: 0,
+      biceps: 0,
+      pantsWaist: 0,
+      crotch: 0,
+      thigh: 0,
+      pantsLength: 0,
+      age: 0,
+      chest: 0,
+      shoulder: 0,
+      sleeveLength: 0,
+      jacketLength: 0
+    },
+    validationSchema: Yup.object({
+      weight: Yup.number().required('This field is required'),
+      height: Yup.number().required('This field is required'),
+      neck: Yup.number().required('This field is required'),
+      hip: Yup.number().required('This field is required'),
+      waist: Yup.number().required('This field is required'),
+      armhole: Yup.number().required('This field is required'),
+      biceps: Yup.number().required('This field is required'),
+      pantsWaist: Yup.number().required('This field is required'),
+      crotch: Yup.number().required('This field is required'),
+      thigh: Yup.number().required('This field is required'),
+      pantsLength: Yup.number().required('This field is required'),
+      age: Yup.number().required('This field is required'),
+      chest: Yup.number().required('This field is required'),
+      shoulder: Yup.number().required('This field is required'),
+      sleeveLength: Yup.number().required('This field is required'),
+      jacketLength: Yup.number().required('This field is required')
+    }),
+    onSubmit: async (values, { resetForm }) => {
+      try {
+        if (!selectedUserId) {
+          alert('Please enter user ID');
+          return;
+        }
+
+        const measurementData = {
+          userId: Number(selectedUserId),
+          weight: Number(values.weight) || 0,
+          height: Number(values.height) || 0,
+          neck: Number(values.neck) || 0,
+          hip: Number(values.hip) || 0,
+          waist: Number(values.waist) || 0,
+          armhole: Number(values.armhole) || 0,
+          biceps: Number(values.biceps) || 0,
+          pantsWaist: Number(values.pantsWaist) || 0,
+          crotch: Number(values.crotch) || 0,
+          thigh: Number(values.thigh) || 0,
+          pantsLength: Number(values.pantsLength) || 0,
+          age: Number(values.age) || 0,
+          chest: Number(values.chest) || 0,
+          shoulder: Number(values.shoulder) || 0,
+          sleeveLength: Number(values.sleeveLength) || 0,
+          jacketLength: Number(values.jacketLength) || 0
+        };
+
+        let response;
+        
+        if (editingMeasurement) {
+          measurementData.measurementId = editingMeasurement.measurementId;
+          console.log('Updating measurement:', measurementData);
+          response = await axios.put(`${API_URL}/${editingMeasurement.measurementId}`, measurementData);
+          
+          setMeasurements(measurements.map(m => 
+            m.measurementId === editingMeasurement.measurementId ? response.data : m
+          ));
+          alert('Measurement updated successfully!');
+        } else {
+          console.log('Creating new measurement:', measurementData);
+          response = await axios.post(API_URL, measurementData);
+          setMeasurements([...measurements, response.data]);
+          alert('Measurement created successfully!');
+        }
+
+        setShowCreateModal(false);
+        resetForm();
+        setSelectedUserId(null);
+        setEditingMeasurement(null);
+
+      } catch (error) {
+        console.error('Error saving measurement:', error);
+        console.log('Error response data:', error.response?.data);
+        alert('Failed to save measurement. Please try again.');
+      }
+    }
+  });
+
+  return (
+    <div className="measure-list-container">
+      <div className="header">
+        <h2>Customer Measurements</h2>
+        <div className="actions">
+          <div className="search-bar">
+            <input type="text" placeholder="Search customer..." />
+            <button className="primary-button">Search</button>
+          </div>
+          <button 
+            className="primary-button create-button"
+            onClick={() => setShowCreateModal(true)}
+          >
+            Create New Measurement
+          </button>
+        </div>
+      </div>
+
+      <div className="table-container">
+        <table className="customers-table">
+          <thead>
+            <tr>
+              <th>Customer Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Gender</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {measurements.map((measurement) => {
+              const user = users[measurement.userId];
+              return (
                 <tr key={measurement.measurementId}>
-                  <td>{measurement.weight}</td>
-                  <td>{measurement.height}</td>
-                  <td>{measurement.neck}</td>
-                  <td>{measurement.hip}</td>
-                  <td>{measurement.waist}</td>
+                  <td>{user?.name}</td>
+                  <td>{user?.email}</td>
+                  <td>{user?.phone}</td>
+                  <td>{user?.gender}</td>
                   <td className="actions">
-                    <button onClick={() => handleEdit(measurement)}>
+                    <button 
+                      className="btn-view"
+                      onClick={() => handleViewDetail(measurement)}
+                    >
+                      View Details
+                    </button>
+                    <button 
+                      className="btn-edit"
+                      onClick={() => handleEdit(measurement)}
+                    >
                       Edit
                     </button>
-                    <button
+                    <button 
+                      className="btn-delete"
                       onClick={() => handleDelete(measurement.measurementId)}
                     >
                       Delete
                     </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-          <h3>{editMeasurementId ? "Edit Measurement" : "Add Measurement"}</h3>
-          <form onSubmit={formik.handleSubmit} className="measurement-form">
-            <div>
-              <label>Weight:</label>
-              <input
-                type="number"
-                name="weight"
-                value={formik.values.weight}
-                onChange={formik.handleChange}
-              />
-              {formik.errors.weight && <div>{formik.errors.weight}</div>}
+      {/* Measurement Detail Modal */}
+      {showDetailModal && selectedMeasurement && (
+        <div className="modal-overlay">
+          <div className="modal-content detail-modal">
+            <div className="modal-header">
+              <h3>Measurement Details</h3>
+              <button className="close-button" onClick={closeDetailModal}>×</button>
             </div>
-            <div>
-              <label>Height:</label>
-              <input
-                type="number"
-                name="height"
-                value={formik.values.height}
-                onChange={formik.handleChange}
-              />
-              {formik.errors.height && <div>{formik.errors.height}</div>}
+            
+            <div className="modal-body">
+              <div className="customer-header">
+                <h4>{users[selectedMeasurement.userId]?.name}</h4>
+                <p>{users[selectedMeasurement.userId]?.email} • {users[selectedMeasurement.userId]?.phone}</p>
+              </div>
+
+              <div className="measurements-detail">
+                <div className="detail-section">
+                  <h5>Basic Measurements</h5>
+                  <div className="detail-grid">
+                    <div className="detail-item">
+                      <span>Weight</span>
+                      <strong>{selectedMeasurement.weight} kg</strong>
+                    </div>
+                    <div className="detail-item">
+                      <span>Height</span>
+                      <strong>{selectedMeasurement.height} cm</strong>
+                    </div>
+                    <div className="detail-item">
+                      <span>Age</span>
+                      <strong>{selectedMeasurement.age}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="detail-section">
+                  <h5>Upper Body</h5>
+                  <div className="detail-grid">
+                    <div className="detail-item">
+                      <span>Neck</span>
+                      <strong>{selectedMeasurement.neck} cm</strong>
+                    </div>
+                    <div className="detail-item">
+                      <span>Chest</span>
+                      <strong>{selectedMeasurement.chest} cm</strong>
+                    </div>
+                    <div className="detail-item">
+                      <span>Shoulder</span>
+                      <strong>{selectedMeasurement.shoulder} cm</strong>
+                    </div>
+                    <div className="detail-item">
+                      <span>Armhole</span>
+                      <strong>{selectedMeasurement.armhole} cm</strong>
+                    </div>
+                    <div className="detail-item">
+                      <span>Biceps</span>
+                      <strong>{selectedMeasurement.biceps} cm</strong>
+                    </div>
+                    <div className="detail-item">
+                      <span>Sleeve Length</span>
+                      <strong>{selectedMeasurement.sleeveLength} cm</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="detail-section">
+                  <h5>Lower Body</h5>
+                  <div className="detail-grid">
+                    <div className="detail-item">
+                      <span>Waist</span>
+                      <strong>{selectedMeasurement.waist} cm</strong>
+                    </div>
+                    <div className="detail-item">
+                      <span>Hip</span>
+                      <strong>{selectedMeasurement.hip} cm</strong>
+                    </div>
+                    <div className="detail-item">
+                      <span>Pants Waist</span>
+                      <strong>{selectedMeasurement.pantsWaist} cm</strong>
+                    </div>
+                    <div className="detail-item">
+                      <span>Crotch</span>
+                      <strong>{selectedMeasurement.crotch} cm</strong>
+                    </div>
+                    <div className="detail-item">
+                      <span>Thigh</span>
+                      <strong>{selectedMeasurement.thigh} cm</strong>
+                    </div>
+                    <div className="detail-item">
+                      <span>Pants Length</span>
+                      <strong>{selectedMeasurement.pantsLength} cm</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <label>Neck:</label>
-              <input
-                type="number"
-                name="neck"
-                value={formik.values.neck}
-                onChange={formik.handleChange}
-              />
-              {formik.errors.neck && <div>{formik.errors.neck}</div>}
+          </div>
+        </div>
+      )}
+
+      {/* Form Modal for Add/Edit */}
+      {selectedUser && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>{editMeasurementId ? "Edit Measurement" : "Add Measurement"}</h3>
+            <form onSubmit={formik.handleSubmit} className="measurement-form">
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Weight (kg)</label>
+                  <input
+                    type="number"
+                    name="weight"
+                    value={formik.values.weight}
+                    onChange={formik.handleChange}
+                  />
+                  {formik.errors.weight && 
+                    <span className="error">{formik.errors.weight}</span>
+                  }
+                </div>
+                {/* Add other form fields similarly */}
+              </div>
+              <div className="form-actions">
+                <button type="button" className="secondary-button">
+                  Cancel
+                </button>
+                <button type="submit" className="primary-button">
+                  {editMeasurementId ? "Update" : "Add"} Measurement
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Measurement Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay">
+          <div className="modal-content detail-modal">
+            <div className="modal-header">
+              <h3>{editingMeasurement ? 'Edit Measurement' : 'Create New Measurement'}</h3>
+              <button 
+                className="close-button" 
+                onClick={() => {
+                  setShowCreateModal(false);
+                  createFormik.resetForm();
+                  setEditingMeasurement(null);
+                }}
+              >
+                ×
+              </button>
             </div>
-            <div>
-              <label>Hip:</label>
-              <input
-                type="number"
-                name="hip"
-                value={formik.values.hip}
-                onChange={formik.handleChange}
-              />
-              {formik.errors.hip && <div>{formik.errors.hip}</div>}
+            
+            <div className="modal-body">
+              <div className="customer-header">
+                <div className="detail-item">
+                  <span>User ID</span>
+                  <input
+                    type="number"
+                    value={selectedUserId || ''}
+                    onChange={(e) => setSelectedUserId(Number(e.target.value))}
+                    placeholder="Enter user ID"
+                    className={
+                      createFormik.touched.userId && !selectedUserId 
+                        ? "error-input" 
+                        : ""
+                    }
+                  />
+                  {createFormik.touched.userId && !selectedUserId && (
+                    <div className="error-message">This field is required</div>
+                  )}
+                </div>
+              </div>
+
+              <form onSubmit={createFormik.handleSubmit}>
+                <div className="measurements-detail">
+                  <div className="detail-section">
+                    <h5>Basic Measurements</h5>
+                    <div className="detail-grid">
+                      <div className="detail-item">
+                        <span>Weight (kg)</span>
+                        <input
+                          type="number"
+                          {...createFormik.getFieldProps('weight')}
+                          placeholder="Enter weight"
+                        />
+                      </div>
+                      <div className="detail-item">
+                        <span>Height (cm)</span>
+                        <input
+                          type="number"
+                          {...createFormik.getFieldProps('height')}
+                          placeholder="Enter height"
+                        />
+                      </div>
+                      <div className="detail-item">
+                        <span>Age</span>
+                        <input
+                          type="number"
+                          {...createFormik.getFieldProps('age')}
+                          placeholder="Enter age"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="detail-section">
+                    <h5>Upper Body</h5>
+                    <div className="detail-grid">
+                      {[
+                        { name: 'neck', label: 'Neck' },
+                        { name: 'chest', label: 'Chest' },
+                        { name: 'shoulder', label: 'Shoulder' },
+                        { name: 'armhole', label: 'Armhole' },
+                        { name: 'biceps', label: 'Biceps' },
+                        { name: 'sleeveLength', label: 'Sleeve Length' },
+                        { name: 'jacketLength', label: 'Jacket Length' }
+                      ].map(field => (
+                        <div key={field.name} className="detail-item">
+                          <span>{field.label} (cm)</span>
+                          <input
+                            type="number"
+                            {...createFormik.getFieldProps(field.name)}
+                            placeholder={`Enter ${field.label.toLowerCase()}`}
+                            className={
+                              createFormik.touched[field.name] && createFormik.errors[field.name] 
+                                ? "error-input" 
+                                : ""
+                            }
+                          />
+                          {createFormik.touched[field.name] && createFormik.errors[field.name] && (
+                            <div className="error-message">{createFormik.errors[field.name]}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="detail-section">
+                    <h5>Lower Body</h5>
+                    <div className="detail-grid">
+                      {[
+                        { name: 'waist', label: 'Waist' },
+                        { name: 'hip', label: 'Hip' },
+                        { name: 'pantsWaist', label: 'Pants Waist' },
+                        { name: 'crotch', label: 'Crotch' },
+                        { name: 'thigh', label: 'Thigh' },
+                        { name: 'pantsLength', label: 'Pants Length' }
+                      ].map(field => (
+                        <div key={field.name} className="detail-item">
+                          <span>{field.label} (cm)</span>
+                          <input
+                            type="number"
+                            {...createFormik.getFieldProps(field.name)}
+                            placeholder={`Enter ${field.label.toLowerCase()}`}
+                            className={
+                              createFormik.touched[field.name] && createFormik.errors[field.name] 
+                                ? "error-input" 
+                                : ""
+                            }
+                          />
+                          {createFormik.touched[field.name] && createFormik.errors[field.name] && (
+                            <div className="error-message">{createFormik.errors[field.name]}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button 
+                    type="button" 
+                    className="secondary-button"
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      createFormik.resetForm();
+                      setEditingMeasurement(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="primary-button">
+                    Save
+                  </button>
+                </div>
+              </form>
             </div>
-            <div>
-              <label>Waist:</label>
-              <input
-                type="number"
-                name="waist"
-                value={formik.values.waist}
-                onChange={formik.handleChange}
-              />
-              {formik.errors.waist && <div>{formik.errors.waist}</div>}
-            </div>
-            <button type="submit">
-              {editMeasurementId ? "Update" : "Add"} Measurement
-            </button>
-          </form>
-        </>
+          </div>
+        </div>
       )}
     </div>
   );

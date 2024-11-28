@@ -6,6 +6,9 @@ import { Footer } from '../../../layouts/components/footer/Footer';
 
 const MeasureGuest = () => {
   const [formData, setFormData] = useState({
+    age: "",
+    weight: "",
+    height: "",
     chest: "",
     waist: "",
     hip: "",
@@ -57,6 +60,9 @@ const MeasureGuest = () => {
   const validateFields = () => {
     const newErrors = {};
     const numberFields = [
+      "age",
+      "weight",
+      "height",
       "chest",
       "waist",
       "hip",
@@ -128,8 +134,10 @@ const MeasureGuest = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
   
-    // Kiểm tra nếu input là số, chuyển đổi sang số nguyên
     const numberFields = [
+      "age",
+      "weight",
+      "height",
       "chest",
       "waist",
       "hip",
@@ -163,181 +171,256 @@ const MeasureGuest = () => {
           </div>
 
           <div className="form-get-measures">
+            <div className="measurement-grid">
+              <div className="measurement-column">
+                <h4>Basic Information</h4>
+                <div className="inline-controls">
+                  <label className="lb">Age</label>
+                  <div className="ipgr">
+                    <input
+                      name="age"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.age || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />
+                    <span className="unit">years</span>
+                  </div>
+                </div>
+                <div className="inline-controls">
+                  <label className="lb">Weight</label>
+                  <div className="ipgr">
+                    <input
+                      name="weight"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.weight || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />
+                    <span className="unit">kg</span>
+                  </div>
+                </div>
+                <div className="inline-controls">
+                  <label className="lb">Height</label>
+                  <div className="ipgr">
+                    <input
+                      name="height"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.height || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+              </div>
 
-            {/* measure form */}
-
-            {/* <form action="" method="post" id="mona-submit-mesuares"> */}
-  <div className="frow col2row">
-    <div className="mona-row1">
-      <div className="inline-controls">
-        <label className="lb">Chest</label>
-        <div className="ipgr">
-          <input
+              <div className="measurement-column">
+                <h4>Upper Body Measurements</h4>
+                <div className="inline-controls">
+                  <label className="lb">Chest</label>
+                  <div className="ipgr">
+                    <input
                       name="chest"
                       type="number"
                       className="fcontrol"
                       value={formData.chest || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
-                    />{" "}
-                    cm
-                    </div>
-      </div>
-      <div className="inline-controls">
-        <label className="lb">Waist</label>
-        <div className="ipgr"><input
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+                <div className="inline-controls">
+                  <label className="lb">Waist</label>
+                  <div className="ipgr">
+                    <input
                       name="waist"
                       type="number"
                       className="fcontrol"
                       value={formData.waist || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
-                    />{" "} cm</div>
-      </div>
-      <div className="inline-controls">
-        <label className="lb">Hip</label>
-        <div className="ipgr"><input
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+                <div className="inline-controls">
+                  <label className="lb">Hip</label>
+                  <div className="ipgr">
+                    <input
                       name="hip"
                       type="number"
                       className="fcontrol"
                       value={formData.hip || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
-                    />{" "} cm</div>
-      </div>
-      <div className="inline-controls">
-        <label className="lb">Neck</label>
-        <div className="ipgr"><input
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+                <div className="inline-controls">
+                  <label className="lb">Neck</label>
+                  <div className="ipgr">
+                    <input
                       name="neck"
                       type="number"
                       className="fcontrol"
                       value={formData.neck || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
-                    />{" "} cm</div>
-      </div>
-      <div className="inline-controls">
-        <label className="lb">Armhole</label>
-        <div className="ipgr"><input
-                      name="armhole"
-                      type="number"
-                      className="fcontrol"
-                      value={formData.armhole || ""}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                    />{" "} cm</div>
-      </div>
-      <div className="inline-controls">
-        <label className="lb">Biceps</label>
-        <div className="ipgr"><input
-                      name="biceps"
-                      type="number"
-                      className="fcontrol"
-                      value={formData.biceps || ""}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                    />{" "} cm</div>
-      </div>
-      <div className="inline-controls">
-        <label className="lb">Shoulder</label>
-        <div className="ipgr"><input
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+                <div className="inline-controls">
+                  <label className="lb">Shoulder</label>
+                  <div className="ipgr">
+                    <input
                       name="shoulder"
                       type="number"
                       className="fcontrol"
                       value={formData.shoulder || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
-                    />{" "} cm</div>
-      </div>
-      <div className="inline-controls">
-        <label className="lb">Sleeve length</label>
-        <div className="ipgr"><input
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="measurement-column">
+                <h4>Arm Measurements</h4>
+                <div className="inline-controls">
+                  <label className="lb">Armhole</label>
+                  <div className="ipgr">
+                    <input
+                      name="armhole"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.armhole || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+                <div className="inline-controls">
+                  <label className="lb">Biceps</label>
+                  <div className="ipgr">
+                    <input
+                      name="biceps"
+                      type="number"
+                      className="fcontrol"
+                      value={formData.biceps || ""}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+                <div className="inline-controls">
+                  <label className="lb">Sleeve length</label>
+                  <div className="ipgr">
+                    <input
                       name="sleeveLength"
                       type="number"
                       className="fcontrol"
                       value={formData.sleeveLength || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
-                    />{" "} cm</div>
-      </div>
-      <div className="inline-controls">
-        <label className="lb">Jaket length</label>
-        <div className="ipgr"><input
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+                <div className="inline-controls">
+                  <label className="lb">Jacket length</label>
+                  <div className="ipgr">
+                    <input
                       name="jacketLength"
                       type="number"
                       className="fcontrol"
                       value={formData.jacketLength || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
-                    />{" "} cm</div>
-      </div>
-    </div>
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+              </div>
 
-    <div className="mona-row2">
-      <div className="inline-controls">
-        <label className="lb">Pants Waist</label>
-        <div className="ipgr"><input
+              <div className="measurement-column">
+                <h4>Lower Body Measurements</h4>
+                <div className="inline-controls">
+                  <label className="lb">Pants Waist</label>
+                  <div className="ipgr">
+                    <input
                       name="pantsWaist"
                       type="number"
                       className="fcontrol"
                       value={formData.pantsWaist || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
-                    />{" "} cm</div>
-      </div>
-      <div className="inline-controls">
-        <label className="lb">Crotch</label>
-        <div className="ipgr"><input
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+                <div className="inline-controls">
+                  <label className="lb">Crotch</label>
+                  <div className="ipgr">
+                    <input
                       name="crotch"
                       type="number"
                       className="fcontrol"
                       value={formData.crotch || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
-                    />{" "} cm</div>
-      </div>
-      <div className="inline-controls">
-        <label className="lb">Thigh</label>
-        <div className="ipgr"><input
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+                <div className="inline-controls">
+                  <label className="lb">Thigh</label>
+                  <div className="ipgr">
+                    <input
                       name="thigh"
                       type="number"
                       className="fcontrol"
                       value={formData.thigh || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
-                    />{" "} cm</div>
-      </div>
-      <div className="inline-controls">
-        <label className="lb">Pants length</label>
-        <div className="ipgr"><input
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+                <div className="inline-controls">
+                  <label className="lb">Pants length</label>
+                  <div className="ipgr">
+                    <input
                       name="pantsLength"
                       type="number"
                       className="fcontrol"
                       value={formData.pantsLength || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
-                    />{" "} cm</div>
-      </div>
-    </div>
-  </div>
-  
-  <div className="button">
-      
-  <p className="center-txt">
-    <Link to='/cart'>
-    <button className="primary-btn btn">Confirm</button>
-    </Link>
-  </p>
+                    />
+                    <span className="unit">cm</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-  <p className="center-txt">
-  <button className="primary-btn btn" type="button" onClick={handleEdit}>
-          {isEditing ? "Save" : "Edit"}
-        </button>
-        </p>
-  </div>
-
-{/* </form> */}
-
+            <div className="button-group">
+              <Link to='/cart'>
+                <button className="primary-btn btn">Confirm</button>
+              </Link>
+              <button className="primary-btn btn" type="button" onClick={handleEdit}>
+                {isEditing ? "Save" : "Edit"}
+              </button>
+            </div>
           </div>
 
           {/* measure guide */}

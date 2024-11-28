@@ -6,11 +6,31 @@ import { Navigation } from '../../layouts/components/navigation/Navigation.jsx';
 import { Footer } from '../../layouts/components/footer/Footer.jsx';
 import { toast } from 'react-toastify';
 import './Checkout.scss';
+import Address from '../../layouts/components/Address/Address.jsx';
 
 const CHECKOUT_API = {
   confirmOrder: "https://localhost:7194/api/AddCart/confirmorder",
   fetchCart: "https://localhost:7194/api/AddCart/mycart",
   fetchStores: "https://localhost:7194/api/Store",
+};
+
+const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
+
+const convertVNDToUSD = async (amountInVND) => {
+  try {
+    const response = await axios.get(`https://v6.exchangerate-api.com/v6/${EXCHANGE_API_KEY}/latest/VND`);
+    if (response.status === 200) {
+      const usdRate = response.data.conversion_rates.USD;
+      const amountInUSD = amountInVND * usdRate;
+      return Number(amountInUSD.toFixed(2));
+    }
+    throw new Error('Failed to fetch exchange rate');
+  } catch (error) {
+    console.error('Error converting VND to USD:', error);
+    // Fallback to approximate rate if API fails
+    const fallbackRate = 0.00004; // Approximately 1 USD = 25,000 VND
+    return Number((amountInVND * fallbackRate).toFixed(2));
+  }
 };
 
 const Checkout = () => {
@@ -21,7 +41,6 @@ const Checkout = () => {
   const [guestEmail, setGuestEmail] = useState('');
   const [guestAddress, setGuestAddress] = useState('');
   const [deposit, setDeposit] = useState(0);
-  const [shippingfee, setShippingfee] = useState(0);
   const [deliveryMethod, setDeliveryMethod] = useState('Pick up');
   const [isPaid, setIsPaid] = useState(false);
   const [voucherId, setVoucherId] = useState(11);
@@ -34,6 +53,9 @@ const Checkout = () => {
   const [orderComplete, setOrderComplete] = useState(false);
   const [isGuest, setIsGuest] = useState(!localStorage.getItem('token'));
   const [orderData, setOrderData] = useState(null);
+  const [paymentDetails, setPaymentDetails] = useState(null);
+  const [shippingFee, setShippingFee] = useState(0);
+  const [nearestStore, setNearestStore] = useState(null);
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -178,157 +200,183 @@ const Checkout = () => {
     fetchUserData();
   }, []);
 
-  const confirmOrder = async (orderData) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Bạn chưa đăng nhập');
+  useEffect(() => {
+    console.log('Address Change Detected:', {
+      'Phương thức giao hàng': deliveryMethod,
+      'Địa chỉ': guestAddress,
+      'Cửa hàng gần nhất': nearestStore,
+      'wardCode': document.querySelector('input[name="wardCode"]')?.value,
+      'districtId': document.querySelector('input[name="districtId"]')?.value
+    });
 
-      const response = await axios.post(CHECKOUT_API.confirmOrder, orderData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 200) {
-        toast.success('Đơn hàng đã được xác nhận thành công!');
-        return response.data;
-      } else {
-        throw new Error('Xác nhận đơn hàng thất bại');
+    if (deliveryMethod === 'Delivery' && guestAddress && nearestStore) {
+      const addressData = {
+        wardCode: document.querySelector('input[name="wardCode"]')?.value,
+        districtId: document.querySelector('input[name="districtId"]')?.value,
+      };
+      if (addressData.wardCode && addressData.districtId) {
+        calculateShippingFee(addressData);
       }
-    } catch (err) {
-      toast.error('Xác nhận đơn hàng thất bại, vui lòng thử lại');
-      throw err;
     }
-  };
-
-  const handleCheckout = async () => {
-    try {
-      if (isGuest) {
-        // Validate guest information
-        if (!guestName || !guestEmail || (deliveryMethod === 'Delivery' && !guestAddress)) {
-          toast.error('Please fill in all required fields');
-          return;
-        }
-
-        const guestCart = JSON.parse(localStorage.getItem('guestCart'));
-        
-        // Prepare cart items for API
-        const cartItems = guestCart.cartItems.map(item => {
-          if (item.isCustom) {
-            return {
-              isCustom: true,
-              customProduct: {
-                categoryID: 5, // Default category for custom suits
-                fabricID: item.customProduct.fabricID,
-                liningID: item.customProduct.liningID,
-                measurementID: parseInt(localStorage.getItem('measurementId')),
-                pickedStyleOptions: item.customProduct.styleOptionIds.map(id => ({
-                  styleOptionID: id
-                })),
-                productCode: item.customProduct.productCode
-              },
-              quantity: item.quantity,
-              price: item.price
-            };
-          } else {
-            return {
-              isCustom: false,
-              productId: item.product.productID,
-              quantity: item.quantity,
-              price: item.price
-            };
-          }
-        });
-
-        // Create guest order payload
-        const orderPayload = {
-          guestName,
-          guestEmail,
-          guestAddress,
-          deliveryMethod,
-          storeId: deliveryMethod === 'Pick up' ? parseInt(storeId) : null,
-          shippingFee: shippingfee,
-          cartItems,
-          totalAmount: deliveryMethod === 'Delivery' 
-            ? guestCart.cartTotal + shippingfee 
-            : guestCart.cartTotal
-        };
-
-        // Show PayPal payment for guest
-        setIsPaid(false); // Reset payment status
-        setOrderData(orderPayload); // Store order data for after payment
-
-      } else {
-        // Existing logged-in user checkout logic
-        const payload = {
-          userId: parseInt(localStorage.getItem("userID")),
-          deliveryMethod: deliveryMethod,
-          storeId: deliveryMethod === 'Pick up' ? parseInt(storeId) : null,
-          shippingFee: shippingfee,
-          totalAmount: deliveryMethod === 'Delivery' 
-            ? apiCart.cartTotal + shippingfee 
-            : apiCart.cartTotal
-        };
-
-        const response = await axios.post(
-          'https://localhost:7194/api/Order/create',
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.status === 200 || response.status === 201) {
-          toast.success('Order placed successfully!');
-          setOrderComplete(true);
-        }
-      }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      toast.error(error.response?.data?.message || 'Failed to place order. Please try again.');
-    }
-  };
+  }, [deliveryMethod, guestAddress, nearestStore]);
 
   const getDisplayProductCode = (fullCode) => {
     if (!fullCode) return '';
     return fullCode.split('2024')[0];  // This will show just the base part like "PRD002"
   };
 
+  const calculateShippingFee = async (addressData) => {
+    console.log('Calculating Shipping Fee with data:', addressData);
+    
+    if (!addressData?.wardCode || !addressData?.districtId || !nearestStore) {
+      console.log('Missing required data:', {
+        wardCode: addressData?.wardCode,
+        districtId: addressData?.districtId,
+        nearestStore: nearestStore
+      });
+      setShippingFee(0);
+      return;
+    }
+
+    try {
+      const shippingPayload = {
+        serviceId: 0,
+        insuranceValue: 0,
+        coupon: "",
+        toWardCode: addressData.wardCode,
+        toDistrictId: parseInt(addressData.districtId),
+        fromDistrictId: nearestStore.districtID,
+        weight: 0,
+        length: 0,
+        width: 0,
+        height: 0,
+        shopCode: nearestStore.storeCode
+      };
+
+      console.log('Shipping Fee Payload:', shippingPayload);
+
+      const response = await axios.post(
+        'https://localhost:7194/api/Shipping/calculate-fee',
+        shippingPayload
+      );
+
+      if (response.data) {
+        console.log('Shipping Fee Response (VND):', response.data.total);
+        const shippingFeeVND = response.data.total || 0;
+        const shippingFeeUSD = await convertVNDToUSD(shippingFeeVND);
+        console.log('Shipping Fee (USD):', shippingFeeUSD);
+        setShippingFee(shippingFeeUSD);
+      }
+    } catch (error) {
+      console.error('Lỗi tính phí vận chuyển:', error);
+      toast.error('Không thể tính phí vận chuyển');
+    }
+  };
+
+  const handleAddressChange = (addressData) => {
+    console.log('Address Data Received in Checkout:', addressData);
+    // Kiểm tra xem có đủ dữ liệu không
+    if (addressData?.wardCode && addressData?.districtId) {
+      setGuestAddress(addressData.fullAddress);
+      calculateShippingFee({
+        wardCode: addressData.wardCode,
+        districtId: addressData.districtId
+      });
+    }
+  };
+
+  const handleDeliveryMethodChange = (e) => {
+    const newMethod = e.target.value;
+    setDeliveryMethod(newMethod);
+    if (newMethod !== 'Delivery') {
+      setShippingFee(0);
+      setNearestStore(null);
+    }
+  };
+
+  const handleStoreSelect = (store) => {
+    setNearestStore(store);
+    if (guestAddress) {
+      calculateShippingFee({
+        wardCode: document.querySelector('input[name="wardCode"]')?.value,
+        districtId: document.querySelector('input[name="districtId"]')?.value,
+      });
+    }
+  };
+
   const handleConfirmOrder = async () => {
     try {
-      if (isGuest) {
-        if (!isPaid) {
-          toast.error('Please complete payment before confirming order');
-          return;
+      // Basic validation
+      if (!guestName || !guestEmail || (!storeId && deliveryMethod === 'Pick up') || (!guestAddress && deliveryMethod === 'Delivery')) {
+        toast.error('Please fill in all required fields');
+        return;
+      }
+
+      if (!isPaid) {
+        toast.error('Please complete payment before confirming order');
+        return;
+      }
+
+      const payload = {
+        userId: localStorage.getItem("userID") ? parseInt(localStorage.getItem("userID")) : null,
+        deliveryMethod: deliveryMethod,
+        storeId: deliveryMethod === 'Pick up' ? parseInt(storeId) : null,
+        totalAmount: deliveryMethod === 'Delivery' 
+          ? apiCart.cartTotal 
+          : apiCart.cartTotal,
+        isPaid: true,
+        isDeposit: paymentDetails.isDeposit,
+        paymentDetails: {
+          paypalOrderId: paymentDetails.id,
+          paymentStatus: paymentDetails.status,
+          paymentAmount: paymentDetails.purchase_units[0].amount.value
+        },
+        guestName: guestName,
+        guestEmail: guestEmail,
+        guestAddress: guestAddress
+      };
+
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        CHECKOUT_API.confirmOrder,
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` })
+          }
         }
+      );
 
-        // Submit guest order
-        const response = await axios.post(
-          'https://localhost:7194/api/Order/guest-order',
-          orderData
-        );
-
-        if (response.status === 200 || response.status === 201) {
-          toast.success('Order confirmed successfully!');
+      if (response.status === 200 || response.status === 201) {
+        toast.success('Order confirmed successfully!');
+        if (isGuest) {
           localStorage.removeItem('guestCart');
-          setOrderComplete(true);
-          navigate('/order-success'); // Add this route if you have it
         }
-      } else {
-        // Existing logged-in user order confirmation
-        const response = await confirmOrder(orderData);
-        if (response) {
-          setOrderComplete(true);
-          navigate('/order-success');
-        }
+        setOrderComplete(true);
+        navigate('/checkout/order-confirm');
       }
     } catch (error) {
       console.error('Error confirming order:', error);
-      toast.error('Failed to confirm order. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to confirm order. Please try again.');
     }
+  };
+
+  const handlePaymentSuccess = (details, data) => {
+    setIsPaid(true);
+    setPaymentDetails(details);
+    toast.success('Payment successful! Please confirm your order.');
+    // You might want to store the PayPal transaction ID or other relevant info
+    console.log('Payment completed successfully', details);
+  };
+
+  const handlePaymentError = (error) => {
+    console.error('Payment error:', error);
+    toast.error('Payment failed. Please try again.');
+  };
+
+  const handlePaymentCancel = () => {
+    toast.info('Payment cancelled.');
   };
 
   if (loading) return <div>Đang tải...</div>;
@@ -354,10 +402,11 @@ const Checkout = () => {
                   <div className="billing-details">
                     <h3>Billing Details</h3>
                     <div className="form-group">
-                      <label htmlFor="name">Full Name *</label>
+                      <label>
+                        Full Name <span className="required">*</span>
+                      </label>
                       <input
                         type="text"
-                        id="name"
                         placeholder="Enter your name"
                         value={guestName}
                         onChange={(e) => setGuestName(e.target.value)}
@@ -366,10 +415,11 @@ const Checkout = () => {
                     </div>
                     
                     <div className="form-group">
-                      <label htmlFor="email">Email Address *</label>
+                      <label>
+                        Email Address <span className="required">*</span>
+                      </label>
                       <input
                         type="email"
-                        id="email"
                         placeholder="Enter your email"
                         value={guestEmail}
                         onChange={(e) => setGuestEmail(e.target.value)}
@@ -378,23 +428,12 @@ const Checkout = () => {
                     </div>
 
                     <div className="form-group">
-                      <label htmlFor="deliveryMethod">Delivery Method *</label>
+                      <label>
+                        Delivery Method <span className="required">*</span>
+                      </label>
                       <select
-                        id="deliveryMethod"
                         value={deliveryMethod}
-                        onChange={(e) => {
-                          setDeliveryMethod(e.target.value);
-                          if (e.target.value === 'Pick up') {
-                            setGuestAddress('');
-                            setShippingfee(0);
-                          } else {
-                            setStoreId('');
-                            setShippingfee(30);
-                            if (userData?.address) {
-                              setGuestAddress(userData.address);
-                            }
-                          }
-                        }}
+                        onChange={handleDeliveryMethodChange}
                         required
                       >
                         <option value="Pick up">Pick up at store</option>
@@ -404,9 +443,10 @@ const Checkout = () => {
 
                     {deliveryMethod === 'Pick up' ? (
                       <div className="form-group">
-                        <label htmlFor="store">Select Store *</label>
+                        <label>
+                          Select Store <span className="required">*</span>
+                        </label>
                         <select
-                          id="store"
                           value={storeId}
                           onChange={(e) => setStoreId(Number(e.target.value))}
                           required
@@ -420,17 +460,46 @@ const Checkout = () => {
                         </select>
                       </div>
                     ) : (
-                      <div className="form-group">
-                        <label htmlFor="address">Delivery Address *</label>
-                        <input
-                          type="text"
-                          id="address"
-                          placeholder="Enter your delivery address"
-                          value={guestAddress}
-                          onChange={(e) => setGuestAddress(e.target.value)}
-                          required
-                        />
-                      </div>
+                      <>
+                        <div className="form-group">
+                          <label>
+                            Select Nearest Store <span className="required">*</span>
+                          </label>
+                          <select
+                            value={nearestStore?.storeId || ''}
+                            onChange={(e) => {
+                              const selected = stores.find(s => s.storeId === Number(e.target.value));
+                              handleStoreSelect(selected);
+                            }}
+                            required
+                          >
+                            <option value="">Select nearest store</option>
+                            {stores.map((store) => (
+                              <option key={store.storeId} value={store.storeId}>
+                                {store.name} - {store.address}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {nearestStore && (
+                          <div className="selected-store-info">
+                            <h4>Selected Store:</h4>
+                            <p><strong>{nearestStore.name}</strong></p>
+                            <p>{nearestStore.address}</p>
+                          </div>
+                        )}
+
+                        <div className="form-group">
+                          <label>
+                            Delivery Address <span className="required">*</span>
+                          </label>
+                          <Address 
+                            initialAddress={userData?.address} 
+                            onAddressChange={handleAddressChange}
+                          />
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -496,68 +565,42 @@ const Checkout = () => {
                         {deliveryMethod === 'Delivery' && (
                           <tr>
                             <td colSpan="3"><strong>Shipping Fee</strong></td>
-                            <td><strong>${shippingfee}</strong></td>
+                            <td><strong>${shippingFee.toFixed(2)}</strong></td>
                           </tr>
                         )}
                         <tr className="order-total">
                           <td colSpan="3"><strong>Total</strong></td>
                           <td>
-                            <strong>
-                              ${deliveryMethod === 'Delivery' 
-                                ? (apiCart.cartTotal + shippingfee) 
-                                : apiCart.cartTotal}
-                            </strong>
+                            <strong>${(apiCart.cartTotal + shippingFee).toFixed(2)}</strong>
                           </td>
                         </tr>
                       </tfoot>
                     </table>
                     {apiCart && apiCart.cartItems.length > 0 && (
-                      <PayPalCheckoutButton
-                        totalPrice={deliveryMethod === 'Delivery' 
-                          ? (apiCart.cartTotal + shippingfee) 
-                          : apiCart.cartTotal}
-                        onSuccess={async (details) => {
-                          try {
-                            let response;
-                            if (isGuest) {
-                              // Submit guest order after successful payment
-                              response = await axios.post(
-                                'https://localhost:7194/api/Order/guest-order',
-                                orderData
-                              );
-                            } else {
-                              // ... existing logged-in order submission ...
-                            }
+                      <>
+                        <PayPalCheckoutButton
+                          amount={apiCart.cartTotal}
+                          shippingFee={shippingFee}
+                          onSuccess={handlePaymentSuccess}
+                          onError={handlePaymentError}
+                          onCancel={handlePaymentCancel}
+                        />
 
-                            if (response.status === 200 || response.status === 201) {
-                              toast.success('Order placed successfully!');
-                              localStorage.removeItem('guestCart'); // Clear guest cart
-                              setOrderComplete(true);
-                            }
-                          } catch (error) {
-                            console.error('Error completing order:', error);
-                            toast.error('Failed to complete order. Please contact support.');
-                          }
-                        }}
-                        onError={(err) => {
-                          console.error('Payment error:', err);
-                          toast.error('Payment failed. Please try again.');
-                        }}
-                      />
+                        <button
+                          type="button"
+                          className="button-confirm-order"
+                          onClick={handleConfirmOrder}
+                          disabled={!isPaid}
+                        >
+                          Confirm Order
+                        </button>
+                      </>
                     )}
                   </>
                 ) : (
                   <p>Your cart is empty.</p>
                 )}
               </div>
-              <button
-                type="button"
-                className="button-confirm-order"
-                onClick={handleConfirmOrder}
-                disabled={!isPaid} // Chỉ bật nút khi đã thanh toán thành công
-              >
-                Confirm Order
-              </button>
             </div>
           </div>
         </div>

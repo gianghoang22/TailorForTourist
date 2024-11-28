@@ -54,7 +54,6 @@ const CustomLining = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch the list of linings from the API
     const fetchLinings = async () => {
       try {
         const response = await fetch('https://localhost:7194/api/Linings');
@@ -63,6 +62,11 @@ const CustomLining = () => {
         }
         const data = await response.json();
         setLinings(data);
+
+        // Auto-select first lining if none selected
+        if (!localStorage.getItem('liningId') && data.length > 0) {
+          handleLiningClick(data[0]);
+        }
       } catch (error) {
         setError(error.message);
       } finally {
@@ -82,36 +86,54 @@ const CustomLining = () => {
   };
   
   const handleNextClick = async () => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      try {
-        // Calculate price for guest custom product
-        const price = await calculateCustomPrice();
-        
-        // Guest user - add custom product to localStorage
-        const customProduct = {
-          productCode: `CUSTOM${Date.now()}`,
-          fabricID: parseInt(localStorage.getItem('selectedFabricID')),
-          liningID: parseInt(localStorage.getItem('liningId')),
-          styleOptionIds: JSON.parse(localStorage.getItem('styleOptionId')) || [],
-          price: price
-        };
-        
-        addToGuestCart(customProduct, true);
-        toast.success('Custom product added to cart');
-        navigate("/measure");
-      } catch (error) {
-        console.error('Error adding custom product to cart:', error);
-        toast.error('Failed to add custom product to cart');
-      }
+    // Check if all required selections are made
+    const fabricId = localStorage.getItem('selectedFabricID');
+    const styleOptionIds = localStorage.getItem('styleOptionId');
+    const liningId = localStorage.getItem('liningId');
+
+    if (!fabricId) {
+      toast.error('Please select a fabric first');
+      navigate('/custom-suits/fabric');
+      return;
+    }
+
+    if (!styleOptionIds) {
+      toast.error('Please select style options first');
+      navigate('/custom-suits/style');
+      return;
+    }
+
+    if (!liningId) {
+      toast.error('Please select a lining');
       return;
     }
 
     try {
-      const fabricId = parseInt(localStorage.getItem('selectedFabricID')); 
-      const styleOptionIds = JSON.parse(localStorage.getItem('styleOptionId')) || [];
-      const liningId = parseInt(localStorage.getItem('liningId'));
+      let fabricId = parseInt(localStorage.getItem('selectedFabricID'));
+      let styleOptionIds = JSON.parse(localStorage.getItem('styleOptionId'));
+      let liningId = parseInt(localStorage.getItem('liningId'));
+
+      // If any selection is missing, fetch and select the first available option
+      if (!fabricId || !styleOptionIds || !liningId) {
+        if (!fabricId) {
+          const fabricResponse = await axios.get('https://localhost:7194/api/Fabrics');
+          fabricId = fabricResponse.data[0].fabricID;
+          localStorage.setItem('selectedFabricID', fabricId);
+        }
+
+        if (!styleOptionIds) {
+          const styleResponse = await axios.get('https://localhost:7194/api/StyleOption');
+          styleOptionIds = [styleResponse.data[0].styleOptionId];
+          localStorage.setItem('styleOptionId', JSON.stringify(styleOptionIds));
+        }
+
+        if (!liningId) {
+          const liningResponse = await axios.get('https://localhost:7194/api/Linings');
+          liningId = liningResponse.data[0].liningId;
+          localStorage.setItem('liningId', liningId);
+        }
+      }
+
       const measurementId = parseInt(localStorage.getItem('measurementId'), 10);
       const userID = parseInt(localStorage.getItem("userID"));
       
@@ -214,7 +236,9 @@ const CustomLining = () => {
         )}
 
         <div className='next-btn'>
-          <button className='navigation-button' onClick={handleNextClick}>Next</button>
+          <button className='navigation-button' onClick={handleNextClick}>
+            Add to Cart
+          </button>
         </div>
       </div>
     </div>

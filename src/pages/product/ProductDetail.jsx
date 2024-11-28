@@ -7,6 +7,7 @@ import axios from 'axios';
 import './ProductDetail.scss';
 import { addToGuestCart } from '../../utils/cartUtil';
 import { format } from 'date-fns';
+import { FaStar, FaRegStar, FaUser, FaCalendarAlt, FaPencilAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const StarRating = ({ rating, onRatingChange }) => {
   const [hover, setHover] = useState(0);
@@ -24,7 +25,7 @@ const StarRating = ({ rating, onRatingChange }) => {
             onMouseEnter={() => setHover(ratingValue)}
             onMouseLeave={() => setHover(0)}
           >
-            ★
+            {ratingValue <= (hover || rating) ? <FaStar /> : <FaRegStar />}
           </span>
         );
       })}
@@ -43,6 +44,49 @@ const ProductDetailPage = () => {
     comment: '',
     rating: 5,
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const feedbacksPerPage = 4;
+
+  // Calculate pagination values
+  const indexOfLastFeedback = currentPage * feedbacksPerPage;
+  const indexOfFirstFeedback = indexOfLastFeedback - feedbacksPerPage;
+  const currentFeedbacks = feedbacks.slice(indexOfFirstFeedback, indexOfLastFeedback);
+  const totalPages = Math.ceil(feedbacks.length / feedbacksPerPage);
+
+  // Add pagination handlers
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const fetchFeedbacks = async () => {
+    try {
+      // First fetch feedbacks
+      const feedbackResponse = await axios.get(`https://localhost:7194/api/Feedback/product/${id}`);
+      const feedbackData = feedbackResponse.data;
+      setFeedbacks(feedbackData);
+
+      // Then fetch user details one by one
+      for (const feedback of feedbackData) {
+        try {
+          const userResponse = await axios.get(`https://localhost:7194/api/User/${feedback.userId}`);
+          setUserNames(prev => ({
+            ...prev,
+            [feedback.userId]: userResponse.data.name
+          }));
+        } catch (userError) {
+          console.error(`Error fetching user ${feedback.userId}:`, userError);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching feedbacks:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      fetchFeedbacks();
+    }
+  }, [id]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -57,36 +101,6 @@ const ProductDetailPage = () => {
     };
     
     fetchProduct();
-  }, [id]);
-
-  useEffect(() => {
-    const fetchFeedbacks = async () => {
-      try {
-        // First fetch feedbacks
-        const feedbackResponse = await axios.get(`https://localhost:7194/api/Feedback/product/${id}`);
-        const feedbackData = feedbackResponse.data;
-        setFeedbacks(feedbackData);
-
-        // Then fetch user details one by one
-        for (const feedback of feedbackData) {
-          try {
-            const userResponse = await axios.get(`https://localhost:7194/api/User/${feedback.userId}`);
-            setUserNames(prev => ({
-              ...prev,
-              [feedback.userId]: userResponse.data.name
-            }));
-          } catch (userError) {
-            console.error(`Error fetching user ${feedback.userId}:`, userError);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching feedbacks:', err);
-      }
-    };
-
-    if (id) {
-      fetchFeedbacks();
-    }
   }, [id]);
 
   const handleAddToCart = async () => {
@@ -166,23 +180,23 @@ toast.error("Failed to add to cart. Please try again.");
     }
 
     try {
-      // Simplified feedback data structure
+      // Get current date in YYYY-MM-DD format
+      const currentDate = new Date().toLocaleDateString('en-CA'); // 'en-CA' gives YYYY-MM-DD format
+      console.log('Current Date:', currentDate);
+
       const feedbackData = {
-        feedbackModel: {
           feedbackId: 0,
           comment: newFeedback.comment,
           rating: parseInt(newFeedback.rating),
-          dateSubmitted: null,
+          dateSubmitted: currentDate, // Only date without time
           userId: parseInt(userId),
-          orderId: null,
           productId: parseInt(id)
-        }
+        
       };
 
-      console.log('Sending feedback data:', feedbackData);
+      console.log('Feedback Data to be sent:', feedbackData);
 
-      // Using fetch instead of axios to see raw response
-      const response = await fetch('https://localhost:7194/api/Feedback', {
+      const response = await fetch('https://localhost:7194/api/Feedback/feedbackforproduct', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -191,7 +205,6 @@ toast.error("Failed to add to cart. Please try again.");
         body: JSON.stringify(feedbackData)
       });
 
-      // Log the raw response
       const responseText = await response.text();
       console.log('Raw response:', responseText);
 
@@ -199,6 +212,7 @@ toast.error("Failed to add to cart. Please try again.");
         throw new Error(`Server responded with ${response.status}: ${responseText}`);
       }
 
+      console.log('Feedback submitted successfully');
       toast.success('Review submitted successfully');
       setNewFeedback({ comment: '', rating: 5 });
       fetchFeedbacks();
@@ -267,11 +281,17 @@ toast.error("Failed to add to cart. Please try again.");
         {/* Related Products Section */}
         
         <div className="feedback-section">
-          <h2>Customer Reviews ({feedbacks.length})</h2>
+          <h2 className="feedback-title">
+            <FaStar className="title-icon" />
+            Customer Reviews ({feedbacks.length})
+          </h2>
           
           {/* Feedback submission form */}
           <div className="feedback-form">
-            <h3>Write Your Review</h3>
+            <h3>
+              <FaPencilAlt className="form-icon" />
+              Write Your Review
+            </h3>
             <form onSubmit={handleSubmitFeedback}>
               <div className="rating-select">
                 <label>Rating:</label>
@@ -307,22 +327,64 @@ toast.error("Failed to add to cart. Please try again.");
           {feedbacks.length === 0 ? (
             <p className="no-feedback">No reviews yet for this product.</p>
           ) : (
-            <div className="feedback-list">
-              {feedbacks.map(feedback => (
-                <div key={feedback.feedbackId} className="feedback-item">
-                  <div className="feedback-header">
-                    <span className="user-name">{userNames[feedback.userId] || 'Anonymous'}</span>
-                    <span className="rating">
-                      {'★'.repeat(feedback.rating)}{'☆'.repeat(5 - feedback.rating)}
-                    </span>
-                    <span className="date">
-                      {format(new Date(feedback.dateSubmitted), 'MMM dd, yyyy')}
-                    </span>
+            <>
+              <div className="feedback-list">
+                {currentFeedbacks.map(feedback => (
+                  <div key={feedback.feedbackId} className="feedback-item">
+                    <div className="feedback-header">
+                      <div className="user-info">
+                        <FaUser className="user-icon" />
+                        <span className="user-name">{userNames[feedback.userId] || 'Anonymous'}</span>
+                      </div>
+                      <div className="rating-date">
+                        <span className="rating">
+                          {[...Array(5)].map((_, index) => (
+                            <span key={index}>
+                              {index < feedback.rating ? <FaStar className="star-filled" /> : <FaRegStar className="star-empty" />}
+                            </span>
+                          ))}
+                        </span>
+                        <span className="date">
+                          <FaCalendarAlt className="calendar-icon" />
+                          {format(new Date(feedback.dateSubmitted), 'MMM dd, yyyy')}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="comment">{feedback.comment}</p>
                   </div>
-                  <p className="comment">{feedback.comment}</p>
+                ))}
+              </div>
+              
+              {totalPages > 1 && (
+                <div className="pagination">
+                  <button 
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="pagination-btn"
+                  >
+                    <FaChevronLeft />
+                  </button>
+                  
+                  {[...Array(totalPages)].map((_, index) => (
+                    <button
+                      key={index + 1}
+                      onClick={() => handlePageChange(index + 1)}
+                      className={`pagination-btn ${currentPage === index + 1 ? 'active' : ''}`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                  
+                  <button 
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="pagination-btn"
+                  >
+                    <FaChevronRight />
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
         

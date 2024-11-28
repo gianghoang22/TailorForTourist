@@ -172,7 +172,7 @@ const UserManagement = () => {
       }
 
       const response = await fetch(
-        `http://157.245.50.125:8080/api/User/${editIndex}`,
+        `https://localhost:7194/api/User/${editIndex}`,
         {
           method: "PUT",
           headers: {
@@ -218,7 +218,7 @@ const UserManagement = () => {
       }
 
       const response = await fetch(
-        `http://157.245.50.125:8080/api/User/${userId}`,
+        `https://localhost:7194/api/User/${userId}`,
         {
           method: "DELETE",
           headers: {

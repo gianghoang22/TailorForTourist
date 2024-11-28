@@ -101,7 +101,7 @@ export default function SignIn(props) {
     if (!validateInputs()) return;
 
     try {
-      const response = await fetch("http://157.245.50.125:8080/api/Login/login", {
+      const response = await fetch("https://localhost:7194/api/Login/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      const response = await fetch("http://157.245.50.125:8080/api/Login/login", {
+      const response = await fetch("https://localhost:7194/api/Login/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

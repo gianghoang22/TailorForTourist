@@ -33,7 +33,7 @@ const FabricManagement = () => {
   useEffect(() => {
     const fetchFabricData = async () => {
       try {
-        const response = await fetch("http://157.245.50.125:8080/api/Fabrics");
+        const response = await fetch("https://localhost:7194/api/Fabrics");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
@@ -123,7 +123,7 @@ const FabricManagement = () => {
       console.log("Updating Fabric Data:", JSON.stringify(newFabric, null, 2)); // Log data before sending
 
       const response = await fetch(
-        `http://157.245.50.125:8080/api/Fabrics/${editIndex}`,
+        `https://localhost:7194/api/Fabrics/${editIndex}`,
         {
           method: "PUT",
           headers: {

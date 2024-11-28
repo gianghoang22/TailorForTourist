@@ -174,6 +174,37 @@ const CustomStyle = () => {
 
         setStyles(stylesResponse.data);
         setStyleOptions(optionsResponse.data);
+
+        // Auto-select first option for each optionType if none selected
+        if (!localStorage.getItem('styleOptionId')) {
+          const firstStyle = stylesResponse.data[0];
+          if (firstStyle) {
+            const uniqueOptionTypes = Array.from(
+              new Set(optionsResponse.data
+                .filter(option => option.styleId === firstStyle.styleId)
+                .map(option => option.optionType))
+            );
+
+            const initialSelections = {};
+            const initialImages = {};
+            const selectedIds = [];
+
+            uniqueOptionTypes.forEach(optionType => {
+              const firstOption = optionsResponse.data.find(
+                option => option.styleId === firstStyle.styleId && option.optionType === optionType
+              );
+              if (firstOption) {
+                initialSelections[optionType] = firstOption.styleOptionId;
+                initialImages[optionType] = optionTypeImages[firstOption.optionValue];
+                selectedIds.push(firstOption.styleOptionId);
+              }
+            });
+
+            setSelectedOptions(initialSelections);
+            setSelectedImages(initialImages);
+            localStorage.setItem('styleOptionId', JSON.stringify(selectedIds));
+          }
+        }
       } catch (error) {
         setError('Failed to load styles or options. Please try again later.');
       } finally {
@@ -218,6 +249,19 @@ const CustomStyle = () => {
 
   const isOptionSelected = (styleOption) => {
     return selectedOptions[styleOption.optionType] === styleOption.styleOptionId;
+  };
+
+  const handleNextClick = (e) => {
+    // Check if at least one style option has been selected
+    if (Object.keys(selectedOptions).length === 0) {
+      e.preventDefault();
+      toast.error('Please select at least one style option before continuing');
+      return;
+    }
+
+    // Save the selections to localStorage
+    const selectedIds = Object.values(selectedOptions);
+    localStorage.setItem('styleOptionId', JSON.stringify(selectedIds));
   };
 
   if (loading) {
@@ -309,7 +353,7 @@ const CustomStyle = () => {
         </div>
 
         <div className='next-btn'>
-          <Link to="/custom-suits/lining">
+          <Link to="/custom-suits/lining" onClick={handleNextClick}>
             <button className='navigation-button'>Go to Lining</button>
           </Link>
         </div>

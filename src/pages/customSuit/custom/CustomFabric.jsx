@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { addToCart } from '../../../utils/cartUtil';
 import './customFabric.scss';
+import { toast } from 'react-toastify';
 
 import all_icon from '../../../assets/img/filter/icon-fabricFilter-all.jpg';
 import new_icon from '../../../assets/img/filter/icon-fabricFilter-new.jpg';
@@ -41,7 +42,27 @@ const CustomFabric = () => {
   };
 
   useEffect(() => {
-    fetchFabrics();
+    const initializeFabric = async () => {
+      try {
+        const response = await fetch('https://localhost:7194/api/Fabrics');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setFabrics(data);
+        
+        // Automatically select the first fabric if none is selected
+        if (!localStorage.getItem('selectedFabricID') && data.length > 0) {
+          handleFabricClick(data[0]);
+        }
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeFabric();
   }, []);
 
   const handleTagClick = (tag) => {
@@ -70,6 +91,14 @@ const CustomFabric = () => {
   const filteredFabrics = fabrics.filter((fabric) =>
     fabric.fabricName.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleNextClick = (e) => {
+    if (!selectedFabric) {
+      e.preventDefault(); // Prevent navigation
+      toast.error('Please select a fabric before continuing');
+      return;
+    }
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -140,7 +169,7 @@ const CustomFabric = () => {
         )}
 
         <div className='next-btn'>
-          <Link to="/custom-suits/style">
+          <Link to="/custom-suits/style" onClick={handleNextClick}>
             <button className='navigation-button'>Go to Style</button>
           </Link>
         </div>
