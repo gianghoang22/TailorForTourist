@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Bar, Line, Doughnut } from "react-chartjs-2";
+import React, { useState, useEffect } from "react";
+import { Bar, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -38,72 +38,202 @@ ChartJS.register(
 
 const ProfitCalculation = () => {
   const [activeTab, setActiveTab] = useState("revenue");
+  const [orders, setOrders] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "top",
-      },
-    },
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+
+    try {
+      const [ordersResponse, bookingsResponse] = await Promise.all([
+        fetch("https://localhost:7194/api/Orders", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("https://localhost:7194/api/Booking", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      if (!ordersResponse.ok || !bookingsResponse.ok) {
+        throw new Error("Failed to fetch data");
+      }
+
+      const ordersData = await ordersResponse.json();
+      const bookingsData = await bookingsResponse.json();
+
+      console.log("Fetched bookings data:", bookingsData);
+
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      setBookings(Array.isArray(bookingsData) ? bookingsData : []);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to load data");
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const processMonthlyData = () => {
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const monthlyRevenue = new Array(12).fill(0);
+    const monthlyProfit = new Array(12).fill(0);
+    const monthlyBookings = new Array(12).fill(0);
+
+    // Process orders
+    orders.forEach((order) => {
+      const date = new Date(order.orderDate);
+      const month = date.getMonth();
+      monthlyRevenue[month] += order.totalPrice || 0;
+      monthlyProfit[month] += (order.totalPrice || 0) * 0.4;
+    });
+
+    console.log("Processing bookings:", bookings);
+
+    // Process bookings with explicit logging
+    if (bookings && bookings.length > 0) {
+      bookings.forEach((booking) => {
+        try {
+          // Extract month from booking date (format: "YYYY-MM-DD")
+          const month = parseInt(booking.bookingDate.split("-")[1]) - 1; // Convert to 0-based month
+          console.log(
+            `Processing booking for month: ${month + 1}, date: ${booking.bookingDate}`
+          );
+          monthlyBookings[month] = (monthlyBookings[month] || 0) + 1;
+        } catch (error) {
+          console.error(`Error processing booking:`, booking, error);
+        }
+      });
+    }
+
+    console.log("Monthly bookings data:", monthlyBookings);
+
+    // Calculate total bookings for current year
+    const currentYear = new Date().getFullYear();
+    const totalBookings = bookings.filter((booking) => {
+      const bookingYear = booking.bookingDate.split("-")[0];
+      return parseInt(bookingYear) === currentYear;
+    }).length;
+
+    return {
+      labels: months,
+      revenue: monthlyRevenue,
+      profit: monthlyProfit,
+      bookings: monthlyBookings,
+      totalBookings,
+    };
+  };
+
+  const monthlyData = processMonthlyData();
+
+  // Calculate totals
+  const totalRevenue = orders.reduce(
+    (sum, order) => sum + (order.totalPrice || 0),
+    0
+  );
+  const totalProfit = totalRevenue * 0.4; // Assuming 40% profit margin
+  const profitMargin =
+    totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
   const venueData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: monthlyData.labels,
     datasets: [
       {
         label: "Revenue",
-        data: [12000, 19000, 15000, 25000, 22000, 30000],
+        data: monthlyData.revenue,
         backgroundColor: "rgba(53, 162, 235, 0.5)",
       },
       {
         label: "Profit",
-        data: [5000, 8000, 6000, 11000, 9000, 14000],
+        data: monthlyData.profit,
         backgroundColor: "rgba(75, 192, 192, 0.5)",
       },
     ],
   };
 
   const profitTrendData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: monthlyData.labels,
     datasets: [
       {
         label: "Profit Trend",
-        data: [5000, 8000, 6000, 11000, 9000, 14000],
+        data: monthlyData.profit,
         borderColor: "rgb(75, 192, 192)",
         tension: 0.1,
       },
     ],
   };
 
-  const customerSatisfactionData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  const bookingData = {
+    labels: monthlyData.labels,
     datasets: [
       {
-        label: "Customer Satisfaction",
-        data: [4.2, 4.3, 4.1, 4.4, 4.5, 4.6],
+        label: "Number of Bookings",
+        data: monthlyData.bookings,
         borderColor: "rgb(255, 99, 132)",
-        tension: 0.1,
-        fill: false,
+        backgroundColor: "rgba(255, 99, 132, 0.5)",
+        borderWidth: 1,
+        barThickness: 30,
       },
     ],
   };
 
-  const eventTypeData = {
-    labels: ["Weddings", "Corporate", "Birthdays", "Concerts", "Other"],
-    datasets: [
-      {
-        data: [30, 25, 20, 15, 10],
-        backgroundColor: [
-          "rgba(255, 99, 132, 0.6)",
-          "rgba(54, 162, 235, 0.6)",
-          "rgba(255, 206, 86, 0.6)",
-          "rgba(75, 192, 192, 0.6)",
-          "rgba(153, 102, 255, 0.6)",
-        ],
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top",
       },
-    ],
+      title: {
+        display: true,
+        text: "Chart.js Chart",
+      },
+    },
+  };
+
+  const bookingChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top",
+      },
+      title: {
+        display: true,
+        text: `Booking Statistics for ${new Date().getFullYear()}`,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1,
+          precision: 0,
+        },
+        title: {
+          display: true,
+          text: "Number of Bookings",
+        },
+      },
+    },
   };
 
   const renderActiveChart = () => {
@@ -112,10 +242,17 @@ const ProfitCalculation = () => {
         return <Bar data={venueData} options={chartOptions} />;
       case "profit":
         return <Line data={profitTrendData} options={chartOptions} />;
-      case "satisfaction":
-        return <Line data={customerSatisfactionData} options={chartOptions} />;
-      case "events":
-        return <Doughnut data={eventTypeData} options={chartOptions} />;
+      case "bookings":
+        console.log("Rendering booking chart with data:", bookingData);
+        return (
+          <div style={{ height: "400px" }}>
+            <Bar
+              key={JSON.stringify(bookingData)}
+              data={bookingData}
+              options={bookingChartOptions}
+            />
+          </div>
+        );
       default:
         return null;
     }
@@ -128,7 +265,7 @@ const ProfitCalculation = () => {
       <div className="stat-cards">
         <StatCard
           title="Total Revenue"
-          value="$123,000"
+          value={`$${totalRevenue.toFixed(2)}`}
           change="+15%"
           icon={<DollarSignIcon />}
           positive
@@ -136,7 +273,7 @@ const ProfitCalculation = () => {
         />
         <StatCard
           title="Total Profit"
-          value="$53,000"
+          value={`$${totalProfit.toFixed(2)}`}
           change="+8%"
           icon={<TrendingUpIcon />}
           positive
@@ -144,7 +281,7 @@ const ProfitCalculation = () => {
         />
         <StatCard
           title="Profit Margin"
-          value="43.1%"
+          value={`${profitMargin.toFixed(1)}%`}
           change="-2%"
           icon={<PercentIcon />}
           className="margin"
@@ -165,22 +302,22 @@ const ProfitCalculation = () => {
           Profit Trend
         </TabButton>
         <TabButton
-          active={activeTab === "satisfaction"}
-          onClick={() => setActiveTab("satisfaction")}
+          active={activeTab === "bookings"}
+          onClick={() => setActiveTab("bookings")}
         >
-          Customer Satisfaction
-        </TabButton>
-        <TabButton
-          active={activeTab === "events"}
-          onClick={() => setActiveTab("events")}
-        >
-          Event Types
+          Bookings
         </TabButton>
       </div>
 
       <div className="chart-container">
         <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Chart</h2>
-        <div className="chart-wrapper">{renderActiveChart()}</div>
+        {loading ? (
+          <p>Loading data...</p>
+        ) : error ? (
+          <p>Error: {error}</p>
+        ) : (
+          <div className="chart-wrapper">{renderActiveChart()}</div>
+        )}
       </div>
 
       <div className="stat-cards">
@@ -202,6 +339,32 @@ const ProfitCalculation = () => {
           value="32%"
           subtext="of total bookings"
           icon={<RepeatIcon />}
+        />
+      </div>
+
+      <div className="stat-cards">
+        <StatCard
+          title="Total Bookings"
+          value={monthlyData.totalBookings.toString()}
+          subtext={`for ${new Date().getFullYear()}`}
+          icon={<CalendarIcon />}
+        />
+        <StatCard
+          title="Average Monthly Bookings"
+          value={(monthlyData.totalBookings / 12).toFixed(1)}
+          subtext="per month"
+          icon={<CalendarIcon />}
+          positive
+        />
+        <StatCard
+          title="Peak Booking Month"
+          value={
+            monthlyData.labels[
+              monthlyData.bookings.indexOf(Math.max(...monthlyData.bookings))
+            ]
+          }
+          subtext={`${Math.max(...monthlyData.bookings)} bookings`}
+          icon={<TrendingUpIcon />}
         />
       </div>
     </div>

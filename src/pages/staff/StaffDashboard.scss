@@ -6,19 +6,21 @@
 
   .sidebar {
     width: 250px;
-    background-color: #fff;
+    background: linear-gradient(180deg, #1a237e 0%, #303f9f 100%);
+    color: white;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
     border-right: 1px solid #e0e0e0;
     display: flex;
     flex-direction: column;
 
     .logo {
-      padding: 20px;
-      font-size: 20px;
-      font-weight: bold;
+      padding: 24px;
+      font-size: 24px;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       display: flex;
       align-items: center;
       gap: 10px;
-      border-bottom: 1px solid #e0e0e0;
     }
 
     .user-profile {
@@ -41,13 +43,21 @@
       button {
         width: 100%;
         justify-content: flex-start;
-        padding: 10px 20px;
-        text-transform: none;
-        color: #666;
+        padding: 12px 24px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        color: rgba(255, 255, 255, 0.8);
+        margin: 4px 16px;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+          transform: translateX(4px);
+        }
 
         &.active {
-          background-color: #e3f2fd;
-          color: #1976d2;
+          background: rgba(255, 255, 255, 0.2);
+          color: white;
+          font-weight: 500;
         }
       }
     }
@@ -62,25 +72,82 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 20px;
+      padding: 16px 24px;
       margin-bottom: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
       .header-actions {
         display: flex;
         align-items: center;
         gap: 10px;
+
+        button {
+          margin-left: 8px;
+          padding: 8px 16px;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: rgba(0, 0, 0, 0.05);
+          }
+        }
       }
     }
 
     .dashboard-content {
       .chart-container {
-        padding: 20px;
+        padding: 24px;
         height: 100%;
         margin-bottom: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease;
+
+        &:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h6 {
+          margin-bottom: 16px;
+          color: #1a237e;
+          font-weight: 600;
+          text-align: center;
+        }
+
+        .recharts-cartesian-grid-horizontal line,
+        .recharts-cartesian-grid-vertical line {
+          stroke: rgba(255, 255, 255, 0.1);
+        }
+
+        .recharts-tooltip-wrapper {
+          .recharts-default-tooltip {
+            background-color: rgba(0, 0, 0, 0.8) !important;
+            border: none !important;
+            border-radius: 4px;
+            padding: 8px 12px;
+
+            .recharts-tooltip-label {
+              color: #fff;
+            }
+
+            .recharts-tooltip-item {
+              color: #fff;
+              padding: 4px 0;
+            }
+          }
+        }
       }
 
       .details-container {
-        padding: 20px;
+        padding: 24px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        margin-top: 24px;
       }
     }
   }
@@ -127,6 +194,18 @@
   .details-container {
     .MuiTypography-root {
       color: #fff;
+    }
+  }
+
+  .chart-container {
+    background-color: #1e1e1e;
+
+    h6 {
+      color: #fff;
+    }
+
+    .recharts-text {
+      fill: #fff;
     }
   }
 }

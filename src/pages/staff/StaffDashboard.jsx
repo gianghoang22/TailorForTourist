@@ -30,12 +30,15 @@ import {
   CalendarToday,
   Inbox,
   Group,
+  Logout,
 } from "@mui/icons-material";
 import "./StaffDashboard.scss";
+import { useNavigate } from "react-router-dom";
 
 const BASE_URL = "https://localhost:7194/api";
 
 const StaffDashboard = () => {
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("orders");
   const [darkMode, setDarkMode] = useState(false);
   const [orderData, setOrderData] = useState([]);
@@ -101,6 +104,13 @@ const StaffDashboard = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("userID");
+    localStorage.removeItem("roleID");
+    localStorage.removeItem("token");
+    navigate("/signin");
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
@@ -140,6 +150,13 @@ const StaffDashboard = () => {
               onClick={() => setActiveSection("measure")}
             >
               Measurement
+            </Button>
+            <Button
+              startIcon={<Logout />}
+              onClick={handleLogout}
+              className="logout-button"
+            >
+              Logout
             </Button>
           </div>
         </Grid>
@@ -193,21 +210,6 @@ const StaffDashboard = () => {
                       <Legend />
                       <Bar dataKey="count" fill="#82ca9d" />{" "}
                       {/* Updated to match bookingData structure */}
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Paper className="chart-container">
-                  <Typography variant="h6">Shipments</Typography>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={shipmentData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="shipmentDate" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="shipmentCount" fill="#ffc658" />
                     </BarChart>
                   </ResponsiveContainer>
                 </Paper>

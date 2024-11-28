@@ -17,7 +17,7 @@ import "./TailorDashboard.scss";
 
 const statusColors = {
   "Not Start": "bg-yellow-300 text-yellow-800",
-  Doing: "bg-blue-300 text-blue-800",
+  Doing: "bg-green-300 text-green-800",
   Finish: "bg-green-300 text-green-800",
   Due: "bg-orange-300 text-orange-800",
   Cancel: "bg-red-300 text-red-800",
@@ -198,8 +198,6 @@ const TailorDashboard = () => {
         liningName: productData.liningName,
         styleOptions: styleOptionsWithNames,
         orderInfo: {
-          //totalPrice: orderData.totalPrice,
-          //deposit: orderData.deposit,
           status: orderData.status,
           guestName: orderData.guestName,
           orderDate: orderData.orderDate,
@@ -582,6 +580,7 @@ const TailorDashboard = () => {
           <table className="orders-table">
             <thead>
               <tr>
+                <th>Order ID</th>
                 <th>Stage Name</th>
                 <th>Order Status</th>
                 <th>Note</th>
@@ -597,13 +596,11 @@ const TailorDashboard = () => {
                 return (
                   <React.Fragment key={order.processingId}>
                     <tr>
+                      <td>{order.orderId}</td>
                       <td>{order.stageName}</td>
                       <td>
                         <span
-                          className={`px-2 py-1 rounded-full ${
-                            statusColors[order.status] ||
-                            "bg-gray-200 text-gray-800"
-                          }`}
+                          className={`status-label ${order.status.toLowerCase().replace(" ", "-")}`}
                         >
                           {order.status}
                         </span>
@@ -632,7 +629,7 @@ const TailorDashboard = () => {
                     </tr>
                     {expandedOrder === order.orderId && (
                       <tr>
-                        <td colSpan="7">
+                        <td colSpan="8">
                           <div className="order-details bg-white shadow-lg rounded-lg p-6 mt-4">
                             <div className="grid grid-cols-2 gap-8">
                               <div className="order-info">
@@ -658,7 +655,6 @@ const TailorDashboard = () => {
                                     </span>{" "}
                                     {details.orderInfo?.orderDate || "N/A"}
                                   </p>
-                                  {/* Total price and deposit removed */}
                                 </div>
                                 <h5 className="text-lg font-semibold mt-4 mb-2 flex items-center">
                                   <Scissors className="mr-2" /> Product Details

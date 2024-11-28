@@ -27,6 +27,7 @@ const UserProfile = () => {
   const isOrderHistoryRoute = location.pathname === "/profile/order-history";
   const isMeasurementRoute = location.pathname === "/profile/measurement";
   const isAppointmentRoute = location.pathname === "/profile/appointment";
+  const isFeedbackRoute = location.pathname === "/profile/feedback";
 
   const handleAvatarChange = (event) => {
     const file = event.target.files[0];
@@ -170,7 +171,8 @@ const UserProfile = () => {
     isChangePasswordRoute ||
     isOrderHistoryRoute ||
     isMeasurementRoute ||
-    isAppointmentRoute
+    isAppointmentRoute ||
+    isFeedbackRoute
   ) {
     return <Outlet />;
   }
@@ -232,6 +234,10 @@ const UserProfile = () => {
             <Link to="/profile/appointment" className="user-profile__nav-item">
               <i className="icon-settings"></i>
               Appointment
+            </Link>
+            <Link to="/profile/feedback" className="user-profile__nav-item">
+              <i className="icon-feedback"></i>
+              Feedback
             </Link>
           </nav>
         </aside>

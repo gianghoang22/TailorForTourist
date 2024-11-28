@@ -52,7 +52,9 @@ import Payment from "../pages/payment/payment";
 import ContactUs from "../pages/contact/ContactUs";
 import OrderDetails from "../pages/orderDetails/OrderDetails";
 import CreatePassword from "../pages/signIn/CreatePassword";
-
+import ProtectedRoute from "../pages/ProtectedRoute/ProtectedRoute";
+import TailorDashboard from "../pages/tailor/TailorDashboard";
+import Feedback from "../pages/profile/Feedback";
 export const routes = [
   {
     path: "/",
@@ -167,6 +169,10 @@ export const routes = [
       {
         path: "appointment",
         element: <Appointment />,
+      },
+      {
+        path: "feedback",
+        element: <Feedback />,
       },
       // Add other profile-related children routes here if needed
     ],

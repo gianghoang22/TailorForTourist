@@ -84,38 +84,41 @@ export default function CreatePassword({ token }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-  
+
     if (!validatePasswords()) return;
-  
+
     try {
       // First, get the refreshToken from the /api/Login/login endpoint
-      const loginResponse = await fetch("https://localhost:7194/api/Login/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          // Include the necessary login credentials here
-        }),
-      });
-  
+      const loginResponse = await fetch(
+        "https://localhost:7194/api/Login/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            // Include the necessary login credentials here
+          }),
+        }
+      );
+
       if (!loginResponse.ok) {
         const errorText = await loginResponse.text();
         throw new Error(
           `Error: ${loginResponse.status} ${loginResponse.statusText} - ${errorText}`
         );
       }
-  
+
       const { refreshToken } = await loginResponse.json();
-  
+
       // Use the refreshToken in the reset-password request
       const requestBody = {
         token: refreshToken,
         newPassword,
       };
-  
+
       console.log("Sending request:", requestBody); // Log the request body
-  
+
       const response = await fetch(
         "https://localhost:7194/api/User/reset-password",
         {
@@ -126,14 +129,14 @@ export default function CreatePassword({ token }) {
           body: JSON.stringify(requestBody),
         }
       );
-  
+
       if (!response.ok) {
         const errorText = await response.text(); // Get response text
         throw new Error(
           `Error: ${response.status} ${response.statusText} - ${errorText}`
         );
       }
-  
+
       console.log("Password reset successful");
       navigate("/signin"); // Redirect to login page after successful password reset
     } catch (error) {

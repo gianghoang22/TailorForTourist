@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import '../sidebar/Sidebar.scss';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import "../sidebar/Sidebar.scss";
 
 const Sidebar = ({ onSelectSubcategory }) => {
   const [categories, setCategories] = useState([]);
@@ -11,16 +11,16 @@ const Sidebar = ({ onSelectSubcategory }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get('https://localhost:7194/api/category');
+        const response = await axios.get("https://localhost:7194/api/category");
         if (Array.isArray(response.data.data)) {
           setCategories(response.data.data);
         } else {
-          throw new Error('API returned unexpected format: expected an array');
+          throw new Error("API returned unexpected format: expected an array");
         }
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching categories:', err);
-        setError(err.message || 'Failed to fetch categories');
+        console.error("Error fetching categories:", err);
+        setError(err.message || "Failed to fetch categories");
         setLoading(false);
       }
     };
@@ -29,7 +29,9 @@ const Sidebar = ({ onSelectSubcategory }) => {
   }, []);
 
   const getSubcategories = (parentId) => {
-    return Array.isArray(categories) ? categories.filter(category => category.categoryParentId === parentId) : [];
+    return Array.isArray(categories)
+      ? categories.filter((category) => category.categoryParentId === parentId)
+      : [];
   };
 
   const handleSubcategoryClick = (subcategoryId) => {
@@ -45,21 +47,35 @@ const Sidebar = ({ onSelectSubcategory }) => {
     return <p>Error: {error}</p>;
   }
 
-  const parentCategories = categories.filter(category => category.categoryParentId === null);
+  const parentCategories = categories.filter(
+    (category) => category.categoryParentId === null
+  );
 
   return (
-    <div id="nav_menu5" className='widget widget_nav_menu'>
+    <div id="nav_menu5" className="widget widget_nav_menu">
       <div className="menu-widget-container">
         <ul id="menu-widget" className="menu">
-          {parentCategories.map(category => (
-            <li key={category.categoryId} className="menu-item menu-item-type-taxonomy menu-item-object-product_cat menu-item-has-children dropdown">
+          {parentCategories.map((category) => (
+            <li
+              key={category.categoryId}
+              className="menu-item menu-item-type-taxonomy menu-item-object-product_cat menu-item-has-children dropdown"
+            >
               <a>{category.name}</a>
               <ul className="menu">
-                {getSubcategories(category.categoryId).map(subcategory => (
-                  <li key={subcategory.categoryId} className="menu-item menu-item-type-post_type menu-item-object-page">
+                {getSubcategories(category.categoryId).map((subcategory) => (
+                  <li
+                    key={subcategory.categoryId}
+                    className="menu-item menu-item-type-post_type menu-item-object-page"
+                  >
                     <a
-                      onClick={() => handleSubcategoryClick(subcategory.categoryId)}
-                      className={activeSubcategory === subcategory.categoryId ? 'selected' : ''}
+                      onClick={() =>
+                        handleSubcategoryClick(subcategory.categoryId)
+                      }
+                      className={
+                        activeSubcategory === subcategory.categoryId
+                          ? "selected"
+                          : ""
+                      }
                     >
                       {subcategory.name}
                     </a>

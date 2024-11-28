@@ -331,7 +331,7 @@ const VoucherManagement = () => {
             style={{ marginRight: "1rem" }}
           />
           <TextField
-            label="Discount Number"
+            label="Discount % Number"
             name="discountNumber"
             type="number"
             value={newVoucher.discountNumber}
@@ -408,7 +408,7 @@ const VoucherManagement = () => {
               <TableRow key={v.voucherId}>
                 <TableCell>{v.voucherCode}</TableCell>
                 <TableCell>{v.description}</TableCell>
-                <TableCell>{v.discountNumber}%</TableCell>
+                <TableCell>{v.discountNumber}</TableCell>
                 <TableCell style={{ color: getStatusColor(v.status) }}>
                   {v.status}
                 </TableCell>

@@ -1,0 +1,75 @@
+.main-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.feedback-container {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+
+  h2 {
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .feedback-table {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+
+    .ant-table-thead > tr > th {
+      background-color: #f0f2f5;
+      color: #333;
+      font-weight: 600;
+    }
+
+    .ant-table-tbody > tr > td {
+      padding: 16px;
+    }
+
+    .ant-table-row:hover {
+      background-color: #f9f9f9;
+    }
+  }
+
+  .ant-rate {
+    font-size: 16px;
+  }
+
+  .response-date {
+    color: #888;
+    font-style: italic;
+  }
+
+  .ant-empty {
+    margin: 2rem 0;
+  }
+
+  .ant-spin {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .feedback-container {
+    padding: 1rem;
+
+    h2 {
+      font-size: 1.5rem;
+    }
+
+    .feedback-table {
+      .ant-table-thead > tr > th,
+      .ant-table-tbody > tr > td {
+        padding: 12px 8px;
+      }
+    }
+  }
+}

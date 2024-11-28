@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import './FabricDetail.scss';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import "./FabricDetail.scss";
 
 const FabricDetail = () => {
   const { id } = useParams();
@@ -12,7 +12,9 @@ const FabricDetail = () => {
   useEffect(() => {
     const fetchFabric = async () => {
       try {
-        const response = await fetch(`https://localhost:7194/api/Fabrics/${id}`);
+        const response = await fetch(
+          `https://localhost:7194/api/Fabrics/${id}`
+        );
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
