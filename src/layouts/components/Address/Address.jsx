@@ -11,6 +11,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
   const [wards, setWards] = useState([]);
   const [userAddress, setUserAddress] = useState('');
   const [error, setError] = useState(null);
+  const [manualAddress, setManualAddress] = useState(initialAddress || '');
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -142,21 +143,35 @@ const Address = ({ initialAddress, onAddressChange }) => {
     }
   };
 
+  const handleManualAddressChange = (e) => {
+    const newAddress = e.target.value;
+    setManualAddress(newAddress);
+    onAddressChange({ fullAddress: newAddress });
+  };
+
   if (error) {
     return <div className="error-message">{error}</div>;
   }
 
   return (
     <div className="address-selector">
-      {userAddress && (
-        <div className="current-address">
-          <p><strong>Địa chỉ hiện tại:</strong> {userAddress}</p>
-        </div>
-      )}
+      <div className="form-group">
+        <label>
+          Detail Address <span className="required">*</span>
+        </label>
+        <input
+          type="text"
+          value={manualAddress}
+          onChange={handleManualAddressChange}
+          placeholder="Enter your address"
+          className="address-input"
+          required
+        />
+      </div>
 
       <div className="select-group">
         <label>
-          Tỉnh/Thành phố <span className="required">*</span>
+          Province <span className="required">*</span>
         </label>
         <select
           value={selectedProvince}
@@ -164,7 +179,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
           className="address-select"
           required
         >
-          <option value="">Chọn Tỉnh/Thành phố</option>
+            <option value="">Select Province</option>
           {provinces.map((province) => (
             <option key={province.provinceID} value={province.provinceID}>
               {province.provinceName}
@@ -175,7 +190,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
 
       <div className="select-group">
         <label>
-          Quận/Huyện <span className="required">*</span>
+            District <span className="required">*</span>
         </label>
         <select
           value={selectedDistrict?.districtID || ''}
@@ -184,7 +199,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
           disabled={!selectedProvince}
           required
         >
-          <option value="">Chọn Quận/Huyện</option>
+          <option value="">Select District</option>
           {districts.map((district) => (
             <option key={district.districtID} value={district.districtID}>
               {district.districtName}
@@ -195,7 +210,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
 
       <div className="select-group">
         <label>
-          Phường/Xã <span className="required">*</span>
+          Ward <span className="required">*</span>
         </label>
         <select
           value={selectedWard?.wardCode || ''}
@@ -204,7 +219,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
           disabled={!selectedDistrict}
           required
         >
-          <option value="">Chọn Phường/Xã</option>
+          <option value="">Select Ward</option>
           {wards.map((ward) => (
             <option key={ward.wardCode} value={ward.wardCode}>
               {ward.wardName}

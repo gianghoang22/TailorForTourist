@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Modal from "react-modal"; // npm install react-modal
 import "./OrderHistory.scss";
 import ProfileNav from "./ProfileNav";
+import { FaStar } from 'react-icons/fa'; // npm install react-icons
 
 const OrderHistory = () => {
   const [orders, setOrders] = useState([]);
@@ -12,6 +13,10 @@ const OrderHistory = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetails, setOrderDetails] = useState([]);
   const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [feedbackModalIsOpen, setFeedbackModalIsOpen] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [hover, setHover] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -115,6 +120,48 @@ const OrderHistory = () => {
     setModalIsOpen(true); // Open modal
   };
 
+  const currentDate = new Date().toLocaleDateString('en-CA');
+
+  const handleFeedbackSubmit = async (orderId) => {
+    const feedback = {
+      feedbackId: 0,
+      comment: comment,
+      rating: rating,
+      dateSubmitted: currentDate,
+      userId: parseInt(userID),
+      orderId: orderId
+    };
+
+    console.log('Submitting feedback:', feedback); // Log the feedback object
+
+    try {
+      const response = await fetch('https://localhost:7194/api/Feedback/feedbackfororder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(feedback)
+      });
+
+      console.log('Response status:', response.status); // Log the response status
+
+      if (!response.ok) {
+        throw new Error('Failed to submit feedback');
+      }
+
+      const responseData = await response.json();
+      console.log('Response data:', responseData); // Log the response data
+
+      setFeedbackModalIsOpen(false);
+      setComment('');
+      setRating(5);
+      alert('Feedback submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      setError(error.message);
+    }
+  };
+
   const customStyles = {
     content: {
       top: "50%",
@@ -195,6 +242,19 @@ const OrderHistory = () => {
                         >
                           View Details
                         </button>
+                        {order.status === 'Shipped' && (
+                          <button 
+                            className="received-button"
+                            onClick={() => {
+                              if (window.confirm('Would you like to provide feedback for this order?')) {
+                                setSelectedOrder(order.orderId);
+                                setFeedbackModalIsOpen(true);
+                              }
+                            }}
+                          >
+                            Received
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -241,6 +301,47 @@ const OrderHistory = () => {
         <button onClick={() => setModalIsOpen(false)} className="close-modal">
           Close
         </button>
+      </Modal>
+
+      <Modal
+        isOpen={feedbackModalIsOpen}
+        onRequestClose={() => setFeedbackModalIsOpen(false)}
+        style={customStyles}
+        contentLabel="Feedback Modal"
+      >
+        <h2>Provide Feedback for Order #{selectedOrder}</h2>
+        <div className="star-rating">
+          {[...Array(5)].map((star, index) => {
+            const ratingValue = index + 1;
+            return (
+              <label key={index}>
+                <input
+                  type="radio"
+                  name="rating"
+                  value={ratingValue}
+                  onClick={() => setRating(ratingValue)}
+                />
+                <FaStar
+                  className="star"
+                  color={ratingValue <= (hover || rating) ? "#ffc107" : "#e4e5e9"}
+                  size={30}
+                  onMouseEnter={() => setHover(ratingValue)}
+                  onMouseLeave={() => setHover(null)}
+                />
+              </label>
+            );
+          })}
+        </div>
+        <textarea
+          placeholder="Please share your feedback..."
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          rows={4}
+        />
+        <div className="modal-buttons">
+          <button onClick={() => handleFeedbackSubmit(selectedOrder)}>Submit</button>
+          <button onClick={() => setFeedbackModalIsOpen(false)}>Cancel</button>
+        </div>
       </Modal>
 
       <a className="continue-shopping" href="#">

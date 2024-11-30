@@ -56,6 +56,9 @@ const Checkout = () => {
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [shippingFee, setShippingFee] = useState(0);
   const [nearestStore, setNearestStore] = useState(null);
+  const [vouchers, setVouchers] = useState([]);
+  const [selectedVoucher, setSelectedVoucher] = useState(null);
+  const [discountedShippingFee, setDiscountedShippingFee] = useState(0);
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -220,6 +223,22 @@ const Checkout = () => {
     }
   }, [deliveryMethod, guestAddress, nearestStore]);
 
+  useEffect(() => {
+    const fetchVouchers = async () => {
+      try {
+        const response = await axios.get('https://localhost:7194/api/Voucher/valid');
+        if (response.status === 200) {
+          setVouchers(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching vouchers:', error);
+        toast.error('Failed to load vouchers');
+      }
+    };
+
+    fetchVouchers();
+  }, []);
+
   const getDisplayProductCode = (fullCode) => {
     if (!fullCode) return '';
     return fullCode.split('2024')[0];  // This will show just the base part like "PRD002"
@@ -304,6 +323,16 @@ const Checkout = () => {
     }
   };
 
+  const handleVoucherSelect = (voucher) => {
+    setSelectedVoucher(voucher);
+    if (voucher && voucher.voucherCode.substring(0, 8) === 'FREESHIP') {
+      const discountAmount = shippingFee * voucher.discountNumber;
+      setDiscountedShippingFee(shippingFee - discountAmount);
+    } else {
+      setDiscountedShippingFee(shippingFee);
+    }
+  };
+
   const handleConfirmOrder = async () => {
     try {
       // Basic validation
@@ -317,29 +346,25 @@ const Checkout = () => {
         return;
       }
 
-      const payload = {
-        userId: localStorage.getItem("userID") ? parseInt(localStorage.getItem("userID")) : null,
-        deliveryMethod: deliveryMethod,
-        storeId: deliveryMethod === 'Pick up' ? parseInt(storeId) : null,
-        totalAmount: deliveryMethod === 'Delivery' 
-          ? apiCart.cartTotal 
-          : apiCart.cartTotal,
-        isPaid: true,
-        isDeposit: paymentDetails.isDeposit,
-        paymentDetails: {
-          paypalOrderId: paymentDetails.id,
-          paymentStatus: paymentDetails.status,
-          paymentAmount: paymentDetails.purchase_units[0].amount.value
-        },
+      const finalShippingFee = selectedVoucher?.voucherCode.substring(0, 8) === 'FREESHIP' 
+        ? discountedShippingFee 
+        : shippingFee;
+
+      const queryParams = new URLSearchParams({
         guestName: guestName,
         guestEmail: guestEmail,
-        guestAddress: guestAddress
-      };
+        guestAddress: guestAddress,
+        deposit: 0,
+        shippingfee: finalShippingFee,
+        deliverymethod: deliveryMethod,
+        storeId: parseInt(storeId),
+        voucherId: 12
+      }).toString();
 
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        CHECKOUT_API.confirmOrder,
-        payload,
+        `${CHECKOUT_API.confirmOrder}?${queryParams}`,
+        null,  // no request body needed
         {
           headers: {
             'Content-Type': 'application/json',
@@ -377,6 +402,15 @@ const Checkout = () => {
 
   const handlePaymentCancel = () => {
     toast.info('Payment cancelled.');
+  };
+
+  // Add this function to calculate the final total
+  const calculateFinalTotal = () => {
+    const baseTotal = apiCart.cartTotal;
+    const finalShippingFee = selectedVoucher?.voucherCode.substring(0, 8) === 'FREESHIP' 
+      ? discountedShippingFee 
+      : shippingFee;
+    return baseTotal + finalShippingFee;
   };
 
   if (loading) return <div>Đang tải...</div>;
@@ -560,27 +594,56 @@ const Checkout = () => {
                       <tfoot>
                         <tr>
                           <td colSpan="3"><strong>Subtotal</strong></td>
-                          <td><strong>${apiCart.cartTotal}</strong></td>
+                          <td><strong>${apiCart.cartTotal.toFixed(2)}</strong></td>
                         </tr>
                         {deliveryMethod === 'Delivery' && (
-                          <tr>
-                            <td colSpan="3"><strong>Shipping Fee</strong></td>
-                            <td><strong>${shippingFee.toFixed(2)}</strong></td>
-                          </tr>
+                          <>
+                            <tr>
+                              <td colSpan="3"><strong>Shipping Fee</strong></td>
+                              <td><strong>${shippingFee.toFixed(2)}</strong></td>
+                            </tr>
+                            {selectedVoucher && selectedVoucher.voucherCode.substring(0, 8) === 'FREESHIP' && (
+                              <tr>
+                                <td colSpan="3"><strong>Shipping Discount</strong></td>
+                                <td className="discount-amount">
+                                  <strong>-${(shippingFee - discountedShippingFee).toFixed(2)}</strong>
+                                </td>
+                              </tr>
+                            )}
+                          </>
                         )}
                         <tr className="order-total">
                           <td colSpan="3"><strong>Total</strong></td>
                           <td>
-                            <strong>${(apiCart.cartTotal + shippingFee).toFixed(2)}</strong>
+                            <strong>${calculateFinalTotal().toFixed(2)}</strong>
                           </td>
                         </tr>
                       </tfoot>
                     </table>
                     {apiCart && apiCart.cartItems.length > 0 && (
                       <>
+                        <div className="voucher-section">
+                          <h4>Available Vouchers</h4>
+                          <select 
+                            onChange={(e) => {
+                              const voucher = vouchers.find(v => v.voucherId === parseInt(e.target.value));
+                              handleVoucherSelect(voucher);
+                            }}
+                            value={selectedVoucher?.voucherId || ''}
+                          >
+                            <option value="">Select a voucher</option>
+                            {vouchers.map((voucher) => (
+                              <option key={voucher.voucherId} value={voucher.voucherId}>
+                                {voucher.voucherCode} - {voucher.description}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                         <PayPalCheckoutButton
-                          amount={apiCart.cartTotal}
-                          shippingFee={shippingFee}
+                          amount={calculateFinalTotal()}
+                          shippingFee={selectedVoucher?.voucherCode.substring(0, 8) === 'FREESHIP' 
+                            ? discountedShippingFee 
+                            : shippingFee}
                           onSuccess={handlePaymentSuccess}
                           onError={handlePaymentError}
                           onCancel={handlePaymentCancel}

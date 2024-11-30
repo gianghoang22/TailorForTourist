@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import logo from '../../assets/img/logo/logo_custom.jpg';
 import './CustomSuit.scss';
 import './Header.scss';
+import { FaAngleRight } from 'react-icons/fa';
 
 const CustomSuit = () => {
   const location = useLocation();
@@ -30,13 +31,13 @@ const CustomSuit = () => {
                   FABRIC
                 </Link>
               </li>
-              <li><i className="fa fa-angle-right"></i></li>
+              <li><FaAngleRight /></li>
               <li>
                 <Link to="/custom-suits/style" className={`toggle-side-menu ${location.pathname === '/custom-suits/style' ? 'active' : ''}`}>
                   STYLE
                 </Link>
               </li>
-              <li><i className="fa fa-angle-right"></i></li>
+              <li><FaAngleRight /></li>
               <li>
                 <Link to="/custom-suits/lining" className={`toggle-side-menu ${location.pathname === '/custom-suits/lining' ? 'active' : ''}`}>
                   LINING

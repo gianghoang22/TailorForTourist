@@ -418,3 +418,23 @@ select {
     }
   }
 }
+
+.voucher-section {
+  margin: 20px 0;
+  
+  h4 {
+    margin-bottom: 10px;
+  }
+  
+  select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    
+    &:focus {
+      outline: none;
+      border-color: #666;
+    }
+  }
+}

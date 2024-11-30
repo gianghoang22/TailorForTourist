@@ -143,4 +143,78 @@ element.style {
     border: 1px dashed #e1e1e1;
 }
 
+.fback-main {
+  padding: 40px 0;
+
+  .feedback-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 30px;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+
+    .page-btn {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+
+      &:hover:not(:disabled) {
+        background: #f0f0f0;
+      }
+
+      &.active {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+    }
+  }
+
+  .stars {
+    display: flex;
+    gap: 2px;
+    
+    .star-filled {
+      color: #ffd700;
+    }
+    
+    .star-empty {
+      color: #e0e0e0;
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .feedback-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .feedback-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Update feedback-item styles for grid layout
+.feedback-item {
+  height: 100%;
+  // ... existing feedback-item styles ...
+}
+
 
