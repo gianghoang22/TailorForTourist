@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './Address.scss';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import "./Address.scss";
 
 const Address = ({ initialAddress, onAddressChange }) => {
-  const [selectedProvince, setSelectedProvince] = useState('');
+  const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [selectedWard, setSelectedWard] = useState(null);
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
-  const [userAddress, setUserAddress] = useState('');
+  const [userAddress, setUserAddress] = useState("");
   const [error, setError] = useState(null);
-  const [manualAddress, setManualAddress] = useState(initialAddress || '');
+  const [manualAddress, setManualAddress] = useState(initialAddress || "");
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -22,7 +22,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
         }
       } catch (err) {
         setError(err.message);
-        console.error('Error loading initial data:', err);
+        console.error("Error loading initial data:", err);
       }
     };
 
@@ -31,53 +31,61 @@ const Address = ({ initialAddress, onAddressChange }) => {
 
   const fetchProvinces = async () => {
     try {
-      const response = await axios.get('https://localhost:7194/api/Shipping/provinces');
+      const response = await axios.get(
+        "https://localhost:7194/api/Shipping/provinces"
+      );
       if (response.data) {
         setProvinces(response.data);
       }
     } catch (error) {
-      console.error('Error fetching provinces:', error);
-      setError('Không thể tải danh sách tỉnh/thành phố');
+      console.error("Error fetching provinces:", error);
+      setError("Không thể tải danh sách tỉnh/thành phố");
     }
   };
 
   const fetchDistricts = async (provinceID) => {
     if (!provinceID) return;
-    
+
     try {
-      const response = await axios.get(`https://localhost:7194/api/Shipping/districts?provinceId=${provinceID}`);
+      const response = await axios.get(
+        `https://localhost:7194/api/Shipping/districts?provinceId=${provinceID}`
+      );
       if (response.data) {
-        console.log('Districts API Response:', response.data);
+        console.log("Districts API Response:", response.data);
         setDistricts(response.data);
       }
     } catch (error) {
-      console.error('Error fetching districts:', error);
-      setError('Không thể tải danh sách quận/huyện');
+      console.error("Error fetching districts:", error);
+      setError("Không thể tải danh sách quận/huyện");
     }
   };
 
   const fetchWards = async (districtId) => {
     if (!districtId) return;
-    
+
     try {
-      const response = await axios.get(`https://localhost:7194/api/Shipping/wards?districtId=${districtId}`);
+      const response = await axios.get(
+        `https://localhost:7194/api/Shipping/wards?districtId=${districtId}`
+      );
       if (response.data) {
-        console.log('Wards API Response:', response.data);
+        console.log("Wards API Response:", response.data);
         setWards(response.data);
       }
     } catch (error) {
-      console.error('Error fetching wards:', error);
-      setError('Không thể tải danh sách phường/xã');
+      console.error("Error fetching wards:", error);
+      setError("Không thể tải danh sách phường/xã");
     }
   };
 
   const handleProvinceChange = (e) => {
     const provinceId = e.target.value;
-    const selectedProv = provinces.find(p => p.provinceID === parseInt(provinceId));
-    console.log('Province Selection:', {
+    const selectedProv = provinces.find(
+      (p) => p.provinceID === parseInt(provinceId)
+    );
+    console.log("Province Selection:", {
       provinceId: provinceId,
       provinceName: selectedProv?.provinceName,
-      fullProvinceData: selectedProv
+      fullProvinceData: selectedProv,
     });
 
     setSelectedProvince(provinceId);
@@ -100,11 +108,13 @@ const Address = ({ initialAddress, onAddressChange }) => {
       return;
     }
 
-    const district = districts.find(d => d.districtID === parseInt(districtId));
-    console.log('District Selection:', {
+    const district = districts.find(
+      (d) => d.districtID === parseInt(districtId)
+    );
+    console.log("District Selection:", {
       districtId: districtId,
       districtName: district?.districtName,
-      fullDistrictData: district
+      fullDistrictData: district,
     });
 
     if (district) {
@@ -120,25 +130,25 @@ const Address = ({ initialAddress, onAddressChange }) => {
       return;
     }
 
-    const ward = wards.find(w => w.wardCode === wardCode);
-    console.log('Ward Selection:', {
+    const ward = wards.find((w) => w.wardCode === wardCode);
+    console.log("Ward Selection:", {
       wardCode: wardCode,
       wardName: ward?.wardName,
-      fullWardData: ward
+      fullWardData: ward,
     });
 
     if (ward && selectedDistrict) {
       setSelectedWard(ward);
       const fullAddress = `${ward.wardName}, ${selectedDistrict.districtName}`;
-      
+
       const addressData = {
         fullAddress,
         wardCode: ward.wardCode,
-        districtId: selectedDistrict.districtID
+        districtId: selectedDistrict.districtID,
       };
 
-      console.log('Final Address Data:', addressData);
-      
+      console.log("Final Address Data:", addressData);
+
       onAddressChange(addressData);
     }
   };
@@ -179,7 +189,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
           className="address-select"
           required
         >
-            <option value="">Select Province</option>
+          <option value="">Select Province</option>
           {provinces.map((province) => (
             <option key={province.provinceID} value={province.provinceID}>
               {province.provinceName}
@@ -190,10 +200,10 @@ const Address = ({ initialAddress, onAddressChange }) => {
 
       <div className="select-group">
         <label>
-            District <span className="required">*</span>
+          District <span className="required">*</span>
         </label>
         <select
-          value={selectedDistrict?.districtID || ''}
+          value={selectedDistrict?.districtID || ""}
           onChange={handleDistrictChange}
           className="address-select"
           disabled={!selectedProvince}
@@ -213,7 +223,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
           Ward <span className="required">*</span>
         </label>
         <select
-          value={selectedWard?.wardCode || ''}
+          value={selectedWard?.wardCode || ""}
           onChange={handleWardChange}
           className="address-select"
           disabled={!selectedDistrict}

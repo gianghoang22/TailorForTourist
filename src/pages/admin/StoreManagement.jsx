@@ -11,6 +11,7 @@ import {
   Paper,
   InputAdornment,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import "./StoreManagement.scss";
@@ -28,10 +29,12 @@ const StoreManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchStoreData = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch("https://localhost:7194/api/Store");
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -41,6 +44,8 @@ const StoreManagement = () => {
       } catch (error) {
         console.error("Error fetching store data:", error);
         setError("Error fetching store data. Please try again later.");
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchStoreData();
@@ -200,97 +205,116 @@ const StoreManagement = () => {
       {showSuccessMessage && (
         <Alert severity="success">Store successfully updated/added!</Alert>
       )}
-      <div className="header">
-        <div className="form">
-          <TextField
-            label="Store Name"
-            name="name"
-            value={newStore.name}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          <TextField
-            label="Address"
-            name="address"
-            value={newStore.address}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          <TextField
-            label="Contact Number"
-            name="contactNumber"
-            value={newStore.contactNumber}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          {editIndex ? (
-            <Button variant="contained" color="primary" onClick={handleUpdate}>
-              Update Store
-            </Button>
-          ) : (
-            <Button variant="contained" color="secondary" onClick={handleAdd}>
-              Add Store
-            </Button>
-          )}
+
+      {isLoading ? (
+        <div
+          style={{ display: "flex", justifyContent: "center", padding: "2rem" }}
+        >
+          <CircularProgress />
         </div>
+      ) : (
+        <>
+          <div className="header">
+            <div className="form">
+              <TextField
+                label="Store Name"
+                name="name"
+                value={newStore.name}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              <TextField
+                label="Address"
+                name="address"
+                value={newStore.address}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              <TextField
+                label="Contact Number"
+                name="contactNumber"
+                value={newStore.contactNumber}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              {editIndex ? (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleUpdate}
+                >
+                  Update Store
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleAdd}
+                >
+                  Add Store
+                </Button>
+              )}
+            </div>
 
-        <TextField
-          label="Search by Store Name"
-          variant="outlined"
-          value={searchTerm}
-          onChange={handleSearchChange}
-          style={{ margin: "1rem 0", marginLeft: "auto" }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </div>
+            <TextField
+              label="Search by Store Name"
+              variant="outlined"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              style={{ margin: "1rem 0", marginLeft: "auto" }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </div>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Store Name</TableCell>
-              <TableCell>Address</TableCell>
-              <TableCell>Contact Number</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredStores.map((s) => (
-              <TableRow key={s.storeId}>
-                <TableCell>{s.name}</TableCell>
-                <TableCell>{s.address}</TableCell>
-                <TableCell>{s.contactNumber}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={() => handleEdit(s)}
-                    style={{ marginRight: "0.5rem" }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={() => handleDelete(s.storeId)}
-                  >
-                    Delete
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Store Name</TableCell>
+                  <TableCell>Address</TableCell>
+                  <TableCell>Contact Number</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredStores.map((s) => (
+                  <TableRow key={s.storeId}>
+                    <TableCell>{s.name}</TableCell>
+                    <TableCell>{s.address}</TableCell>
+                    <TableCell>{s.contactNumber}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleEdit(s)}
+                        style={{ marginRight: "0.5rem" }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => handleDelete(s.storeId)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
+      )}
     </div>
   );
 };

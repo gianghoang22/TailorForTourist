@@ -12,6 +12,7 @@ import {
   Paper,
   InputAdornment,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import "./UserManagement.scss";
@@ -42,13 +43,16 @@ const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
+      setLoading(true);
       try {
         const token = localStorage.getItem("token");
         if (!token) {
           setError("You need to log in first!");
+          setLoading(false);
           return;
         }
 
@@ -64,6 +68,7 @@ const UserManagement = () => {
           );
           localStorage.removeItem("token");
           window.location.href = "/signin";
+          setLoading(false);
           return;
         }
 
@@ -76,6 +81,8 @@ const UserManagement = () => {
       } catch (error) {
         console.error("Error fetching user data:", error);
         setError("Error fetching user data. Please try again later.");
+      } finally {
+        setLoading(false);
       }
     };
     fetchUserData();
@@ -250,143 +257,158 @@ const UserManagement = () => {
     <div className="user-management">
       <h2>User Management</h2>
       {error && <Alert severity="error">{error}</Alert>}
-      <div className="header">
-        <div className="form">
-          <TextField
-            label="Name"
-            name="name"
-            value={newUser.name}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          <TextField
-            label="Email"
-            name="email"
-            value={newUser.email}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          <TextField
-            label="Phone"
-            name="phone"
-            value={newUser.phone}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          <TextField
-            label="Address"
-            name="address"
-            value={newUser.address}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          <TextField
-            label="Gender"
-            name="gender"
-            select
-            value={newUser.gender}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          >
-            <MenuItem value="Male">Male</MenuItem>
-            <MenuItem value="Female">Female</MenuItem>
-            <MenuItem value="Other">Other</MenuItem>
-          </TextField>
-          <TextField
-            label="Role"
-            name="roleId"
-            select
-            value={newUser.roleId}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          >
-            {roles.map((role) => (
-              <MenuItem key={role.id} value={role.id}>
-                {role.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          {editIndex !== null ? (
-            <Button variant="contained" color="primary" onClick={handleUpdate}>
-              Update User
-            </Button>
-          ) : (
-            <Button variant="contained" color="secondary" onClick={handleAdd}>
-              Add User
-            </Button>
-          )}
+      {loading ? (
+        <div className="loading-spinner">
+          <CircularProgress />
         </div>
+      ) : (
+        <>
+          <div className="header">
+            <div className="form">
+              <TextField
+                label="Name"
+                name="name"
+                value={newUser.name}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              <TextField
+                label="Email"
+                name="email"
+                value={newUser.email}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              <TextField
+                label="Phone"
+                name="phone"
+                value={newUser.phone}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              <TextField
+                label="Address"
+                name="address"
+                value={newUser.address}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              <TextField
+                label="Gender"
+                name="gender"
+                select
+                value={newUser.gender}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              >
+                <MenuItem value="Male">Male</MenuItem>
+                <MenuItem value="Female">Female</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </TextField>
+              <TextField
+                label="Role"
+                name="roleId"
+                select
+                value={newUser.roleId}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              >
+                {roles.map((role) => (
+                  <MenuItem key={role.id} value={role.id}>
+                    {role.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+              {editIndex !== null ? (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleUpdate}
+                >
+                  Update User
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleAdd}
+                >
+                  Add User
+                </Button>
+              )}
+            </div>
 
-        <TextField
-          label="Search by Name"
-          variant="outlined"
-          value={searchTerm}
-          onChange={handleSearchChange}
-          style={{ margin: "1rem 0", marginLeft: "auto" }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </div>
+            <TextField
+              label="Search by Name"
+              variant="outlined"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              style={{ margin: "1rem 0", marginLeft: "auto" }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </div>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Phone</TableCell>
-              <TableCell>Address</TableCell>
-              <TableCell>Gender</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Role</TableCell> {/* Added Role Column */}
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredUsers.map((u) => (
-              <TableRow key={u.userId}>
-                <TableCell>{u.name}</TableCell>
-                <TableCell>{u.email}</TableCell>
-                <TableCell>{u.phone}</TableCell>
-                <TableCell>{u.address}</TableCell>
-                <TableCell>{u.gender}</TableCell>
-                <TableCell>{u.status}</TableCell>
-                <TableCell>
-                  {roles.find((role) => role.id === u.roleId)?.name}
-                </TableCell>{" "}
-                {/* Display Role Name */}
-                <TableCell>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={() => handleEdit(u)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={() => handleDelete(u.userId)}
-                  >
-                    Delete
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Phone</TableCell>
+                  <TableCell>Address</TableCell>
+                  <TableCell>Gender</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Role</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredUsers.map((u) => (
+                  <TableRow key={u.userId}>
+                    <TableCell>{u.name}</TableCell>
+                    <TableCell>{u.email}</TableCell>
+                    <TableCell>{u.phone}</TableCell>
+                    <TableCell>{u.address}</TableCell>
+                    <TableCell>{u.gender}</TableCell>
+                    <TableCell>{u.status}</TableCell>
+                    <TableCell>
+                      {roles.find((role) => role.id === u.roleId)?.name}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleEdit(u)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => handleDelete(u.userId)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
+      )}
       {showSuccessMessage && (
         <Alert severity="success">User has been successfully updated!</Alert>
       )}

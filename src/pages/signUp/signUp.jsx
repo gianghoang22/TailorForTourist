@@ -22,6 +22,7 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import { useNavigate } from "react-router-dom";
 import IMG from "./../../assets/img/icon/matcha.png";
+import CircularProgress from "@mui/material/CircularProgress";
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
@@ -75,6 +76,9 @@ export default function SignUp() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
   const navigate = useNavigate();
+
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isOtpLoading, setIsOtpLoading] = React.useState(false);
 
   React.useEffect(() => {
     const savedMode = localStorage.getItem("themeMode");
@@ -147,6 +151,7 @@ export default function SignUp() {
   };
 
   const handleOtpValidation = async () => {
+    setIsOtpLoading(true);
     try {
       const response = await fetch(
         "https://localhost:7194/api/Register/confirm-email",
@@ -174,6 +179,8 @@ export default function SignUp() {
     } catch (error) {
       console.error("Error validating OTP:", error);
       alert("An error occurred. Please try again.");
+    } finally {
+      setIsOtpLoading(false);
     }
   };
 
@@ -183,6 +190,7 @@ export default function SignUp() {
 
     if (!validateInputs()) return;
 
+    setIsLoading(true);
     const dobValue = data.get("dob");
     const requestBody = {
       name: name,
@@ -222,6 +230,8 @@ export default function SignUp() {
     } catch (error) {
       console.error("Error during registration:", error);
       alert("An error occurred during registration. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
   return (
@@ -356,8 +366,28 @@ export default function SignUp() {
                     autoComplete="street-address"
                   />
                 </FormControl>
-                <Button type="submit" variant="contained" size="large">
-                  Sign up
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  disabled={isLoading}
+                  sx={{ position: "relative" }}
+                >
+                  {isLoading ? (
+                    <CircularProgress
+                      size={24}
+                      sx={{
+                        color: "#90caf9", // Light blue color
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        marginTop: "-12px",
+                        marginLeft: "-12px",
+                      }}
+                    />
+                  ) : (
+                    "Sign up"
+                  )}
                 </Button>
               </Box>
               <Divider />
@@ -393,8 +423,27 @@ export default function SignUp() {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleOtpValidation} variant="contained">
-              Submit
+            <Button
+              onClick={handleOtpValidation}
+              variant="contained"
+              disabled={isOtpLoading}
+              sx={{ position: "relative" }}
+            >
+              {isOtpLoading ? (
+                <CircularProgress
+                  size={24}
+                  sx={{
+                    color: "#90caf9", // Light blue color
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    marginTop: "-12px",
+                    marginLeft: "-12px",
+                  }}
+                />
+              ) : (
+                "Submit"
+              )}
             </Button>
           </DialogActions>
         </Dialog>

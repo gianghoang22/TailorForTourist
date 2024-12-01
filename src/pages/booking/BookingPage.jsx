@@ -7,6 +7,7 @@ import QuoteCarousel from "./QuoteCarousel";
 import ReviewSection from "./ReviewSection";
 import { Navigation } from "../../layouts/components/navigation/Navigation";
 import { Footer } from "../../layouts/components/footer/Footer";
+import { motion } from "framer-motion";
 
 const BookingPage = () => {
   const navigate = useNavigate();
@@ -273,11 +274,56 @@ const BookingPage = () => {
     return `${hours}:${minutes}`;
   };
 
+  // Add these animation variants
+  const pageVariants = {
+    initial: {
+      opacity: 0,
+      y: 20,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: "easeOut",
+        staggerChildren: 0.2,
+      },
+    },
+    exit: {
+      opacity: 0,
+      y: -20,
+      transition: {
+        duration: 0.5,
+      },
+    },
+  };
+
+  const contentVariants = {
+    initial: {
+      opacity: 0,
+      y: 20,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+    },
+  };
+
   return (
-    <div className="booking-page">
+    <motion.div
+      className="booking-page"
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={pageVariants}
+    >
       <Navigation />
-      <div className="content-container">
-        <div className="left-column">
+      <motion.div className="content-container" variants={contentVariants}>
+        <motion.div
+          className="left-column"
+          variants={contentVariants}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
           {selectedStoreInfo.name && (
             <>
               <h1>{selectedStoreInfo.name}</h1>
@@ -343,8 +389,13 @@ const BookingPage = () => {
               loading="lazy"
             />
           </div>
-        </div>
-        <div className="right-column">
+        </motion.div>
+
+        <motion.div
+          className="right-column"
+          variants={contentVariants}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
           <h2>Book an Appointment</h2>
           <div className="studio-select">
             <select onChange={handleStoreChange} value={selectedStoreId}>
@@ -454,12 +505,19 @@ const BookingPage = () => {
               Book Appointment
             </button>
           </form>
-        </div>
-      </div>
-      <QuoteCarousel />
-      <ReviewSection />
+        </motion.div>
+      </motion.div>
+
+      <motion.div variants={contentVariants} transition={{ delay: 0.6 }}>
+        <QuoteCarousel />
+      </motion.div>
+
+      <motion.div variants={contentVariants} transition={{ delay: 0.7 }}>
+        <ReviewSection />
+      </motion.div>
+
       <Footer />
-    </div>
+    </motion.div>
   );
 };
 
