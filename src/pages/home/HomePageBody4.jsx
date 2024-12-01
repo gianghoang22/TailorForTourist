@@ -1,10 +1,54 @@
-
 import '../home/HomePageBody4.scss';
+import { useEffect, useState } from 'react';
+import { FaStar } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 // import { faTripadvisor } from '@fortawesome/free-brands-svg-icons';
 
 export const HomePageBody4 = () => {
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const feedbacksPerPage = 4;
+
+  // Calculate pagination values
+  const indexOfLastFeedback = currentPage * feedbacksPerPage;
+  const indexOfFirstFeedback = indexOfLastFeedback - feedbacksPerPage;
+  const currentFeedbacks = feedbacks.slice(indexOfFirstFeedback, indexOfLastFeedback);
+  const totalPages = Math.ceil(feedbacks.length / feedbacksPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  useEffect(() => {
+    const fetchFeedbackData = async () => {
+      try {
+        // Fetch feedback data
+        const feedbackResponse = await fetch('https://localhost:7194/api/Feedback/all');
+        const feedbackData = await feedbackResponse.json();
+
+        // Fetch user data for each feedback
+        const feedbacksWithUser = await Promise.all(
+          feedbackData.map(async (feedback) => {
+            const userResponse = await fetch(`https://localhost:7194/api/User/${feedback.userId}`);
+            const userData = await userResponse.json();
+            return {
+              ...feedback,
+              userName: userData.name
+            };
+          })
+        );
+
+        setFeedbacks(feedbacksWithUser);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchFeedbackData();
+  }, []);
+
   return (
     <>
     {/* link-info */}
@@ -67,7 +111,61 @@ export const HomePageBody4 = () => {
                     </div>
                     {/* feedback here */}
                     <div className="fback-main">
-                        <div>FEEDBACK HERE</div>
+                        <div className="feedback-grid">
+                            {currentFeedbacks.map((feedback) => (
+                                <div key={feedback.feedbackId} className="feedback-item">
+                                    <div className="user-info">
+                                        <h3>{feedback.userName}</h3>
+                                        <div className="stars">
+                                            {[...Array(5)].map((_, index) => (
+                                                <FaStar
+                                                    key={index}
+                                                    className={index < feedback.rating ? 'star-filled' : 'star-empty'}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <p className="comment">{feedback.comment}</p>
+                                    <p className="date">{new Date(feedback.dateSubmitted).toLocaleDateString()}</p>
+                                    {feedback.response && (
+                                        <div className="response">
+                                            <p><strong>Response:</strong> {feedback.response}</p>
+                                            <p className="date">{new Date(feedback.dateResponse).toLocaleDateString()}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {totalPages > 1 && (
+                            <div className="pagination">
+                                <button 
+                                    className="page-btn"
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                >
+                                    <FaChevronLeft />
+                                </button>
+
+                                {[...Array(totalPages)].map((_, index) => (
+                                    <button
+                                        key={index + 1}
+                                        className={`page-btn ${currentPage === index + 1 ? 'active' : ''}`}
+                                        onClick={() => handlePageChange(index + 1)}
+                                    >
+                                        {index + 1}
+                                    </button>
+                                ))}
+
+                                <button 
+                                    className="page-btn"
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    <FaChevronRight />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

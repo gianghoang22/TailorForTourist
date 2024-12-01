@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { addToCart } from '../../../utils/cartUtil';
-import './customFabric.scss';
 import { toast } from 'react-toastify';
+import './customFabric.scss';
 
 import all_icon from '../../../assets/img/filter/icon-fabricFilter-all.jpg';
 import new_icon from '../../../assets/img/filter/icon-fabricFilter-new.jpg';
 import premium_icon from '../../../assets/img/filter/icon-fabricFilter-premium.jpg';
 import sale_icon from '../../../assets/img/filter/icon-fabricFilter-sale.png';
 import search_icon from '../../../assets/img/icon/search.png';
+import unavailable_img from '../../../assets/img/icon/unavailable.jpg';
 
 const CustomFabric = () => {
   const [fabrics, setFabrics] = useState([]);
@@ -134,7 +135,7 @@ const CustomFabric = () => {
             filteredFabrics.map((fabric) => (
               <li key={fabric.fabricID} onClick={() => handleFabricClick(fabric)}>
                 <div className="fabric-img">
-                  {fabric.imageUrl ? <img src={fabric.imageUrl} alt={fabric.fabricName} /> : 'No image available'}
+                  {fabric.imageUrl ? <img src={fabric.imageUrl} alt={fabric.fabricName} /> : <img src={unavailable_img} alt="Unavailable" />}
                 </div>
                 <div className="fabric-price">
                   {fabric.price} USD
@@ -162,7 +163,7 @@ const CustomFabric = () => {
               <p className='composition set'>{selectedFabric.description}</p>
               <p className='price'>{selectedFabric.price} USD</p>
               <div className="fabric-img">
-                {selectedFabric.imageUrl ? <img src={selectedFabric.imageUrl} alt={selectedFabric.fabricName} /> : 'No image available'}
+                {selectedFabric.imageUrl ? <img src={selectedFabric.imageUrl} alt={selectedFabric.fabricName} /> : <img src={unavailable_img} alt="Unavailable" />}
               </div>
             </div>
           </div>

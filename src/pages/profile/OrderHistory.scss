@@ -149,3 +149,65 @@ body {
   text-decoration: none;
   border-radius: 5px;
 }
+
+.received-button {
+  margin-left: 8px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #45a049;
+  }
+}
+
+.star-rating {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+
+  input[type="radio"] {
+    display: none;
+  }
+
+  .star {
+    cursor: pointer;
+    transition: color 200ms;
+  }
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+
+  button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:first-child {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    &:last-child {
+      background-color: #f44336;
+      color: white;
+    }
+  }
+}
