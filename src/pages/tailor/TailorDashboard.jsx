@@ -25,12 +25,22 @@ const statusColors = {
   Processing: "bg-purple-300 text-purple-800",
 };
 
+const LoadingSpinner = () => (
+  <div className="loading-spinner-overlay">
+    <div className="loading-spinner">
+      <div className="spinner"></div>
+      <span className="loading-text">Loading...</span>
+    </div>
+  </div>
+);
+
 const TailorDashboard = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [orderDetails, setOrderDetails] = useState({});
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const STAGES = {
     MAKE_SAMPLE: "Make Sample",
     FIX: "Fix",
@@ -245,6 +255,7 @@ const TailorDashboard = () => {
 
   const fetchOrders = async () => {
     try {
+      setIsLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
         "https://localhost:7194/api/ProcessingTailor",
@@ -297,6 +308,8 @@ const TailorDashboard = () => {
     } catch (error) {
       console.error("Error fetching orders:", error);
       setError("Error fetching orders. Please try again later.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -575,173 +588,178 @@ const TailorDashboard = () => {
 
         {error && <div className="error">{error}</div>}
 
-        <div className="dashboard-content">
-          <h3>Processing Orders</h3>
-          <table className="orders-table">
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>Stage Name</th>
-                <th>Order Status</th>
-                <th>Note</th>
-                <th>Date Sample</th>
-                <th>Date Fix</th>
-                <th>Date Delivery</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => {
-                const details = orderDetails[order.orderId] || {};
-                return (
-                  <React.Fragment key={order.processingId}>
-                    <tr>
-                      <td>{order.orderId}</td>
-                      <td>{order.stageName}</td>
-                      <td>
-                        <span
-                          className={`status-label ${order.status.toLowerCase().replace(" ", "-")}`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                      <td>{order.note}</td>
-                      <td>{order.dateSample}</td>
-                      <td>{order.dateFix}</td>
-                      <td>{order.dateDelivery}</td>
-                      <td>
-                        <button
-                          onClick={() => handleUpdate(order)}
-                          disabled={order.status === "Finish"}
-                        >
-                          Update Status
-                        </button>
-                        <button
-                          onClick={() => toggleOrderDetails(order.orderId)}
-                        >
-                          {expandedOrder === order.orderId ? (
-                            <ChevronUp />
-                          ) : (
-                            <ChevronDown />
-                          )}
-                        </button>
-                      </td>
-                    </tr>
-                    {expandedOrder === order.orderId && (
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : (
+          <div className="dashboard-content">
+            <h3>Processing Orders</h3>
+            <table className="orders-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Stage Name</th>
+                  <th>Order Status</th>
+                  <th>Note</th>
+                  <th>Date Sample</th>
+                  <th>Date Fix</th>
+                  <th>Date Delivery</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => {
+                  const details = orderDetails[order.orderId] || {};
+                  return (
+                    <React.Fragment key={order.processingId}>
                       <tr>
-                        <td colSpan="8">
-                          <div className="order-details bg-white shadow-lg rounded-lg p-6 mt-4">
-                            <div className="grid grid-cols-2 gap-8">
-                              <div className="order-info">
-                                <h4 className="text-xl font-semibold mb-4 flex items-center">
-                                  <Package className="mr-2" /> Order Details
-                                </h4>
-                                <div className="bg-gray-100 p-4 rounded-md">
-                                  <p className="mb-2">
-                                    <span className="font-semibold">
-                                      Order ID:
-                                    </span>{" "}
-                                    {order.orderId}
-                                  </p>
-                                  <p className="mb-2">
-                                    <span className="font-semibold">
-                                      Guest Name:
-                                    </span>{" "}
-                                    {details.orderInfo?.guestName || "N/A"}
-                                  </p>
-                                  <p className="mb-2">
-                                    <span className="font-semibold">
-                                      Order Date:
-                                    </span>{" "}
-                                    {details.orderInfo?.orderDate || "N/A"}
-                                  </p>
-                                </div>
-                                <h5 className="text-lg font-semibold mt-4 mb-2 flex items-center">
-                                  <Scissors className="mr-2" /> Product Details
-                                </h5>
-                                <div className="bg-gray-100 p-4 rounded-md">
-                                  <p className="mb-2">
-                                    <span className="font-semibold">
-                                      Fabric:
-                                    </span>{" "}
-                                    {details.fabricName || "N/A"}
-                                  </p>
-                                  <p className="mb-2">
-                                    <span className="font-semibold">
-                                      Lining:
-                                    </span>{" "}
-                                    {details.liningName || "N/A"}
-                                  </p>
-                                </div>
-                                <h6 className="text-md font-semibold mt-4 mb-2">
-                                  Style Options
-                                </h6>
-                                <div className="bg-gray-100 p-4 rounded-md">
-                                  {details.styleOptions &&
-                                    details.styleOptions.map(
-                                      (option, index) => (
-                                        <div key={index} className="mb-2">
-                                          <p>
-                                            <span className="font-semibold">
-                                              Style:
-                                            </span>{" "}
-                                            {option.styleName || "N/A"}
-                                          </p>
-                                          <p>
-                                            <span className="font-semibold">
-                                              Type:
-                                            </span>{" "}
-                                            {option.optionType || "N/A"}
-                                          </p>
-                                          <p>
-                                            <span className="font-semibold">
-                                              Value:
-                                            </span>{" "}
-                                            {option.optionValue || "N/A"}
-                                          </p>
-                                        </div>
-                                      )
-                                    )}
-                                </div>
-                              </div>
-                              <div className="measurements">
-                                <h4 className="text-xl font-semibold mb-4 flex items-center">
-                                  <Ruler className="mr-2" /> Measurements
-                                </h4>
-                                {details.measurementError ? (
-                                  <p className="text-red-500 bg-red-100 p-4 rounded-md">
-                                    {details.measurementError}
-                                  </p>
-                                ) : details.measurement ? (
-                                  <div className="grid grid-cols-2 gap-4 bg-gray-100 p-4 rounded-md">
-                                    {Object.entries(details.measurement).map(
-                                      ([key, value]) => (
-                                        <p key={key} className="capitalize">
-                                          <span className="font-semibold">
-                                            {key}:
-                                          </span>{" "}
-                                          {value || "N/A"}
-                                        </p>
-                                      )
-                                    )}
-                                  </div>
-                                ) : (
-                                  <p className="bg-yellow-100 p-4 rounded-md text-yellow-700">
-                                    No measurement data available.
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
+                        <td>{order.orderId}</td>
+                        <td>{order.stageName}</td>
+                        <td>
+                          <span
+                            className={`status-label ${order.status.toLowerCase().replace(" ", "-")}`}
+                          >
+                            {order.status}
+                          </span>
+                        </td>
+                        <td>{order.note}</td>
+                        <td>{order.dateSample}</td>
+                        <td>{order.dateFix}</td>
+                        <td>{order.dateDelivery}</td>
+                        <td>
+                          <button
+                            onClick={() => handleUpdate(order)}
+                            disabled={order.status === "Finish"}
+                          >
+                            Update Status
+                          </button>
+                          <button
+                            onClick={() => toggleOrderDetails(order.orderId)}
+                          >
+                            {expandedOrder === order.orderId ? (
+                              <ChevronUp />
+                            ) : (
+                              <ChevronDown />
+                            )}
+                          </button>
                         </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      {expandedOrder === order.orderId && (
+                        <tr>
+                          <td colSpan="8">
+                            <div className="order-details bg-white shadow-lg rounded-lg p-6 mt-4">
+                              <div className="grid grid-cols-2 gap-8">
+                                <div className="order-info">
+                                  <h4 className="text-xl font-semibold mb-4 flex items-center">
+                                    <Package className="mr-2" /> Order Details
+                                  </h4>
+                                  <div className="bg-gray-100 p-4 rounded-md">
+                                    <p className="mb-2">
+                                      <span className="font-semibold">
+                                        Order ID:
+                                      </span>{" "}
+                                      {order.orderId}
+                                    </p>
+                                    <p className="mb-2">
+                                      <span className="font-semibold">
+                                        Guest Name:
+                                      </span>{" "}
+                                      {details.orderInfo?.guestName || "N/A"}
+                                    </p>
+                                    <p className="mb-2">
+                                      <span className="font-semibold">
+                                        Order Date:
+                                      </span>{" "}
+                                      {details.orderInfo?.orderDate || "N/A"}
+                                    </p>
+                                  </div>
+                                  <h5 className="text-lg font-semibold mt-4 mb-2 flex items-center">
+                                    <Scissors className="mr-2" /> Product
+                                    Details
+                                  </h5>
+                                  <div className="bg-gray-100 p-4 rounded-md">
+                                    <p className="mb-2">
+                                      <span className="font-semibold">
+                                        Fabric:
+                                      </span>{" "}
+                                      {details.fabricName || "N/A"}
+                                    </p>
+                                    <p className="mb-2">
+                                      <span className="font-semibold">
+                                        Lining:
+                                      </span>{" "}
+                                      {details.liningName || "N/A"}
+                                    </p>
+                                  </div>
+                                  <h6 className="text-md font-semibold mt-4 mb-2">
+                                    Style Options
+                                  </h6>
+                                  <div className="bg-gray-100 p-4 rounded-md">
+                                    {details.styleOptions &&
+                                      details.styleOptions.map(
+                                        (option, index) => (
+                                          <div key={index} className="mb-2">
+                                            <p>
+                                              <span className="font-semibold">
+                                                Style:
+                                              </span>{" "}
+                                              {option.styleName || "N/A"}
+                                            </p>
+                                            <p>
+                                              <span className="font-semibold">
+                                                Type:
+                                              </span>{" "}
+                                              {option.optionType || "N/A"}
+                                            </p>
+                                            <p>
+                                              <span className="font-semibold">
+                                                Value:
+                                              </span>{" "}
+                                              {option.optionValue || "N/A"}
+                                            </p>
+                                          </div>
+                                        )
+                                      )}
+                                  </div>
+                                </div>
+                                <div className="measurements">
+                                  <h4 className="text-xl font-semibold mb-4 flex items-center">
+                                    <Ruler className="mr-2" /> Measurements
+                                  </h4>
+                                  {details.measurementError ? (
+                                    <p className="text-red-500 bg-red-100 p-4 rounded-md">
+                                      {details.measurementError}
+                                    </p>
+                                  ) : details.measurement ? (
+                                    <div className="grid grid-cols-2 gap-4 bg-gray-100 p-4 rounded-md">
+                                      {Object.entries(details.measurement).map(
+                                        ([key, value]) => (
+                                          <p key={key} className="capitalize">
+                                            <span className="font-semibold">
+                                              {key}:
+                                            </span>{" "}
+                                            {value || "N/A"}
+                                          </p>
+                                        )
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <p className="bg-yellow-100 p-4 rounded-md text-yellow-700">
+                                      No measurement data available.
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </main>
     </div>
   );

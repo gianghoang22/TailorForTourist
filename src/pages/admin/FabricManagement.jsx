@@ -11,6 +11,7 @@ import {
   Paper,
   InputAdornment,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import "./FabricManagement.scss";
@@ -29,10 +30,12 @@ const FabricManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchFabricData = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch("https://localhost:7194/api/Fabrics");
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -42,6 +45,8 @@ const FabricManagement = () => {
       } catch (error) {
         console.error("Error fetching fabric data:", error);
         setError("Error fetching fabric data. Please try again later.");
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchFabricData();
@@ -196,138 +201,153 @@ const FabricManagement = () => {
     <div className="fabric-management">
       <h2>Fabric Management</h2>
       {error && <Alert severity="error">{error}</Alert>}
-      <div className="header">
-        <div className="form">
-          <TextField
-            label="Fabric Name"
-            name="fabricName"
-            value={newFabric.fabricName}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          <TextField
-            label="Price"
-            name="price"
-            type="number"
-            value={newFabric.price}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          <TextField
-            label="Description"
-            name="description"
-            value={newFabric.description}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          <TextField
-            label="Image URL"
-            name="imageUrl"
-            value={newFabric.imageUrl}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          <TextField
-            label="Tag"
-            name="tag"
-            type="number"
-            value={newFabric.tag}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          {editIndex ? (
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleUpdate}
-            >
-              Update Fabric
-            </Button>
-          ) : (
-            <Button variant="contained" color="secondary" onClick={handleAdd}>
-              Add Fabric
-            </Button>
-          )}
+
+      {isLoading ? (
+        <div
+          style={{ display: "flex", justifyContent: "center", padding: "2rem" }}
+        >
+          <CircularProgress />
         </div>
+      ) : (
+        <>
+          <div className="header">
+            <div className="form">
+              <TextField
+                label="Fabric Name"
+                name="fabricName"
+                value={newFabric.fabricName}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              <TextField
+                label="Price"
+                name="price"
+                type="number"
+                value={newFabric.price}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              <TextField
+                label="Description"
+                name="description"
+                value={newFabric.description}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              <TextField
+                label="Image URL"
+                name="imageUrl"
+                value={newFabric.imageUrl}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              <TextField
+                label="Tag"
+                name="tag"
+                type="number"
+                value={newFabric.tag}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              {editIndex ? (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleUpdate}
+                >
+                  Update Fabric
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleAdd}
+                >
+                  Add Fabric
+                </Button>
+              )}
+            </div>
 
-        <TextField
-          label="Search by Fabric Name"
-          variant="outlined"
-          value={searchTerm}
-          onChange={handleSearchChange}
-          style={{ margin: "1rem 0", marginLeft: "auto" }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </div>
+            <TextField
+              label="Search by Fabric Name"
+              variant="outlined"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              style={{ margin: "1rem 0", marginLeft: "auto" }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </div>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Fabric Name</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Image URL</TableCell>
-              <TableCell>Tag</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredFabrics.map((f) => (
-              <TableRow key={f.fabricID}>
-                <TableCell>{f.fabricName}</TableCell>
-                <TableCell>{f.price}</TableCell>
-                <TableCell>{f.description}</TableCell>
-                <TableCell>
-                  <img
-                    src={f.imageUrl}
-                    alt={f.fabricName}
-                    style={{
-                      width: "100px",
-                      height: "auto",
-                      objectFit: "cover",
-                    }}
-                  />
-                </TableCell>
-                <TableCell>{f.tag}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={() => handleEdit(f)}
-                    style={{ marginRight: "0.5rem" }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={() => handleDelete(f.fabricID)}
-                  >
-                    Delete
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Fabric Name</TableCell>
+                  <TableCell>Price</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell>Image URL</TableCell>
+                  <TableCell>Tag</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredFabrics.map((f) => (
+                  <TableRow key={f.fabricID}>
+                    <TableCell>{f.fabricName}</TableCell>
+                    <TableCell>{f.price}</TableCell>
+                    <TableCell>{f.description}</TableCell>
+                    <TableCell>
+                      <img
+                        src={f.imageUrl}
+                        alt={f.fabricName}
+                        style={{
+                          width: "100px",
+                          height: "auto",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>{f.tag}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleEdit(f)}
+                        style={{ marginRight: "0.5rem" }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => handleDelete(f.fabricID)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-      {showSuccessMessage && (
-        <Alert severity="success" style={{ marginTop: "1rem" }}>
-          Fabric successfully saved!
-        </Alert>
+          {showSuccessMessage && (
+            <Alert severity="success" style={{ marginTop: "1rem" }}>
+              Fabric successfully saved!
+            </Alert>
+          )}
+        </>
       )}
     </div>
   );

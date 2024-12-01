@@ -11,6 +11,7 @@ import {
   Paper,
   InputAdornment,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import "./LiningManagement.scss";
@@ -26,19 +27,23 @@ const LiningManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchLiningData = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch("https://localhost:7194/api/Linings");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        setLiningData(data); // No filtering required
+        setLiningData(data);
       } catch (error) {
         console.error("Error fetching lining data:", error);
         setError("Error fetching lining data. Please try again later.");
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchLiningData();
@@ -142,97 +147,112 @@ const LiningManagement = () => {
     <div className="lining-management">
       <h2>Lining Management</h2>
       {error && <Alert severity="error">{error}</Alert>}
-      <div className="header">
-        <div className="form">
-          <TextField
-            label="Lining Name"
-            name="liningName"
-            value={newLining.liningName}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          <TextField
-            label="Image URL"
-            name="imageUrl"
-            value={newLining.imageUrl}
-            onChange={handleChange}
-            variant="outlined"
-            style={{ marginRight: "1rem" }}
-          />
-          {editIndex ? (
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleUpdate}
-            >
-              Update Lining
-            </Button>
-          ) : (
-            <Button variant="contained" color="secondary" onClick={handleAdd}>
-              Add Lining
-            </Button>
-          )}
+
+      {isLoading ? (
+        <div
+          style={{ display: "flex", justifyContent: "center", padding: "2rem" }}
+        >
+          <CircularProgress />
         </div>
+      ) : (
+        <>
+          <div className="header">
+            <div className="form">
+              <TextField
+                label="Lining Name"
+                name="liningName"
+                value={newLining.liningName}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              <TextField
+                label="Image URL"
+                name="imageUrl"
+                value={newLining.imageUrl}
+                onChange={handleChange}
+                variant="outlined"
+                style={{ marginRight: "1rem" }}
+              />
+              {editIndex ? (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleUpdate}
+                >
+                  Update Lining
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleAdd}
+                >
+                  Add Lining
+                </Button>
+              )}
+            </div>
 
-        <TextField
-          label="Search by Lining Name"
-          variant="outlined"
-          value={searchTerm}
-          onChange={handleSearchChange}
-          style={{ margin: "1rem 0", marginLeft: "auto" }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </div>
+            <TextField
+              label="Search by Lining Name"
+              variant="outlined"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              style={{ margin: "1rem 0", marginLeft: "auto" }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </div>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Lining Name</TableCell>
-              <TableCell>Image URL</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredLinings.map((l) => (
-              <TableRow key={l.liningId}>
-                <TableCell>{l.liningName}</TableCell>
-                <TableCell>
-                  <img
-                    src={l.imageUrl}
-                    alt={l.liningName}
-                    style={{ width: "100px", height: "auto" }}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={() => handleEdit(l)}
-                    style={{ marginRight: "0.5rem" }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={() => handleDelete(l.liningId)}
-                  >
-                    Delete
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Lining Name</TableCell>
+                  <TableCell>Image URL</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredLinings.map((l) => (
+                  <TableRow key={l.liningId}>
+                    <TableCell>{l.liningName}</TableCell>
+                    <TableCell>
+                      <img
+                        src={l.imageUrl}
+                        alt={l.liningName}
+                        style={{ width: "100px", height: "auto" }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleEdit(l)}
+                        style={{ marginRight: "0.5rem" }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => handleDelete(l.liningId)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
+      )}
     </div>
   );
 };

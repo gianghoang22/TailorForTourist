@@ -19,6 +19,7 @@ import { GoogleIcon, FacebookIcon } from "./CustomIcons";
 import AppTheme from "../shared-theme/AppTheme";
 import ColorModeSelect from "../shared-theme/ColorModeSelect";
 import { useNavigate, useLocation } from "react-router-dom";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -65,6 +66,7 @@ export default function SignIn(props) {
   const [open, setOpen] = React.useState(false);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -100,6 +102,7 @@ export default function SignIn(props) {
 
     if (!validateInputs()) return;
 
+    setIsLoading(true);
     try {
       const response = await fetch("https://localhost:7194/api/Login/login", {
         method: "POST",
@@ -163,6 +166,8 @@ export default function SignIn(props) {
     } catch (error) {
       console.error("There was an error with the login request:", error);
       setAuthError("Invalid email or password."); // Set the auth error message
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -248,8 +253,28 @@ export default function SignIn(props) {
               label="Remember me"
             />
             <ForgotPassword open={open} handleClose={handleClose} />
-            <Button type="submit" fullWidth variant="contained">
-              Sign in
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              disabled={isLoading}
+              sx={{ position: "relative" }}
+            >
+              {isLoading ? (
+                <CircularProgress
+                  size={24}
+                  sx={{
+                    color: "#90caf9", // Light blue color
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    marginTop: "-12px",
+                    marginLeft: "-12px",
+                  }}
+                />
+              ) : (
+                "Sign in"
+              )}
             </Button>
             {authError && (
               <Typography
