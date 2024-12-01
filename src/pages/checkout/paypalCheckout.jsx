@@ -80,8 +80,8 @@ const PayPalCheckoutButton = ({ amount, shippingFee = 0, onSuccess, onError }) =
           Subtotal: ${validAmount.toFixed(2)}
           {validShippingFee > 0 && <><br />Shipping Fee: ${validShippingFee.toFixed(2)}</>}
           <br />
-          Total to pay: ${finalPrice.toFixed(2)}
-          {isDeposit && ` (50% of $${subtotal.toFixed(2)})`}
+          Total to pay: ${validAmount.toFixed(2)}
+          {validShippingFee > 0 && <></>}
         </p>
       </div>
       <div id="paypal-button-container"></div>

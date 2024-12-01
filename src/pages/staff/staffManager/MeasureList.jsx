@@ -15,20 +15,19 @@ const MeasureList = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [editingMeasurement, setEditingMeasurement] = useState(null);
+  const [searchTerm, setSearchTerm] = useState(""); // Add search state
 
   const API_URL = "https://localhost:7194/api/Measurement";
   const USER_API_URL = "https://localhost:7194/api/User";
 
-  // Fetch all users
+  // Update the users fetch to filter roleId === 3
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get(`${USER_API_URL}`);
-        const userMap = response.data.reduce((acc, user) => {
-          acc[user.userId] = user;
-          return acc;
-        }, {});
-        setUsers(userMap);
+        const response = await axios.get(USER_API_URL);
+        // Filter users with roleId === 3
+        const filteredUsers = response.data.filter(user => user.roleId === 3);
+        setUsers(filteredUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
@@ -36,12 +35,16 @@ const MeasureList = () => {
     fetchUsers();
   }, []);
 
-  // Fetch all measurements
+  // Fetch measurements for each user
   useEffect(() => {
     const fetchMeasurements = async () => {
       try {
         const response = await axios.get(API_URL);
-        setMeasurements(response.data);
+        const measurementMap = response.data.reduce((acc, measurement) => {
+          acc[measurement.userId] = measurement;
+          return acc;
+        }, {});
+        setMeasurements(measurementMap);
       } catch (error) {
         console.error("Error fetching measurements:", error);
       }
@@ -296,14 +299,28 @@ const MeasureList = () => {
     }
   });
 
+  // Add filtered users logic
+  const filteredUsers = users.filter(user => 
+    user.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
   return (
     <div className="measure-list-container">
       <div className="header">
         <h2>Customer Measurements</h2>
         <div className="actions">
           <div className="search-bar">
-            <input type="text" placeholder="Search customer..." />
-            <button className="primary-button">Search</button>
+            <input 
+              type="text" 
+              placeholder="Search by customer name..." 
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
           </div>
           <button 
             className="primary-button create-button"
@@ -318,6 +335,7 @@ const MeasureList = () => {
         <table className="customers-table">
           <thead>
             <tr>
+              <th>User ID</th>
               <th>Customer Name</th>
               <th>Email</th>
               <th>Phone</th>
@@ -326,33 +344,49 @@ const MeasureList = () => {
             </tr>
           </thead>
           <tbody>
-            {measurements.map((measurement) => {
-              const user = users[measurement.userId];
+            {filteredUsers.map((user) => {  // Changed from users to filteredUsers
+              const measurement = measurements[user.userId];
               return (
-                <tr key={measurement.measurementId}>
-                  <td>{user?.name}</td>
-                  <td>{user?.email}</td>
-                  <td>{user?.phone}</td>
-                  <td>{user?.gender}</td>
+                <tr key={user.userId}>
+                  <td>{user.userId}</td>
+                  <td>{user.name}</td>
+                  <td>{user.email}</td>
+                  <td>{user.phone}</td>
+                  <td>{user.gender}</td>
                   <td className="actions">
-                    <button 
-                      className="btn-view"
-                      onClick={() => handleViewDetail(measurement)}
-                    >
-                      View Details
-                    </button>
-                    <button 
-                      className="btn-edit"
-                      onClick={() => handleEdit(measurement)}
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      className="btn-delete"
-                      onClick={() => handleDelete(measurement.measurementId)}
-                    >
-                      Delete
-                    </button>
+                    {measurement && (
+                      <>
+                        <button 
+                          className="btn-view"
+                          onClick={() => handleViewDetail(measurement)}
+                        >
+                          View Details
+                        </button>
+                        <button 
+                          className="btn-edit"
+                          onClick={() => handleEdit(measurement)}
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          className="btn-delete"
+                          onClick={() => handleDelete(measurement.measurementId)}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                    {!measurement && (
+                      <button 
+                        className="btn-add"
+                        onClick={() => {
+                          setSelectedUserId(user.userId);
+                          setShowCreateModal(true);
+                        }}
+                      >
+                        Add Measurement
+                      </button>
+                    )}
                   </td>
                 </tr>
               );

@@ -40,10 +40,8 @@ const Checkout = () => {
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [guestAddress, setGuestAddress] = useState('');
-  const [deposit, setDeposit] = useState(0);
   const [deliveryMethod, setDeliveryMethod] = useState('Pick up');
   const [isPaid, setIsPaid] = useState(false);
-  const [voucherId, setVoucherId] = useState(11);
   const [storeId, setStoreId] = useState(1);
   const navigate = useNavigate();
   const [customDetails, setCustomDetails] = useState({});
@@ -323,13 +321,37 @@ const Checkout = () => {
     }
   };
 
-  const handleVoucherSelect = (voucher) => {
-    setSelectedVoucher(voucher);
-    if (voucher && voucher.voucherCode.substring(0, 8) === 'FREESHIP') {
-      const discountAmount = shippingFee * voucher.discountNumber;
-      setDiscountedShippingFee(shippingFee - discountAmount);
-    } else {
+  const handleVoucherSelect = async (voucher) => {
+    // Reset states if no voucher is selected
+    if (!voucher) {
+      setSelectedVoucher(null);
       setDiscountedShippingFee(shippingFee);
+      return;
+    }
+
+    try {
+      const response = await axios.get(`https://localhost:7194/api/Voucher/${voucher.voucherId}/validate`);
+      
+      if (response.status === 200) {
+        setSelectedVoucher(voucher);
+        if (voucher.voucherCode?.substring(0, 8) === 'FREESHIP') {
+          const discountAmount = shippingFee * voucher.discountNumber;
+          setDiscountedShippingFee(shippingFee - discountAmount);
+        } else {
+          setDiscountedShippingFee(shippingFee);
+        }
+        toast.success('Voucher applied successfully');
+      }
+    } catch (error) {
+      console.error('Error validating voucher:', error);
+      setSelectedVoucher(null);
+      setDiscountedShippingFee(shippingFee);
+      
+      if (error.response?.status === 500) {
+        toast.error('This voucher is invalid or has expired');
+      } else {
+        toast.error('Failed to apply voucher. Please try again.');
+      }
     }
   };
 
@@ -346,25 +368,32 @@ const Checkout = () => {
         return;
       }
 
-      const finalShippingFee = selectedVoucher?.voucherCode.substring(0, 8) === 'FREESHIP' 
+      const finalShippingFee = selectedVoucher?.voucherCode?.substring(0, 8) === 'FREESHIP' 
         ? discountedShippingFee 
         : shippingFee;
 
-      const queryParams = new URLSearchParams({
-        guestName: guestName,
-        guestEmail: guestEmail,
-        guestAddress: guestAddress,
+      // Create base params object
+      const baseParams = {
+        guestName,
+        guestEmail,
+        guestAddress,
         deposit: 0,
         shippingfee: finalShippingFee,
         deliverymethod: deliveryMethod,
         storeId: parseInt(storeId),
-        voucherId: 12
-      }).toString();
+      };
+
+      // Only add voucherId if a voucher is selected and valid
+      if (selectedVoucher && selectedVoucher.voucherId) {
+        baseParams.voucherId = selectedVoucher.voucherId;
+      }
+
+      const queryParams = new URLSearchParams(baseParams).toString();
 
       const token = localStorage.getItem('token');
       const response = await axios.post(
         `${CHECKOUT_API.confirmOrder}?${queryParams}`,
-        null,  // no request body needed
+        null,
         {
           headers: {
             'Content-Type': 'application/json',
