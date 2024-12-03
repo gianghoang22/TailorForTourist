@@ -12,7 +12,9 @@ import {
   MenuItem,
   Box,
   Chip,
+  Typography,
 } from "@mui/material";
+import { BookingChart } from "./DashboardCharts";
 
 const BASE_URL = "https://localhost:7194/api";
 
@@ -103,6 +105,19 @@ const BookingList = () => {
     }
   };
 
+  // Add function to process booking data for chart
+  const processBookingData = (bookings) => {
+    const bookingCountByDate = bookings.reduce((acc, booking) => {
+      const date = booking.bookingDate.split("T")[0];
+      if (!acc[date]) {
+        acc[date] = { date, count: 0 };
+      }
+      acc[date].count += 1;
+      return acc;
+    }, {});
+    return Object.values(bookingCountByDate);
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -113,6 +128,22 @@ const BookingList = () => {
 
   return (
     <div>
+      <Typography variant="h4" sx={{ mb: 2 }}>
+        Booking Management
+      </Typography>
+
+      {/* Add Chart Section */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Booking Trends
+        </Typography>
+        {loading ? (
+          <div>Loading...</div>
+        ) : (
+          <BookingChart data={processBookingData(bookings)} />
+        )}
+      </Paper>
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>

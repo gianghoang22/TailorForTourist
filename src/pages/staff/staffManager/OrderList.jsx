@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 import { Edit, Visibility, Add } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
+import { OrderChart } from "./DashboardCharts";
 
 const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
 
@@ -152,6 +153,14 @@ const OrderList = () => {
       <Typography variant="h4" sx={{ mb: 2 }}>
         Order Management
       </Typography>
+
+      {/* Add Chart Section */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Orders Overview
+        </Typography>
+        {loading ? <CircularProgress /> : <OrderChart data={orders} />}
+      </Paper>
 
       <StyledButton
         variant="contained"
