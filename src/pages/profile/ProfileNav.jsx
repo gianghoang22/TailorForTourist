@@ -1,7 +1,14 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import "./ProfileNav.scss"; // Optional: Add your own styles
-import { FaUser, FaRuler, FaShoppingBag, FaLock, FaHome } from "react-icons/fa";
+import "./ProfileNav.scss";
+import {
+  FaHome,
+  FaUser,
+  FaRuler,
+  FaShoppingBag,
+  FaCalendarAlt,
+  FaComments,
+} from "react-icons/fa";
 
 const ProfileNav = () => {
   const location = useLocation();
@@ -14,12 +21,12 @@ const ProfileNav = () => {
       <ul>
         <li>
           <Link to="/" className={activeLink("/")}>
-            <FaHome /> Home
+            <FaHome className="nav-icon" /> Home
           </Link>
         </li>
         <li>
           <Link to="/profile" className={activeLink("/profile")}>
-            <FaUser /> Profile
+            <FaUser className="nav-icon" /> Profile
           </Link>
         </li>
         <li>
@@ -27,7 +34,7 @@ const ProfileNav = () => {
             to="/profile/measurement"
             className={activeLink("/profile/measurement")}
           >
-            <FaRuler /> Measurement
+            <FaRuler className="nav-icon" /> Measurement
           </Link>
         </li>
         <li>
@@ -35,7 +42,7 @@ const ProfileNav = () => {
             to="/profile/order-history"
             className={activeLink("/profile/order-history")}
           >
-            <FaShoppingBag /> Orders
+            <FaShoppingBag className="nav-icon" /> Orders
           </Link>
         </li>
         <li>
@@ -43,7 +50,7 @@ const ProfileNav = () => {
             to="/profile/appointment"
             className={activeLink("/profile/appointment")}
           >
-            <FaShoppingBag /> Appointments
+            <FaCalendarAlt className="nav-icon" /> Appointments
           </Link>
         </li>
         <li>
@@ -51,7 +58,7 @@ const ProfileNav = () => {
             to="/profile/feedback"
             className={activeLink("/profile/feedback")}
           >
-            <FaShoppingBag /> Feedback
+            <FaComments className="nav-icon" /> Feedback
           </Link>
         </li>
       </ul>

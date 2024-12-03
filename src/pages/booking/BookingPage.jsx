@@ -7,7 +7,8 @@ import QuoteCarousel from "./QuoteCarousel";
 import ReviewSection from "./ReviewSection";
 import { Navigation } from "../../layouts/components/navigation/Navigation";
 import { Footer } from "../../layouts/components/footer/Footer";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaClock, FaMapMarkerAlt, FaPhone, FaEnvelope } from "react-icons/fa";
 
 const BookingPage = () => {
   const navigate = useNavigate();
@@ -37,8 +38,15 @@ const BookingPage = () => {
   useEffect(() => {
     fetchStores();
     fetchUserDetails();
-    updateAvailableTimes(date);
+    if (!selectedTime) {
+      updateAvailableTimes(date);
+    }
   }, [date]);
+
+  useEffect(() => {
+    fetchStores();
+    fetchUserDetails();
+  }, []);
 
   const fetchUserDetails = async () => {
     const userId = localStorage.getItem("userID");
@@ -309,6 +317,21 @@ const BookingPage = () => {
     },
   };
 
+  const stepVariants = {
+    initial: { opacity: 0, x: 50 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -50 },
+  };
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   return (
     <motion.div
       className="booking-page"
@@ -318,31 +341,43 @@ const BookingPage = () => {
       variants={pageVariants}
     >
       <Navigation />
-      <motion.div className="content-container" variants={contentVariants}>
-        <motion.div
-          className="left-column"
-          variants={contentVariants}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
+      <motion.div className="booking-hero" variants={contentVariants}>
+        <h1>Book Your Perfect Fit</h1>
+        <p>Experience the art of tailoring with our expert craftsmen</p>
+      </motion.div>
+
+      <motion.div className="content-container">
+        <motion.div className="left-column" variants={contentVariants}>
           {selectedStoreInfo.name && (
-            <>
-              <h1>{selectedStoreInfo.name}</h1>
+            <div className="store-card">
+              <div className="store-header">
+                <h2>{selectedStoreInfo.name}</h2>
+                <div className="rating">
+                  <span className="stars">★★★★★</span>
+                  <span className="review-count">(124 reviews)</span>
+                </div>
+              </div>
+
               <div className="location-info">
                 <img
-                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHzjFYQWUH5LXNPVt5QXsZuAaOr3niokdr-A&s"
+                  src="https://your-store-image-url.jpg"
                   alt={selectedStoreInfo.name}
                   className="location-image"
                 />
-                <div className="address-info">
-                  <h2>{selectedStoreInfo.address}</h2>
-                  <p>Hotline: {selectedStoreInfo.phone}</p>
-                  <button className="bridal-appointments">
-                    Click here for Bridal Appointments
-                  </button>
+                <div className="store-details">
+                  <div className="detail-item">
+                    <FaMapMarkerAlt />
+                    <p>{selectedStoreInfo.address}</p>
+                  </div>
+                  <div className="detail-item">
+                    <FaPhone />
+                    <p>{selectedStoreInfo.phone}</p>
+                  </div>
                 </div>
               </div>
-            </>
+            </div>
           )}
+
           <div className="about-section">
             <h3>About</h3>
             <p>
@@ -391,120 +426,164 @@ const BookingPage = () => {
           </div>
         </motion.div>
 
-        <motion.div
-          className="right-column"
-          variants={contentVariants}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <h2>Book an Appointment</h2>
-          <div className="studio-select">
-            <select onChange={handleStoreChange} value={selectedStoreId}>
-              <option value="">Change Studio</option>
-              {availableStores.map((store) => (
-                <option key={store.storeId} value={store.storeId}>
-                  {store.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="appointment-info">
-            <p>30 minutes</p>
-            <p>Click on any time to make a booking.</p>
-          </div>
-          <div className="custom-calendar">
-            <Calendar
-              onChange={setDate}
-              value={date}
-              minDate={new Date()} // Prevent selecting past dates
-            />
-          </div>
-          {dateError && <p className="error">{dateError}</p>}
-          <div className="available-times">
-            <h4>Available Times</h4>
-            {availableTimes.map((time, index) => (
-              <button
-                key={index}
-                className={`time-slot ${selectedTime === time ? "selected" : ""}`}
-                onClick={() => setSelectedTime(time)}
+        <motion.div className="right-column" variants={contentVariants}>
+          <div className="booking-wizard">
+            <motion.div
+              className="booking-summary"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <h3>Booking Summary</h3>
+              <div className="summary-details">
+                <div className="summary-item">
+                  <span className="label">Studio:</span>
+                  <span className="value">
+                    {selectedStoreInfo.name || "Not selected"}
+                  </span>
+                </div>
+                <div className="summary-item">
+                  <span className="label">Date:</span>
+                  <span className="value">
+                    {date ? formatDate(date) : "Not selected"}
+                  </span>
+                </div>
+                <div className="summary-item">
+                  <span className="label">Time:</span>
+                  <span className="value">
+                    {selectedTime || "Not selected"}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            <div className="booking-form-container">
+              <div className="form-section service-selection">
+                <select
+                  className="studio-select elegant-select"
+                  onChange={handleStoreChange}
+                  value={selectedStoreId}
+                >
+                  <option value="">Select Studio Location</option>
+                  {availableStores.map((store) => (
+                    <option key={store.storeId} value={store.storeId}>
+                      {store.name}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="service-grid">
+                  {["Tailor", "Return", "Exchange", "Fix"].map((service) => (
+                    <motion.div
+                      key={service}
+                      className={`service-card ${formData.service === service ? "selected" : ""}`}
+                      onClick={() =>
+                        handleInputChange({
+                          target: { name: "service", value: service },
+                        })
+                      }
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <h3>{service}</h3>
+                      <p className="duration">
+                        <FaClock /> 30 minutes
+                      </p>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              <motion.div
+                className="form-section datetime-selection"
+                variants={stepVariants}
               >
-                {time}
-              </button>
-            ))}
+                <div className="calendar-container">
+                  <Calendar
+                    onChange={setDate}
+                    value={date}
+                    minDate={new Date()}
+                    className="modern-calendar"
+                  />
+                </div>
+
+                <div className="time-slots-container">
+                  <h4>Available Times</h4>
+                  <div className="time-grid">
+                    {availableTimes.map((time, index) => (
+                      <motion.button
+                        key={index}
+                        className={`time-slot ${selectedTime === time ? "selected" : ""}`}
+                        onClick={() => setSelectedTime(time)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        {time}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Keep the conditional rendering for the personal details form */}
+              <AnimatePresence mode="wait">
+                {selectedTime && (
+                  <motion.form
+                    className="form-section personal-details"
+                    onSubmit={handleSubmit}
+                    variants={stepVariants}
+                  >
+                    <div className="form-group">
+                      <label htmlFor="fullName">Full Name:</label>
+                      <input
+                        type="text"
+                        id="fullName"
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="email">Email:</label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="phone">Phone:</label>
+                      <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        required
+                      />
+                      {phoneError && <p className="error">{phoneError}</p>}
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="description">Description:</label>
+                      <textarea
+                        id="description"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <button type="submit" className="submit-button">
+                      Book Appointment
+                    </button>
+                  </motion.form>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-          {timeError && <p className="error">{timeError}</p>}
-          {selectedTime && (
-            <div className="selected-time-info">
-              <p>
-                You have selected: <strong>{date.toLocaleDateString()}</strong>{" "}
-                at <strong>{selectedTime}</strong>
-              </p>
-            </div>
-          )}
-          <form onSubmit={handleSubmit} className="booking-form">
-            <div className="form-group">
-              <label htmlFor="fullName">Full Name:</label>
-              <input
-                type="text"
-                id="fullName"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="email">Email:</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="phone">Phone:</label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                required
-              />
-              {phoneError && <p className="error">{phoneError}</p>}
-            </div>
-            <div className="form-group">
-              <label htmlFor="description">Description:</label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="service">Service:</label>
-              <select
-                id="service"
-                name="service"
-                value={formData.service}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="">Select a service</option>
-                <option value="Tailor">Tailor</option>
-                <option value="Return">Return</option>
-                <option value="Exchange">Exchange</option>
-                <option value="Fix">Fix</option>
-              </select>
-              {serviceError && <p className="error">{serviceError}</p>}
-            </div>
-            <button type="submit" className="submit-button">
-              Book Appointment
-            </button>
-          </form>
         </motion.div>
       </motion.div>
 

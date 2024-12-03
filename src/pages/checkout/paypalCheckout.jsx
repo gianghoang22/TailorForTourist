@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
-const PayPalCheckoutButton = ({ 
-  amount, 
-  shippingFee = 0, 
-  onSuccess, 
+const PayPalCheckoutButton = ({
+  amount,
+  shippingFee = 0,
+  onSuccess,
   onError,
-  selectedVoucher = null 
+  selectedVoucher = null,
 }) => {
   const [isDeposit, setIsDeposit] = useState(false);
   const validAmount = parseFloat(amount) || 0;
@@ -15,10 +15,10 @@ const PayPalCheckoutButton = ({
   const calculateDiscount = () => {
     if (!selectedVoucher) return 0;
 
-    if (selectedVoucher.voucherCode.substring(0, 8) === 'FREESHIP') {
+    if (selectedVoucher.voucherCode.substring(0, 8) === "FREESHIP") {
       // Voucher free ship
       return validShippingFee * selectedVoucher.discountNumber;
-    } else if (selectedVoucher.voucherCode.substring(0, 7) === 'BIGSALE') {
+    } else if (selectedVoucher.voucherCode.substring(0, 7) === "BIGSALE") {
       // Voucher giảm giá sản phẩm
       return validAmount * selectedVoucher.discountNumber;
     }
@@ -27,14 +27,16 @@ const PayPalCheckoutButton = ({
 
   const discount = calculateDiscount();
   // Tính subtotal sau khi áp dụng giảm giá
-  const discountedAmount = selectedVoucher?.voucherCode.substring(0, 7) === 'BIGSALE' 
-    ? validAmount - discount 
-    : validAmount;
-  
+  const discountedAmount =
+    selectedVoucher?.voucherCode.substring(0, 7) === "BIGSALE"
+      ? validAmount - discount
+      : validAmount;
+
   // Tính shipping fee sau khi áp dụng giảm giá
-  const finalShippingFee = selectedVoucher?.voucherCode.substring(0, 8) === 'FREESHIP'
-    ? validShippingFee - discount
-    : validShippingFee;
+  const finalShippingFee =
+    selectedVoucher?.voucherCode.substring(0, 8) === "FREESHIP"
+      ? validShippingFee - discount
+      : validShippingFee;
 
   // Tổng cộng cuối cùng
   const subtotal = discountedAmount + finalShippingFee;
@@ -42,63 +44,71 @@ const PayPalCheckoutButton = ({
 
   useEffect(() => {
     const renderPayPalButton = () => {
-      const container = document.getElementById('paypal-button-container');
+      const container = document.getElementById("paypal-button-container");
       if (container) {
-        container.innerHTML = '';
-        window.paypal.Buttons({
-          createOrder: (data, actions) => {
-            if (validAmount <= 0) {
-              throw new Error('Invalid price amount');
-            }
+        container.innerHTML = "";
+        window.paypal
+          .Buttons({
+            createOrder: (data, actions) => {
+              if (validAmount <= 0) {
+                throw new Error("Invalid price amount");
+              }
 
-            const payableItemTotal = isDeposit ? discountedAmount * 0.5 : discountedAmount;
-            const payableShipping = isDeposit ? finalShippingFee * 0.5 : finalShippingFee;
+              const payableItemTotal = isDeposit
+                ? discountedAmount * 0.5
+                : discountedAmount;
+              const payableShipping = isDeposit
+                ? finalShippingFee * 0.5
+                : finalShippingFee;
 
-            return actions.order.create({
-              purchase_units: [{
-                amount: {
-                  currency_code: 'USD',
-                  value: finalPrice.toFixed(2),
-                  breakdown: {
-                    item_total: {
-                      currency_code: 'USD',
-                      value: payableItemTotal.toFixed(2)
+              return actions.order.create({
+                purchase_units: [
+                  {
+                    amount: {
+                      currency_code: "USD",
+                      value: finalPrice.toFixed(2),
+                      breakdown: {
+                        item_total: {
+                          currency_code: "USD",
+                          value: payableItemTotal.toFixed(2),
+                        },
+                        shipping: {
+                          currency_code: "USD",
+                          value: payableShipping.toFixed(2),
+                        },
+                      },
                     },
-                    shipping: {
-                      currency_code: 'USD',
-                      value: payableShipping.toFixed(2)
-                    }
-                  }
-                },
-                description: `${isDeposit ? '50% Deposit' : 'Full'} Payment${selectedVoucher ? ` (Voucher: ${selectedVoucher.voucherCode})` : ''}`
-              }]
-            });
-          },
-          onApprove: (data, actions) => {
-            return actions.order.capture().then((details) => {
-              onSuccess({ 
-                ...details, 
-                isDeposit,
-                depositAmount: isDeposit ? subtotal * 0.5 : 0,
-                appliedVoucher: selectedVoucher,
-                discount: discount
+                    description: `${isDeposit ? "50% Deposit" : "Full"} Payment${selectedVoucher ? ` (Voucher: ${selectedVoucher.voucherCode})` : ""}`,
+                  },
+                ],
               });
-            });
-          },
-          onError: (err) => {
-            console.error('PayPal Checkout Error:', err);
-            onError?.(err);
-          },
-        }).render('#paypal-button-container');
+            },
+            onApprove: (data, actions) => {
+              return actions.order.capture().then((details) => {
+                onSuccess({
+                  ...details,
+                  isDeposit,
+                  depositAmount: isDeposit ? subtotal * 0.5 : 0,
+                  appliedVoucher: selectedVoucher,
+                  discount: discount,
+                });
+              });
+            },
+            onError: (err) => {
+              console.error("PayPal Checkout Error:", err);
+              onError?.(err);
+            },
+          })
+          .render("#paypal-button-container");
       }
     };
 
     const initializePayPal = () => {
-      if (!document.getElementById('paypal-script')) {
-        const script = document.createElement('script');
+      if (!document.getElementById("paypal-script")) {
+        const script = document.createElement("script");
         script.src = `https://www.paypal.com/sdk/js?client-id=AdsYCtJXJ7FC2O9-sB4OtYURnik9DBHH_Dfd-OlsxmJcc9OinV3dj1TnWAzI2XB4-tMfoUbToOCJWZZt&currency=USD`;
-        script.id = 'paypal-script';
-        script.addEventListener('load', () => {
+        script.id = "paypal-script";
+        script.addEventListener("load", () => {
           renderPayPalButton();
         });
         document.body.appendChild(script);
@@ -110,12 +120,22 @@ const PayPalCheckoutButton = ({
     initializePayPal();
 
     return () => {
-      const scriptElement = document.getElementById('paypal-script');
+      const scriptElement = document.getElementById("paypal-script");
       if (scriptElement) {
         document.body.removeChild(scriptElement);
       }
     };
-  }, [finalPrice, onSuccess, onError, isDeposit, validAmount, validShippingFee, subtotal, selectedVoucher, discount]);
+  }, [
+    finalPrice,
+    onSuccess,
+    onError,
+    isDeposit,
+    validAmount,
+    validShippingFee,
+    subtotal,
+    selectedVoucher,
+    discount,
+  ]);
 
   return (
     <div className="paypal-container">
@@ -130,22 +150,28 @@ const PayPalCheckoutButton = ({
         </label>
         <p className="price-display">
           Original Price: ${validAmount.toFixed(2)}
-          {discount > 0 && selectedVoucher?.voucherCode.substring(0, 7) === 'BIGSALE' && (
-            <>
-              <br />
-              <span className="discount">Discount ({selectedVoucher.discountNumber * 100}%): -${discount.toFixed(2)}</span>
-              <br />
-              <span>Discounted Price: ${discountedAmount.toFixed(2)}</span>
-            </>
-          )}
+          {discount > 0 &&
+            selectedVoucher?.voucherCode.substring(0, 7) === "BIGSALE" && (
+              <>
+                <br />
+                <span className="discount">
+                  Discount ({selectedVoucher.discountNumber * 100}%): -$
+                  {discount.toFixed(2)}
+                </span>
+                <br />
+                <span>Discounted Price: ${discountedAmount.toFixed(2)}</span>
+              </>
+            )}
           {validShippingFee > 0 && (
             <>
               <br />
               <span>Shipping Fee: ${validShippingFee.toFixed(2)}</span>
-              {selectedVoucher?.voucherCode.substring(0, 8) === 'FREESHIP' && (
+              {selectedVoucher?.voucherCode.substring(0, 8) === "FREESHIP" && (
                 <>
                   <br />
-                  <span className="discount">Shipping Discount: -${discount.toFixed(2)}</span>
+                  <span className="discount">
+                    Shipping Discount: -${discount.toFixed(2)}
+                  </span>
                 </>
               )}
             </>
