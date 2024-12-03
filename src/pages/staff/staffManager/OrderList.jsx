@@ -21,9 +21,15 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid,
 } from "@mui/material";
-import { Edit, Visibility, Add } from "@mui/icons-material";
+import { Edit, Visibility, Add, Delete } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
+import UpdateOrderForm from './UpdateOrderForm';
 
 const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
 
@@ -73,9 +79,75 @@ const OrderList = () => {
   });
   const [orderDetails, setOrderDetails] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [updateOrderId, setUpdateOrderId] = useState(null);
+  const [updateFormOpen, setUpdateFormOpen] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [fabrics, setFabrics] = useState([]);
+  const [linings, setLinings] = useState([]);
+  const [styleOptions, setStyleOptions] = useState([]);
+  const [createOrderForm, setCreateOrderForm] = useState({
+    userID: 2,
+    storeId: 1,
+    voucherId: 16,
+    shipperPartnerId: 1,
+    shippedDate: "",
+    note: "",
+    paid: true,
+    deposit: 0,
+    shippingFee: 0,
+    deliveryMethod: "Pick up",
+    products: [],
+    customProducts: []
+  });
+  const [stores, setStores] = useState([]);
+  const [vouchers, setVouchers] = useState([]);
+  const [shippers, setShippers] = useState([]);
 
   useEffect(() => {
     fetchOrders();
+  }, []);
+
+  useEffect(() => {
+    const fetchRequiredData = async () => {
+      try {
+        const [
+          usersRes,
+          storesRes, 
+          vouchersRes,
+          shippersRes,
+          productsRes,
+          fabricsRes,
+          liningsRes,
+          styleOptionsRes
+        ] = await Promise.all([
+          api.get("/User"),
+          api.get("/Store"),
+          api.get("/Voucher/valid"),
+          api.get("/ShipperPartner"),
+          api.get("/Product/products/custom-false"),
+          api.get("/Fabrics"),
+          api.get("/Linings"),
+          api.get("/StyleOption")
+        ]);
+
+        setUsers(usersRes.data);
+        setStores(storesRes.data);
+        setVouchers(vouchersRes.data);
+        setShippers(shippersRes.data);
+        setProducts(productsRes.data);
+        setFabrics(fabricsRes.data);
+        setLinings(liningsRes.data);
+        setStyleOptions(styleOptionsRes.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setSnackbarMessage("Failed to load required data");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+      }
+    };
+
+    fetchRequiredData();
   }, []);
 
   const fetchOrders = async () => {
@@ -121,7 +193,8 @@ const OrderList = () => {
   const handleEdit = (order) => {
     setFormState(order);
     setIsEditMode(true);
-    setOpen(true);
+    setUpdateOrderId(order.id);
+    setUpdateFormOpen(true);
   };
 
   const handleViewDetails = async (orderId) => {
@@ -143,6 +216,438 @@ const OrderList = () => {
     }
     setSnackbarOpen(false);
   };
+
+  const handleUpdateSuccess = () => {
+    fetchOrders(); // Refresh the orders list
+  };
+
+  const handleCreateOrderSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      await api.post("/Orders/staffcreateorder", createOrderForm);
+      setSnackbarMessage("Order created successfully");
+      setSnackbarSeverity("success");
+      setOpen(false);
+      fetchOrders();
+    } catch (error) {
+      console.error("Error creating order:", error);
+      setSnackbarMessage("Failed to create order");
+      setSnackbarSeverity("error");
+    }
+    setSnackbarOpen(true);
+  };
+
+  const CreateOrderDialog = () => (
+    <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
+      <DialogTitle>Create New Order</DialogTitle>
+      <DialogContent>
+        <Grid container spacing={2} sx={{ mt: 1 }}>
+          {/* Basic Order Information */}
+          <Grid item xs={6}>
+            <FormControl fullWidth>
+              <InputLabel>User</InputLabel>
+              <Select
+                value={createOrderForm.userID}
+                onChange={(e) => setCreateOrderForm({
+                  ...createOrderForm,
+                  userID: e.target.value
+                })}
+              >
+                {users.map((user) => (
+                  <MenuItem key={user.id} value={user.id}>
+                    {user.userName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={6}>
+            <FormControl fullWidth>
+              <InputLabel>Store</InputLabel>
+              <Select
+                value={createOrderForm.storeId}
+                onChange={(e) => setCreateOrderForm({
+                  ...createOrderForm,
+                  storeId: e.target.value
+                })}
+              >
+                {stores.map((store) => (
+                  <MenuItem key={store.id} value={store.id}>
+                    {store.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={6}>
+            <FormControl fullWidth>
+              <InputLabel>Voucher</InputLabel>
+              <Select
+                value={createOrderForm.voucherId}
+                onChange={(e) => setCreateOrderForm({
+                  ...createOrderForm,
+                  voucherId: e.target.value
+                })}
+              >
+                {vouchers.map((voucher) => (
+                  <MenuItem key={voucher.id} value={voucher.id}>
+                    {voucher.code} - {voucher.discountAmount}%
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={6}>
+            <FormControl fullWidth>
+              <InputLabel>Shipper Partner</InputLabel>
+              <Select
+                value={createOrderForm.shipperPartnerId}
+                onChange={(e) => setCreateOrderForm({
+                  ...createOrderForm,
+                  shipperPartnerId: e.target.value
+                })}
+              >
+                {shippers.map((shipper) => (
+                  <MenuItem key={shipper.id} value={shipper.id}>
+                    {shipper.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* Guest Information */}
+          <Grid item xs={4}>
+            <TextField
+              fullWidth
+              label="Guest Name"
+              value={createOrderForm.guestName}
+              onChange={(e) => setCreateOrderForm({
+                ...createOrderForm,
+                guestName: e.target.value
+              })}
+            />
+          </Grid>
+
+          <Grid item xs={4}>
+            <TextField
+              fullWidth
+              label="Guest Email"
+              value={createOrderForm.guestEmail}
+              onChange={(e) => setCreateOrderForm({
+                ...createOrderForm,
+                guestEmail: e.target.value
+              })}
+            />
+          </Grid>
+
+          <Grid item xs={4}>
+            <TextField
+              fullWidth
+              label="Guest Address"
+              value={createOrderForm.guestAddress}
+              onChange={(e) => setCreateOrderForm({
+                ...createOrderForm,
+                guestAddress: e.target.value
+              })}
+            />
+          </Grid>
+
+          {/* Order Details */}
+          <Grid item xs={4}>
+            <TextField
+              fullWidth
+              type="number"
+              label="Deposit"
+              value={createOrderForm.deposit}
+              onChange={(e) => setCreateOrderForm({
+                ...createOrderForm,
+                deposit: parseFloat(e.target.value)
+              })}
+            />
+          </Grid>
+
+          <Grid item xs={4}>
+            <TextField
+              fullWidth
+              type="number"
+              label="Shipping Fee"
+              value={createOrderForm.shippingFee}
+              onChange={(e) => setCreateOrderForm({
+                ...createOrderForm,
+                shippingFee: parseFloat(e.target.value)
+              })}
+            />
+          </Grid>
+
+          <Grid item xs={4}>
+            <FormControl fullWidth>
+              <InputLabel>Delivery Method</InputLabel>
+              <Select
+                value={createOrderForm.deliveryMethod}
+                onChange={(e) => setCreateOrderForm({
+                  ...createOrderForm,
+                  deliveryMethod: e.target.value
+                })}
+              >
+                <MenuItem value="Pick up">Pick up</MenuItem>
+                <MenuItem value="Delivery">Delivery</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Note"
+              value={createOrderForm.note}
+              onChange={(e) => setCreateOrderForm({
+                ...createOrderForm,
+                note: e.target.value
+              })}
+            />
+          </Grid>
+
+          {/* Regular Products Section */}
+          <Grid item xs={12}>
+            <Typography variant="h6">Products</Typography>
+            <Button
+              variant="outlined"
+              onClick={() => setCreateOrderForm({
+                ...createOrderForm,
+                products: [...createOrderForm.products, {
+                  productID: 0,
+                  productCode: "",
+                  measurementID: 0,
+                  categoryID: 0,
+                  fabricID: 0,
+                  liningID: 0,
+                  size: "",
+                  quantity: 1,
+                  isCustom: false,
+                  imgURL: "",
+                  price: 0
+                }]
+              })}
+            >
+              Add Product
+            </Button>
+
+            {createOrderForm.products.map((product, index) => (
+              <Grid container spacing={2} key={index} sx={{ mt: 1 }}>
+                <Grid item xs={3}>
+                  <FormControl fullWidth>
+                    <InputLabel>Product</InputLabel>
+                    <Select
+                      value={product.productID}
+                      onChange={(e) => {
+                        const newProducts = [...createOrderForm.products];
+                        const selectedProduct = products.find(p => p.id === e.target.value);
+                        newProducts[index] = {
+                          ...newProducts[index],
+                          productID: e.target.value,
+                          productCode: selectedProduct?.code || '',
+                          price: selectedProduct?.price || 0
+                        };
+                        setCreateOrderForm({
+                          ...createOrderForm,
+                          products: newProducts
+                        });
+                      }}
+                    >
+                      {products.map((p) => (
+                        <MenuItem key={p.id} value={p.id}>
+                          {p.name} - ${p.price}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={3}>
+                  <TextField
+                    fullWidth
+                    label="Size"
+                    value={product.size}
+                    onChange={(e) => {
+                      const newProducts = [...createOrderForm.products];
+                      newProducts[index].size = e.target.value;
+                      setCreateOrderForm({
+                        ...createOrderForm,
+                        products: newProducts
+                      });
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={3}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Quantity"
+                    value={product.quantity}
+                    onChange={(e) => {
+                      const newProducts = [...createOrderForm.products];
+                      newProducts[index].quantity = parseInt(e.target.value);
+                      setCreateOrderForm({
+                        ...createOrderForm,
+                        products: newProducts
+                      });
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={2}>
+                  <TextField
+                    fullWidth
+                    disabled
+                    label="Price"
+                    value={`$${product.price}`}
+                  />
+                </Grid>
+
+                <Grid item xs={1}>
+                  <IconButton
+                    onClick={() => {
+                      const newProducts = createOrderForm.products.filter((_, i) => i !== index);
+                      setCreateOrderForm({
+                        ...createOrderForm,
+                        products: newProducts
+                      });
+                    }}
+                  >
+                    <Delete />
+                  </IconButton>
+                </Grid>
+              </Grid>
+            ))}
+          </Grid>
+
+          {/* Custom Products Section */}
+          <Grid item xs={12}>
+            <Typography variant="h6">Custom Products</Typography>
+            <Button
+              variant="outlined"
+              onClick={() => setCreateOrderForm({
+                ...createOrderForm,
+                customProducts: [...createOrderForm.customProducts, {
+                  categoryID: 5,
+                  fabricID: "",
+                  liningID: "",
+                  measurementID: "",
+                  quantity: 1,
+                  pickedStyleOptions: []
+                }]
+              })}
+            >
+              Add Custom Product
+            </Button>
+
+            {createOrderForm.customProducts.map((customProduct, index) => (
+              <Grid container spacing={2} key={index} sx={{ mt: 1 }}>
+                <Grid item xs={3}>
+                  <FormControl fullWidth>
+                    <InputLabel>Fabric</InputLabel>
+                    <Select
+                      value={customProduct.fabricID}
+                      onChange={(e) => {
+                        const newCustomProducts = [...createOrderForm.customProducts];
+                        newCustomProducts[index].fabricID = e.target.value;
+                        setCreateOrderForm({
+                          ...createOrderForm,
+                          customProducts: newCustomProducts
+                        });
+                      }}
+                    >
+                      {fabrics.map((fabric) => (
+                        <MenuItem key={fabric.id} value={fabric.id}>
+                          {fabric.name} - ${fabric.price}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={3}>
+                  <FormControl fullWidth>
+                    <InputLabel>Lining</InputLabel>
+                    <Select
+                      value={customProduct.liningID}
+                      onChange={(e) => {
+                        const newCustomProducts = [...createOrderForm.customProducts];
+                        newCustomProducts[index].liningID = e.target.value;
+                        setCreateOrderForm({
+                          ...createOrderForm,
+                          customProducts: newCustomProducts
+                        });
+                      }}
+                    >
+                      {linings.map((lining) => (
+                        <MenuItem key={lining.id} value={lining.id}>
+                          {lining.name} - ${lining.price}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={5}>
+                  <FormControl fullWidth>
+                    <InputLabel>Style Options</InputLabel>
+                    <Select
+                      multiple
+                      value={customProduct.pickedStyleOptions.map(option => option.styleOptionID)}
+                      onChange={(e) => {
+                        const newCustomProducts = [...createOrderForm.customProducts];
+                        newCustomProducts[index].pickedStyleOptions = e.target.value.map(id => ({
+                          styleOptionID: id
+                        }));
+                        setCreateOrderForm({
+                          ...createOrderForm,
+                          customProducts: newCustomProducts
+                        });
+                      }}
+                    >
+                      {styleOptions.map((style) => (
+                        <MenuItem key={style.id} value={style.id}>
+                          {style.name} - ${style.price}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={1}>
+                  <IconButton
+                    onClick={() => {
+                      const newCustomProducts = createOrderForm.customProducts.filter((_, i) => i !== index);
+                      setCreateOrderForm({
+                        ...createOrderForm,
+                        customProducts: newCustomProducts
+                      });
+                    }}
+                  >
+                    <Delete />
+                  </IconButton>
+                </Grid>
+              </Grid>
+            ))}
+          </Grid>
+        </Grid>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setOpen(false)}>Cancel</Button>
+        <Button onClick={handleCreateOrderSubmit} variant="contained" color="primary">
+          Create Order
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 
   if (loading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
@@ -178,6 +683,16 @@ const OrderList = () => {
       >
         Add Order
       </StyledButton>
+
+      <Button
+        onClick={() => {
+          console.log("Test button clicked");
+          setUpdateOrderId(1); // Test với mt ID cụ thể
+          setUpdateFormOpen(true);
+        }}
+      >
+        Test Update Form
+      </Button>
 
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
@@ -358,6 +873,13 @@ const OrderList = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      <UpdateOrderForm
+        orderId={updateOrderId}
+        open={updateFormOpen}
+        onClose={() => setUpdateFormOpen(false)}
+        onUpdateSuccess={handleUpdateSuccess}
+      />
     </div>
   );
 };
