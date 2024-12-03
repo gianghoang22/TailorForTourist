@@ -247,12 +247,9 @@ const Checkout = () => {
   const calculateShippingFee = async (addressData) => {
     console.log('Calculating Shipping Fee with data:', addressData);
     
+    // Early return with 0 if missing required data
     if (!addressData?.wardCode || !addressData?.districtId || !nearestStore) {
-      console.log('Missing required data:', {
-        wardCode: addressData?.wardCode,
-        districtId: addressData?.districtId,
-        nearestStore: nearestStore
-      });
+      console.log('Missing required data - setting shipping fee to 0');
       setShippingFee(0);
       return;
     }
@@ -272,23 +269,31 @@ const Checkout = () => {
         shopCode: nearestStore.storeCode
       };
 
-      console.log('Shipping Fee Payload:', shippingPayload);
-
       const response = await axios.post(
         'https://localhost:7194/api/Shipping/calculate-fee',
         shippingPayload
       );
 
       if (response.data) {
-        console.log('Shipping Fee Response (VND):', response.data.total);
         const shippingFeeVND = response.data.total || 0;
+        
+        // If shipping fee is below a threshold (e.g., very close distance), set it to 0
+        if (shippingFeeVND < 15000) { // 15,000 VND threshold, adjust as needed
+          console.log('Short distance detected - setting shipping fee to 0');
+          setShippingFee(0);
+          return;
+        }
+
         const shippingFeeUSD = await convertVNDToUSD(shippingFeeVND);
         console.log('Shipping Fee (USD):', shippingFeeUSD);
         setShippingFee(shippingFeeUSD);
+      } else {
+        console.log('No shipping fee data - setting to 0');
+        setShippingFee(0);
       }
     } catch (error) {
-      console.error('Lỗi tính phí vận chuyển:', error);
-      toast.error('Không thể tính phí vận chuyển');
+      console.error('Error calculating shipping fee - setting to 0:', error);
+      setShippingFee(0);
     }
   };
 
