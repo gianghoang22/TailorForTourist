@@ -167,7 +167,7 @@ export const Footer = () => {
         {/* <div className="sys ceter-txt">
             <div className="all">
                 <div className="coppyright">
-                    <p>�� All rights reserved.</p>
+                    <p> All rights reserved.</p>
                 </div>
             </div>
         </div> */}

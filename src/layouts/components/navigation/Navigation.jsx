@@ -143,6 +143,9 @@ export const Navigation = () => {
                   <Link to="/contact-us">CONTACT</Link>
                 </li>
                 <li>
+                  <Link to="/how-to-measure">HOW TO MEASURE</Link>
+                </li>
+                <li>
                   <Link to="/cart">CART</Link>
                 </li>
                 {isLoggedIn && roleID === "customer" && (
@@ -150,17 +153,20 @@ export const Navigation = () => {
                     <Link to="/profile">PROFILE</Link>
                   </li>
                 )}
-                {/* Render Booking button for all users, but restrict access in logic */}
-                {(isLoggedIn && roleID === "customer") || !isLoggedIn ? (
+                
+              </ul>
+            </div>
+          </nav>
+          <div className="header-right-btn d-none d-lg-block ml-30">
+            {/* Render Booking button for all users, but restrict access in logic */}
+            {(isLoggedIn && roleID === "customer") || !isLoggedIn ? (
                   <li>
                     <Link to="/booking" className="booking-btn">
                       <FaCalendarAlt /> BOOKING
                     </Link>
-                  </li>
-                ) : null}
-              </ul>
-            </div>
-          </nav>
+                </li>
+              ) : null}
+          </div>
           <div className="header-right-btn d-none d-lg-block ml-30">
             {isLoggedIn ? (
               <button className="logout-btn" onClick={handleLogout}>
@@ -171,7 +177,9 @@ export const Navigation = () => {
                 <FaSignInAlt /> Login
               </Link>
             )}
-          </div>
+
+            </div>
+            
           <div className="mobile_menu d-block d-lg-none"></div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import axios from "axios";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import "./MeasureList.scss"; // Import the new styles
+import { toast } from "react-toastify";
 
 const MeasureList = () => {
   const [users, setUsers] = useState([]);
@@ -15,20 +16,19 @@ const MeasureList = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [editingMeasurement, setEditingMeasurement] = useState(null);
+  const [searchTerm, setSearchTerm] = useState(""); // Add search state
 
   const API_URL = "https://localhost:7194/api/Measurement";
   const USER_API_URL = "https://localhost:7194/api/User";
 
-  // Fetch all users
+  // Update the users fetch to filter roleId === 3
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get(`${USER_API_URL}`);
-        const userMap = response.data.reduce((acc, user) => {
-          acc[user.userId] = user;
-          return acc;
-        }, {});
-        setUsers(userMap);
+        const response = await axios.get(USER_API_URL);
+        // Filter users with roleId === 3
+        const filteredUsers = response.data.filter(user => user.roleId === 3);
+        setUsers(filteredUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
@@ -36,12 +36,16 @@ const MeasureList = () => {
     fetchUsers();
   }, []);
 
-  // Fetch all measurements
+  // Fetch measurements for each user
   useEffect(() => {
     const fetchMeasurements = async () => {
       try {
         const response = await axios.get(API_URL);
-        setMeasurements(response.data);
+        const measurementMap = response.data.reduce((acc, measurement) => {
+          acc[measurement.userId] = measurement;
+          return acc;
+        }, {});
+        setMeasurements(measurementMap);
       } catch (error) {
         console.error("Error fetching measurements:", error);
       }
@@ -151,6 +155,7 @@ const MeasureList = () => {
     setEditingMeasurement(measurement);
     setShowCreateModal(true);
     createFormik.setValues({
+      userId: measurement.userId,
       weight: measurement.weight,
       height: measurement.height,
       neck: measurement.neck,
@@ -174,18 +179,25 @@ const MeasureList = () => {
   const handleDelete = async (measurementId) => {
     try {
       if (window.confirm('Are you sure you want to delete this measurement?')) {
-        console.log('Deleting measurement:', measurementId);
-        
         await axios.delete(`${API_URL}/${measurementId}`);
         
-        setMeasurements(measurements.filter(m => m.measurementId !== measurementId));
+        // Update measurements state by removing the deleted measurement
+        setMeasurements(prevMeasurements => {
+          const updatedMeasurements = { ...prevMeasurements };
+          // Find and remove the measurement with the matching measurementId
+          Object.keys(updatedMeasurements).forEach(userId => {
+            if (updatedMeasurements[userId].measurementId === measurementId) {
+              delete updatedMeasurements[userId];
+            }
+          });
+          return updatedMeasurements;
+        });
         
-        alert('Measurement deleted successfully!');
+        toast.success('Measurement deleted successfully!');
       }
     } catch (error) {
       console.error('Error deleting measurement:', error);
-      console.log('Error response data:', error.response?.data);
-      alert('Failed to delete measurement. Please try again.');
+      toast.error('Failed to delete measurement. Please try again.');
     }
   };
 
@@ -201,7 +213,6 @@ const MeasureList = () => {
 
   const createFormik = useFormik({
     initialValues: {
-      measurementId: 0,
       userId: 0,
       weight: 0,
       height: 0,
@@ -268,21 +279,47 @@ const MeasureList = () => {
         let response;
         
         if (editingMeasurement) {
-          measurementData.measurementId = editingMeasurement.measurementId;
-          console.log('Updating measurement:', measurementData);
-          response = await axios.put(`${API_URL}/${editingMeasurement.measurementId}`, measurementData);
-          
-          setMeasurements(measurements.map(m => 
-            m.measurementId === editingMeasurement.measurementId ? response.data : m
-          ));
-          alert('Measurement updated successfully!');
+          try {
+            // Delete old measurement
+            await axios.delete(`${API_URL}/${editingMeasurement.measurementId}`);
+            
+            // Create new measurement
+            response = await axios.post(API_URL, measurementData);
+            
+            // Update measurements state with the new data
+            setMeasurements(prevMeasurements => {
+              const updatedMeasurements = { ...prevMeasurements };
+              updatedMeasurements[selectedUserId] = response.data;
+              return updatedMeasurements;
+            });
+            
+            toast.success('Measurement updated successfully!');
+          } catch (error) {
+            console.error('Error updating measurement:', error);
+            toast.error('Failed to update measurement. Please try again.');
+            return;
+          }
         } else {
-          console.log('Creating new measurement:', measurementData);
-          response = await axios.post(API_URL, measurementData);
-          setMeasurements([...measurements, response.data]);
-          alert('Measurement created successfully!');
+          try {
+            // Create new measurement
+            response = await axios.post(API_URL, measurementData);
+            
+            // Update measurements state with the new data
+            setMeasurements(prevMeasurements => {
+              const updatedMeasurements = { ...prevMeasurements };
+              updatedMeasurements[selectedUserId] = response.data;
+              return updatedMeasurements;
+            });
+            
+            toast.success('Measurement created successfully!');
+          } catch (error) {
+            console.error('Error creating measurement:', error);
+            toast.error('Failed to create measurement. Please try again.');
+            return;
+          }
         }
 
+        // Reset form and states
         setShowCreateModal(false);
         resetForm();
         setSelectedUserId(null);
@@ -290,11 +327,20 @@ const MeasureList = () => {
 
       } catch (error) {
         console.error('Error saving measurement:', error);
-        console.log('Error response data:', error.response?.data);
-        alert('Failed to save measurement. Please try again.');
+        toast.error('An unexpected error occurred. Please try again.');
       }
     }
   });
+
+  // Add filtered users logic
+  const filteredUsers = users.filter(user => 
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
 
   return (
     <div className="measure-list-container">
@@ -302,8 +348,12 @@ const MeasureList = () => {
         <h2>Customer Measurements</h2>
         <div className="actions">
           <div className="search-bar">
-            <input type="text" placeholder="Search customer..." />
-            <button className="primary-button">Search</button>
+            <input 
+              type="text" 
+              placeholder="Search by email..." 
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
           </div>
           <button 
             className="primary-button create-button"
@@ -318,6 +368,7 @@ const MeasureList = () => {
         <table className="customers-table">
           <thead>
             <tr>
+              <th>User ID</th>
               <th>Customer Name</th>
               <th>Email</th>
               <th>Phone</th>
@@ -326,33 +377,49 @@ const MeasureList = () => {
             </tr>
           </thead>
           <tbody>
-            {measurements.map((measurement) => {
-              const user = users[measurement.userId];
+            {filteredUsers.map((user) => {  // Changed from users to filteredUsers
+              const measurement = measurements[user.userId];
               return (
-                <tr key={measurement.measurementId}>
-                  <td>{user?.name}</td>
-                  <td>{user?.email}</td>
-                  <td>{user?.phone}</td>
-                  <td>{user?.gender}</td>
+                <tr key={user.userId}>
+                  <td>{user.userId}</td>
+                  <td>{user.name}</td>
+                  <td>{user.email}</td>
+                  <td>{user.phone}</td>
+                  <td>{user.gender}</td>
                   <td className="actions">
-                    <button 
-                      className="btn-view"
-                      onClick={() => handleViewDetail(measurement)}
-                    >
-                      View Details
-                    </button>
-                    <button 
-                      className="btn-edit"
-                      onClick={() => handleEdit(measurement)}
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      className="btn-delete"
-                      onClick={() => handleDelete(measurement.measurementId)}
-                    >
-                      Delete
-                    </button>
+                    {measurement && (
+                      <>
+                        <button 
+                          className="btn-view"
+                          onClick={() => handleViewDetail(measurement)}
+                        >
+                          View Details
+                        </button>
+                        <button 
+                          className="btn-edit"
+                          onClick={() => handleEdit(measurement)}
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          className="btn-delete"
+                          onClick={() => handleDelete(measurement.measurementId)}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                    {!measurement && (
+                      <button 
+                        className="btn-add"
+                        onClick={() => {
+                          setSelectedUserId(user.userId);
+                          setShowCreateModal(true);
+                        }}
+                      >
+                        Add Measurement
+                      </button>
+                    )}
                   </td>
                 </tr>
               );

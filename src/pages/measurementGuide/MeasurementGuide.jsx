@@ -1,5 +1,7 @@
 import React from 'react';
 import './MeasurementGuide.scss';
+import { Navigation } from '../../layouts/components/navigation/Navigation';
+import { Footer } from '../../layouts/components/footer/Footer';
 
 const jacketVideos = [
   { title: "How To Measure Your Chest For A Custom Suit", id: "C2HXr2od5cY" },
@@ -22,13 +24,15 @@ const pantVideos = [
 
 const MeasurementGuide = () => {
   return (
+    <>
+    <Navigation />  
     <div className="page-with-side-bar">
       <div className="all">
         <div className="left-side">
           <div className="sec-title">
             <h1 className="tt-txt">
               <span className="tt-sub">How to measure</span>
-              A Dong Silk
+              MATCHA Vest
             </h1>
           </div>
         </div>
@@ -68,6 +72,8 @@ const MeasurementGuide = () => {
         </div>
       </div>
     </div>
+    <Footer />
+  </>
   );
 };
 

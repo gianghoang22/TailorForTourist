@@ -42,6 +42,7 @@ const Checkout = () => {
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [guestAddress, setGuestAddress] = useState("");
+  const [deposit, setDeposit] = useState(0);
   const [deliveryMethod, setDeliveryMethod] = useState("Pick up");
   const [isPaid, setIsPaid] = useState(false);
   const [storeId, setStoreId] = useState(1);
@@ -59,6 +60,7 @@ const Checkout = () => {
   const [vouchers, setVouchers] = useState([]);
   const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [discountedShippingFee, setDiscountedShippingFee] = useState(0);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -342,44 +344,31 @@ const Checkout = () => {
     }
   };
 
-  const handleVoucherSelect = async (voucher) => {
-    // Reset states if no voucher is selected
-    if (!voucher) {
+  const handleVoucherSelect = (event) => {
+    const voucherId = parseInt(event.target.value);
+
+    if (!voucherId) {
       setSelectedVoucher(null);
-      setDiscountedShippingFee(shippingFee);
       return;
     }
 
-    try {
-      const response = await axios.get(
-        `https://localhost:7194/api/Voucher/${voucher.voucherId}/validate`
-      );
+    const voucher = vouchers.find((v) => v.voucherId === voucherId);
+    if (voucher) {
+      setSelectedVoucher(voucher);
 
-      if (response.status === 200) {
-        setSelectedVoucher(voucher);
-        if (voucher.voucherCode?.substring(0, 8) === "FREESHIP") {
-          const discountAmount = shippingFee * voucher.discountNumber;
-          setDiscountedShippingFee(shippingFee - discountAmount);
-        } else {
-          setDiscountedShippingFee(shippingFee);
-        }
-        toast.success("Voucher applied successfully");
-      }
-    } catch (error) {
-      console.error("Error validating voucher:", error);
-      setSelectedVoucher(null);
-      setDiscountedShippingFee(shippingFee);
-
-      if (error.response?.status === 500) {
-        toast.error("This voucher is invalid or has expired");
-      } else {
-        toast.error("Failed to apply voucher. Please try again.");
+      // Hiển thị thông báo về voucher đã được áp dụng
+      if (voucher.voucherCode.substring(0, 8) === "FREESHIP") {
+        toast.success(`Applied Free Shipping voucher: ${voucher.description}`);
+      } else if (voucher.voucherCode.substring(0, 7) === "BIGSALE") {
+        toast.success(`Applied Discount voucher: ${voucher.description}`);
       }
     }
   };
 
   const handleConfirmOrder = async () => {
     try {
+      setIsConfirming(true);
+
       // Basic validation
       if (
         !guestName ||
@@ -397,23 +386,23 @@ const Checkout = () => {
       }
 
       const finalShippingFee =
-        selectedVoucher?.voucherCode?.substring(0, 8) === "FREESHIP"
+        selectedVoucher?.voucherCode.substring(0, 8) === "FREESHIP"
           ? discountedShippingFee
           : shippingFee;
 
-      // Create base params object
+      // Create base query parameters
       const baseParams = {
-        guestName,
-        guestEmail,
-        guestAddress,
-        deposit: 0,
+        guestName: guestName,
+        guestEmail: guestEmail,
+        guestAddress: guestAddress,
+        deposit: deposit.toString(), // Ensure deposit is sent as string
         shippingfee: finalShippingFee,
         deliverymethod: deliveryMethod,
         storeId: parseInt(storeId),
       };
 
-      // Only add voucherId if a voucher is selected and valid
-      if (selectedVoucher && selectedVoucher.voucherId) {
+      // Only add voucherId if a valid voucher is selected
+      if (selectedVoucher && selectedVoucher.voucherId > 0) {
         baseParams.voucherId = selectedVoucher.voucherId;
       }
 
@@ -445,15 +434,32 @@ const Checkout = () => {
         error.response?.data?.message ||
           "Failed to confirm order. Please try again."
       );
+    } finally {
+      setIsConfirming(false);
     }
   };
 
-  const handlePaymentSuccess = (details, data) => {
+  const handlePaymentSuccess = (details) => {
     setIsPaid(true);
     setPaymentDetails(details);
+
+    // Calculate deposit and remaining amount
+    const depositAmount = details.isDeposit
+      ? Number(details.depositAmount) || 0
+      : 0;
+    const fullAmount = Number(details.fullAmount) || 0;
+
+    setDeposit(depositAmount);
+
+    // Log payment details for debugging
+    console.log("Payment Details:", {
+      isDeposit: details.isDeposit,
+      depositAmount: depositAmount,
+      fullAmount: fullAmount,
+      remainingBalance: fullAmount - depositAmount,
+    });
+
     toast.success("Payment successful! Please confirm your order.");
-    // You might want to store the PayPal transaction ID or other relevant info
-    console.log("Payment completed successfully", details);
   };
 
   const handlePaymentError = (error) => {
@@ -736,45 +742,82 @@ const Checkout = () => {
                         <div className="voucher-section">
                           <h4>Available Vouchers</h4>
                           <select
-                            onChange={(e) => {
-                              const voucher = vouchers.find(
-                                (v) => v.voucherId === parseInt(e.target.value)
-                              );
-                              handleVoucherSelect(voucher);
-                            }}
+                            onChange={handleVoucherSelect}
                             value={selectedVoucher?.voucherId || ""}
+                            className="voucher-select"
                           >
                             <option value="">Select a voucher</option>
                             {vouchers.map((voucher) => (
                               <option
                                 key={voucher.voucherId}
                                 value={voucher.voucherId}
+                                disabled={
+                                  (selectedVoucher &&
+                                    selectedVoucher.voucherId !==
+                                      voucher.voucherId) ||
+                                  (selectedVoucher?.voucherCode.substring(
+                                    0,
+                                    8
+                                  ) === "FREESHIP" &&
+                                    voucher.voucherCode.substring(0, 7) ===
+                                      "BIGSALE") ||
+                                  (selectedVoucher?.voucherCode.substring(
+                                    0,
+                                    7
+                                  ) === "BIGSALE" &&
+                                    voucher.voucherCode.substring(0, 8) ===
+                                      "FREESHIP")
+                                }
                               >
                                 {voucher.voucherCode} - {voucher.description}
                               </option>
                             ))}
                           </select>
+
+                          {selectedVoucher && (
+                            <div className="selected-voucher-info">
+                              <p>
+                                <strong>Applied Voucher:</strong>{" "}
+                                {selectedVoucher.voucherCode}
+                                <button
+                                  className="remove-voucher-btn"
+                                  onClick={() => {
+                                    setSelectedVoucher(null);
+                                    toast.info("Voucher removed");
+                                  }}
+                                >
+                                  Remove
+                                </button>
+                              </p>
+                              <p className="voucher-description">
+                                {selectedVoucher.description}
+                              </p>
+                            </div>
+                          )}
                         </div>
                         <PayPalCheckoutButton
                           amount={calculateFinalTotal()}
-                          shippingFee={
-                            selectedVoucher?.voucherCode.substring(0, 8) ===
-                            "FREESHIP"
-                              ? discountedShippingFee
-                              : shippingFee
-                          }
+                          shippingFee={shippingFee}
                           onSuccess={handlePaymentSuccess}
                           onError={handlePaymentError}
                           onCancel={handlePaymentCancel}
+                          selectedVoucher={selectedVoucher}
                         />
 
                         <button
                           type="button"
                           className="button-confirm-order"
                           onClick={handleConfirmOrder}
-                          disabled={!isPaid}
+                          disabled={!isPaid || isConfirming}
                         >
-                          Confirm Order
+                          {isConfirming ? (
+                            <div className="button-content">
+                              <span className="spinner"></span>
+                              <span>Confirming...</span>
+                            </div>
+                          ) : (
+                            "Confirm Order"
+                          )}
                         </button>
                       </>
                     )}

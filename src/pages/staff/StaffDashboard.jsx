@@ -22,6 +22,7 @@ import OrderList from "./staffManager/OrderList";
 import BookingList from "./staffManager/BookingList";
 import ShipmentList from "./staffManager/ShipmentList";
 import MeasureList from "./staffManager/MeasureList";
+import CreateAccount from "./staffManager/CreateAccount";
 import {
   Search,
   Notifications,
@@ -99,6 +100,8 @@ const StaffDashboard = () => {
         return <ShipmentList />;
       case "measure":
         return <MeasureList />;
+      case "account":
+        return <CreateAccount />;
       default:
         return <OrderList />;
     }
@@ -150,6 +153,13 @@ const StaffDashboard = () => {
               onClick={() => setActiveSection("measure")}
             >
               Measurement
+            </Button>
+            <Button
+              startIcon={<Group />}
+              className={activeSection === "account" ? "active" : ""}
+              onClick={() => setActiveSection("account")}
+            >
+              Create Account
             </Button>
             <Button
               startIcon={<Logout />}
