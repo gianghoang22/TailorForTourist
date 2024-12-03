@@ -19,10 +19,18 @@ import {
   DialogTitle,
   MenuItem,
   Select,
+  IconButton,
+  Menu,
+  FormControl,
+  InputLabel,
+  Box,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import "./ManagerDashboard.scss";
 import logo from "./../../assets/img/icon/matcha.png";
+import Pagination from "@mui/material/Pagination";
+
 const ManagerDashboard = () => {
   const location = useLocation();
   const [orders, setOrders] = useState([]);
@@ -47,6 +55,81 @@ const ManagerDashboard = () => {
   const [tailorPartners, setTailorPartners] = useState([]);
   const [processingStatuses, setProcessingStatuses] = useState({});
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [page, setPage] = useState(1);
+  const [ordersPerPage] = useState(20);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [dateFilter, setDateFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [processStatusFilter, setProcessStatusFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  const filteredOrders = useMemo(() => {
+    if (!Array.isArray(orders)) return [];
+
+    return orders.filter((order) => {
+      const matchesSearch = order?.note
+        ?.toLowerCase()
+        .includes(searchTerm?.toLowerCase() || "");
+
+      // Date filtering
+      const orderDate = new Date(order.orderDate);
+      const matchesDate =
+        dateFilter === "all" ||
+        (dateFilter === "custom"
+          ? (!startDate || orderDate >= new Date(startDate)) &&
+            (!endDate || orderDate <= new Date(endDate))
+          : dateFilter === "today"
+            ? orderDate.toDateString() === new Date().toDateString()
+            : dateFilter === "week"
+              ? orderDate >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+              : dateFilter === "month" &&
+                orderDate >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+
+      // Status filtering
+      const matchesStatus =
+        statusFilter === "all" || order.status === statusFilter;
+
+      // Process status filtering
+      const matchesProcessStatus =
+        processStatusFilter === "all" ||
+        processingStatuses[order.orderId] === processStatusFilter;
+
+      return (
+        matchesSearch && matchesDate && matchesStatus && matchesProcessStatus
+      );
+    });
+  }, [
+    orders,
+    searchTerm,
+    dateFilter,
+    statusFilter,
+    processStatusFilter,
+    startDate,
+    endDate,
+    processingStatuses,
+  ]);
+
+  const indexOfLastOrder = page * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = filteredOrders.slice(
+    indexOfFirstOrder,
+    indexOfLastOrder
+  );
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+
+  useEffect(() => {
+    console.log("Total orders:", filteredOrders.length);
+    console.log("Current page:", page);
+    console.log("Orders per page:", ordersPerPage);
+    console.log("Current orders shown:", currentOrders.length);
+  }, [filteredOrders, page, ordersPerPage, currentOrders]);
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleLogout = () => {
     // Clear user-related data from localStorage
     localStorage.removeItem("userID");
@@ -366,12 +449,100 @@ const ManagerDashboard = () => {
     }
   };
 
-  const filteredOrders = useMemo(() => {
-    if (!Array.isArray(orders)) return [];
-    return orders.filter((order) =>
-      order?.note?.toLowerCase().includes(searchTerm || "")
-    );
-  }, [orders, searchTerm]);
+  const handleFilterClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setAnchorEl(null);
+  };
+
+  const FilterControls = () => (
+    <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "center" }}>
+      <TextField
+        label="Search by Note"
+        variant="outlined"
+        value={searchTerm}
+        onChange={handleSearchChange}
+        size="small"
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon />
+            </InputAdornment>
+          ),
+        }}
+      />
+
+      <FormControl size="small" sx={{ minWidth: 120 }}>
+        <InputLabel>Date Filter</InputLabel>
+        <Select
+          value={dateFilter}
+          label="Date Filter"
+          onChange={(e) => setDateFilter(e.target.value)}
+        >
+          <MenuItem value="all">All Time</MenuItem>
+          <MenuItem value="today">Today</MenuItem>
+          <MenuItem value="week">Last Week</MenuItem>
+          <MenuItem value="month">Last Month</MenuItem>
+          <MenuItem value="custom">Custom Range</MenuItem>
+        </Select>
+      </FormControl>
+
+      {dateFilter === "custom" && (
+        <>
+          <TextField
+            label="Start Date"
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            size="small"
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            label="End Date"
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            size="small"
+            InputLabelProps={{ shrink: true }}
+          />
+        </>
+      )}
+
+      <FormControl size="small" sx={{ minWidth: 120 }}>
+        <InputLabel>Order Status</InputLabel>
+        <Select
+          value={statusFilter}
+          label="Order Status"
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <MenuItem value="all">All Status</MenuItem>
+          <MenuItem value="Pending">Pending</MenuItem>
+          <MenuItem value="Processing">Processing</MenuItem>
+          <MenuItem value="Finish">Finish</MenuItem>
+          <MenuItem value="Cancel">Cancel</MenuItem>
+        </Select>
+      </FormControl>
+
+      <FormControl size="small" sx={{ minWidth: 120 }}>
+        <InputLabel>Process Status</InputLabel>
+        <Select
+          value={processStatusFilter}
+          label="Process Status"
+          onChange={(e) => setProcessStatusFilter(e.target.value)}
+        >
+          <MenuItem value="all">All Status</MenuItem>
+          <MenuItem value="Pending">Pending</MenuItem>
+          <MenuItem value="Doing">Doing</MenuItem>
+          <MenuItem value="Due">Due</MenuItem>
+          <MenuItem value="Finish">Finish</MenuItem>
+          <MenuItem value="Not Start">Not Start</MenuItem>
+          <MenuItem value="Cancel">Cancel</MenuItem>
+        </Select>
+      </FormControl>
+    </Box>
+  );
 
   return (
     <div className="manager-dashboard">
@@ -496,29 +667,14 @@ const ManagerDashboard = () => {
           ) : (
             location.pathname === "/manager" && (
               <>
-                <div className="header">
-                  <TextField
-                    label="Search by Note"
-                    variant="outlined"
-                    value={searchTerm}
-                    onChange={handleSearchChange}
-                    style={{ marginBottom: "1rem", width: "300px" }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </div>
+                <FilterControls />
                 <TableContainer component={Paper}>
                   <Table>
                     <TableHead>
                       <TableRow>
+                        <TableCell>Order ID</TableCell>
                         <TableCell>User Name</TableCell>
                         <TableCell>Store Name</TableCell>
-
                         <TableCell>Order Date</TableCell>
                         <TableCell>Shipped Date</TableCell>
                         <TableCell>Note</TableCell>
@@ -531,8 +687,9 @@ const ManagerDashboard = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {filteredOrders.map((order) => (
+                      {currentOrders.map((order) => (
                         <TableRow key={order.orderId}>
+                          <TableCell>{order.orderId}</TableCell>
                           <TableCell>
                             {users[order.userID] || "Unknown"}
                           </TableCell>
@@ -731,6 +888,26 @@ const ManagerDashboard = () => {
                     </Button>
                   </DialogActions>
                 </Dialog>
+                {filteredOrders.length > ordersPerPage && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      margin: "2rem 0",
+                      padding: "1rem",
+                    }}
+                  >
+                    <Pagination
+                      count={totalPages}
+                      page={page}
+                      onChange={handlePageChange}
+                      color="primary"
+                      size="large"
+                      showFirstButton
+                      showLastButton
+                    />
+                  </div>
+                )}
               </>
             )
           )}

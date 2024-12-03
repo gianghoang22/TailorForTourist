@@ -1,23 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
-import '../../assets/scss/SlideShow.scss';
-import '../home/HomePageBody.scss';
-import banner1 from '../../assets/img/elements/banner-1.jpg';
-import banner2 from '../../assets/img/elements/banner-2.jpg';
-import banner3 from '../../assets/img/elements/banner-3.jpg';
-import banner4 from '../../assets/img/elements/banner-4.jpg';
+import "../../assets/scss/SlideShow.scss";
+import "../home/HomePageBody.scss";
+import banner1 from "../../assets/img/elements/banner-1.jpg";
+import banner2 from "../../assets/img/elements/banner-2.jpg";
+import banner3 from "../../assets/img/elements/banner-3.jpg";
+import banner4 from "../../assets/img/elements/banner-4.jpg";
 export function HomePageBody() {
   const [slideIndex, setSlideIndex] = useState(0);
   const slides = [
-    { src: banner1},
-    { src: banner2},
-    { src: banner3},
-    { src: banner4}
+    { src: banner1 },
+    { src: banner2 },
+    { src: banner3 },
+    { src: banner4 },
   ];
 
   // Function to handle next/prev buttons
   const plusSlides = (n) => {
-    setSlideIndex((prevIndex) => (prevIndex + n + slides.length) % slides.length);
+    setSlideIndex(
+      (prevIndex) => (prevIndex + n + slides.length) % slides.length
+    );
   };
 
   useEffect(() => {
@@ -30,103 +32,113 @@ export function HomePageBody() {
   return (
     <div className="slider-area position-relative">
       <div className="slider-active">
-      <div className="slideshow-container section-padding40">
-      {slides.map((slide, index) => (
-        <div
-          key={index}
-          className="mySlides"
-          style={{ display: index === slideIndex ? 'block' : 'none' }}
-        >
-          {/* <div className="numbertext">{index + 1} / {slides.length}</div> */}
-          <img src={slide.src} alt={`Slide ${index + 1}`} style={{ width: '100%' }} />
-          <div className="text">{slide.caption}</div>
-        </div>
-      ))}
+        <div className="slideshow-container section-padding40">
+          {slides.map((slide, index) => (
+            <div
+              key={index}
+              className="mySlides"
+              style={{ display: index === slideIndex ? "block" : "none" }}
+            >
+              {/* <div className="numbertext">{index + 1} / {slides.length}</div> */}
+              <img
+                src={slide.src}
+                alt={`Slide ${index + 1}`}
+                style={{ width: "100%" }}
+              />
+              <div className="text">{slide.caption}</div>
+            </div>
+          ))}
 
-      {/* Next and previous buttons */}
-      {/* <a className="prev" onClick={() => plusSlides(-1)}>&#10094;</a>
+          {/* Next and previous buttons */}
+          {/* <a className="prev" onClick={() => plusSlides(-1)}>&#10094;</a>
       <a className="next" onClick={() => plusSlides(1)}>&#10095;</a> */}
-    </div>
+        </div>
 
         {/* Clients Area */}
-      <div id='sec-thumb' className="sec-thumb sec-featbn">
-        <section className="bn-feat-item">
-          <a href="#" className="img">
-          <img 
-          width="640" 
-          height="400" 
-          src="https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an.jpg" 
-          className="attachment-info_thumb size-info_thumb" 
-          alt="" 
-          srcSet="https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an.jpg 640w, 
+        <div id="sec-thumb" className="sec-thumb sec-featbn">
+          <section className="bn-feat-item">
+            <a href="#" className="img">
+              <img
+                width="640"
+                height="400"
+                src="https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an.jpg"
+                className="attachment-info_thumb size-info_thumb"
+                alt=""
+                srcSet="https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an.jpg 640w, 
           https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-300x188.jpg 300w, 
           https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-488x305.jpg 488w, 
           https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-216x135.jpg 216w, 
-          https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-600x375.jpg 600w" 
-          sizes="(max-width: 640px) 100vw, 640px" 
-           />
-          </a>
-          <div className="info left-txt">
-            <p className="sub-name">
-              <a href="#">BE OUTSTANDING AT THE WEDDING</a>
-            </p>
-            <h4 className="feat-name">
-              <a href="#">Wedding suits I wedding dress</a>
-            </h4>
-          </div>
-        </section>
-        <section className="bn-feat-item">
-        <a href="https://adongsilk.com/custom-suits/" className="img">
-          <img 
-          width="640" 
-          height="400" 
-          src="https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2.jpg" 
-          className="attachment-info_thumb size-info_thumb" 
-          alt="" 
-          srcSet="https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2.jpg 640w, 
+          https://adongsilk.com/wp-content/uploads/2024/03/wedding-suits-in-hoi-an-600x375.jpg 600w"
+                sizes="(max-width: 640px) 100vw, 640px"
+              />
+            </a>
+            <div className="info left-txt">
+              <p className="sub-name">
+                <a href="#">BE OUTSTANDING AT THE WEDDING</a>
+              </p>
+              <h4 className="feat-name">
+                <a href="#">Wedding suits I wedding dress</a>
+              </h4>
+            </div>
+          </section>
+          <section className="bn-feat-item">
+            <a href="https://adongsilk.com/custom-suits/" className="img">
+              <img
+                width="640"
+                height="400"
+                src="https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2.jpg"
+                className="attachment-info_thumb size-info_thumb"
+                alt=""
+                srcSet="https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2.jpg 640w, 
           https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-300x188.jpg 300w,
           https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-488x305.jpg 488w, 
           https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-216x135.jpg 216w, 
-          https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-600x375.jpg 600w" 
-          sizes="(max-width: 640px) 100vw, 640px" 
-            />
-          </a>
-          <div className="info center-txt">
-            <p className="sub-name">
-              <a href="https://adongsilk.com/custom-suits/">DESIGN YOUR NEW FAVORITE SUITS</a>
+          https://adongsilk.com/wp-content/uploads/2018/05/bnsmall-bg-2-600x375.jpg 600w"
+                sizes="(max-width: 640px) 100vw, 640px"
+              />
+            </a>
+            <div className="info center-txt">
+              <p className="sub-name">
+                <a href="https://adongsilk.com/custom-suits/">
+                  DESIGN YOUR NEW FAVORITE SUITS
+                </a>
               </p>
-                <h4 className="feat-name">
-                  <a href="https://adongsilk.com/custom-suits/">CUSTOM SUITS</a>
-                </h4>
+              <h4 className="feat-name">
+                <a href="https://adongsilk.com/custom-suits/">CUSTOM SUITS</a>
+              </h4>
             </div>
-        </section>
-        <section className="bn-feat-item">
-        <a href="https://adongsilk.com/custom-your-shirt/" className="img">
-  <img 
-    width="640" 
-    height="400" 
-    src="https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an.png" 
-    className="attachment-info_thumb size-info_thumb" 
-    alt="" 
-    srcSet="https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an.png 640w, 
+          </section>
+          <section className="bn-feat-item">
+            <a href="https://adongsilk.com/custom-your-shirt/" className="img">
+              <img
+                width="640"
+                height="400"
+                src="https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an.png"
+                className="attachment-info_thumb size-info_thumb"
+                alt=""
+                srcSet="https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an.png 640w, 
     https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-300x188.png 300w, 
     https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-488x305.png 488w, 
     https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-216x135.png 216w, 
-    https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-600x375.png 600w" 
-    sizes="(max-width: 640px) 100vw, 640px" 
-  />
-</a>
-<div className="info right-txt">
-  <p className="sub-name">
-    <a href="https://adongsilk.com/custom-your-shirt/">MADE TO MEASURE AND DESIGNED BY YOU</a>
-  </p>
-  <h4 className="feat-name">
-    <a href="https://adongsilk.com/custom-your-shirt/">CUSTOM SHIRTS</a>
-  </h4>
-</div>
-        </section>
+    https://adongsilk.com/wp-content/uploads/2024/03/tailored-shirts-in-hoi-an-600x375.png 600w"
+                sizes="(max-width: 640px) 100vw, 640px"
+              />
+            </a>
+            <div className="info right-txt">
+              <p className="sub-name">
+                <a href="https://adongsilk.com/custom-your-shirt/">
+                  MADE TO MEASURE AND DESIGNED BY YOU
+                </a>
+              </p>
+              <h4 className="feat-name">
+                <a href="https://adongsilk.com/custom-your-shirt/">
+                  CUSTOM SHIRTS
+                </a>
+              </h4>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
-  </div>
   );
 }

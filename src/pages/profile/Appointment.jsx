@@ -67,7 +67,7 @@ const Appointment = () => {
   return (
     <div className="profile-page">
       <ProfileNav />
-      <div className="appointment-container">
+      <div className="content-container">
         <h2>Your Appointments</h2>
         {isLoading ? (
           <div className="appointment-loading">Loading appointments...</div>

@@ -152,7 +152,7 @@ body {
 
 .received-button {
   margin-left: 8px;
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   border: none;
   padding: 5px 10px;
@@ -201,13 +201,33 @@ textarea {
     cursor: pointer;
 
     &:first-child {
-      background-color: #4CAF50;
+      background-color: #4caf50;
       color: white;
     }
 
     &:last-child {
       background-color: #f44336;
       color: white;
+    }
+  }
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+
+  .MuiPagination-root {
+    .MuiPaginationItem-root {
+      &.Mui-selected {
+        background-color: #228be6;
+        color: white;
+
+        &:hover {
+          background-color: #1c7ed6;
+        }
+      }
     }
   }
 }

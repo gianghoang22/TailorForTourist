@@ -217,10 +217,26 @@
             font-weight: bold;
           }
 
-          .label-1 { top: 20%; left: 50%; transform: translate(-50%, -50%); }
-          .label-2 { top: 50%; left: 75%; transform: translate(-50%, -50%); }
-          .label-3 { top: 75%; left: 50%; transform: translate(-50%, -50%); }
-          .label-4 { top: 50%; left: 25%; transform: translate(-50%, -50%); }
+          .label-1 {
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+          }
+          .label-2 {
+            top: 50%;
+            left: 75%;
+            transform: translate(-50%, -50%);
+          }
+          .label-3 {
+            top: 75%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+          }
+          .label-4 {
+            top: 50%;
+            left: 25%;
+            transform: translate(-50%, -50%);
+          }
         }
 
         .legend {
@@ -239,13 +255,57 @@
               margin-right: 0.5rem;
             }
 
-            .blue { background: #3b82f6; }
-            .yellow { background: #fbbf24; }
-            .red { background: #ef4444; }
-            .green { background: #10b981; }
+            .blue {
+              background: #3b82f6;
+            }
+            .yellow {
+              background: #fbbf24;
+            }
+            .red {
+              background: #ef4444;
+            }
+            .green {
+              background: #10b981;
+            }
           }
         }
       }
+    }
+  }
+
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+    padding: 1rem;
+
+    .MuiPagination-root {
+      .MuiPaginationItem-root {
+        &.Mui-selected {
+          background-color: #1976d2;
+          color: white;
+
+          &:hover {
+            background-color: #1565c0;
+          }
+        }
+      }
+    }
+  }
+
+  .filter-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    .MuiFormControl-root {
+      min-width: 150px;
     }
   }
 }
