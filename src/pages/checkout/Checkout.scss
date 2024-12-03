@@ -340,16 +340,52 @@ select {
   }
 
   &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .loading-spinner {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    i {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  &.loading {
+    position: relative;
+    cursor: not-allowed;
+    opacity: 0.7;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  &:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-    
-    &:hover {
-      background-color: #cccccc;
-      transform: none;
-      box-shadow: none;
-    }
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -421,20 +457,81 @@ select {
 
 .voucher-section {
   margin: 20px 0;
-  
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+
   h4 {
     margin-bottom: 10px;
+    color: #333;
   }
-  
-  select {
+
+  .voucher-select {
     width: 100%;
-    padding: 8px;
+    padding: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
+    font-size: 14px;
     
-    &:focus {
-      outline: none;
-      border-color: #666;
+    option:disabled {
+      color: #999;
+      font-style: italic;
     }
   }
+
+  .selected-voucher-info {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+
+    p {
+      margin: 5px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .voucher-description {
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    .remove-voucher-btn {
+      padding: 5px 10px;
+      background-color: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.8em;
+
+      &:hover {
+        background-color: #cc0000;
+      }
+    }
+  }
+}
+
+.loading-spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

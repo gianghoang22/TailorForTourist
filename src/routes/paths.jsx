@@ -26,6 +26,7 @@ import OrderList from "../pages/staff/staffManager/OrderList";
 import BookingList from "../pages/staff/staffManager/BookingList";
 import ShipmentList from "../pages/staff/staffManager/ShipmentList";
 import MeasureList from "../pages/staff/staffManager/MeasureList";
+import CreateAccount from "../pages/staff/staffManager/CreateAccount";
 
 import OrderHistory from "../pages/profile/OrderHistory";
 import Measurement from "../pages/profile/Measurement";
@@ -240,6 +241,10 @@ export const routes = [
       {
         path: "measurement",
         element: <MeasureList />,
+      },
+      {
+        path: "account",
+        element: <CreateAccount />,
       },
     ],
   },
