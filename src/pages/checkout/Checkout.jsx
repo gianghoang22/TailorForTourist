@@ -287,7 +287,6 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error('Lỗi tính phí vận chuyển:', error);
-      toast.error('Không thể tính phí vận chuyển');
     }
   };
 

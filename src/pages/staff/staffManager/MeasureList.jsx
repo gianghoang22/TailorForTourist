@@ -151,29 +151,31 @@ const MeasureList = () => {
     enableReinitialize: true,
   });
 
-  const handleEdit = (measurement) => {
-    setEditingMeasurement(measurement);
-    setShowCreateModal(true);
-    createFormik.setValues({
-      userId: measurement.userId,
-      weight: measurement.weight,
-      height: measurement.height,
-      neck: measurement.neck,
-      hip: measurement.hip,
-      waist: measurement.waist,
-      armhole: measurement.armhole,
-      biceps: measurement.biceps,
-      pantsWaist: measurement.pantsWaist,
-      crotch: measurement.crotch,
-      thigh: measurement.thigh,
-      pantsLength: measurement.pantsLength,
-      age: measurement.age,
-      chest: measurement.chest,
-      shoulder: measurement.shoulder,
-      sleeveLength: measurement.sleeveLength,
-      jacketLength: measurement.jacketLength
-    });
-    setSelectedUserId(measurement.userId);
+  const handleEdit = (userId) => {
+    const measurement = measurements[userId];
+    if (measurement) {
+      setEditingMeasurement(measurement);
+      setShowCreateModal(true);
+      createFormik.setValues({
+        userId: measurement.userId,
+        weight: measurement.weight,
+        height: measurement.height,
+        neck: measurement.neck,
+        hip: measurement.hip,
+        waist: measurement.waist,
+        armhole: measurement.armhole,
+        biceps: measurement.biceps,
+        pantsWaist: measurement.pantsWaist,
+        crotch: measurement.crotch,
+        thigh: measurement.thigh,
+        pantsLength: measurement.pantsLength,
+        age: measurement.age,
+        chest: measurement.chest,
+        shoulder: measurement.shoulder,
+        sleeveLength: measurement.sleeveLength,
+        jacketLength: measurement.jacketLength
+      });
+    }
   };
 
   const handleDelete = async (measurementId) => {
@@ -181,10 +183,9 @@ const MeasureList = () => {
       if (window.confirm('Are you sure you want to delete this measurement?')) {
         await axios.delete(`${API_URL}/${measurementId}`);
         
-        // Update measurements state by removing the deleted measurement
         setMeasurements(prevMeasurements => {
           const updatedMeasurements = { ...prevMeasurements };
-          // Find and remove the measurement with the matching measurementId
+          // Tìm và xóa measurement có measurementId tương ứng
           Object.keys(updatedMeasurements).forEach(userId => {
             if (updatedMeasurements[userId].measurementId === measurementId) {
               delete updatedMeasurements[userId];
@@ -201,9 +202,12 @@ const MeasureList = () => {
     }
   };
 
-  const handleViewDetail = (measurement) => {
-    setSelectedMeasurement(measurement);
-    setShowDetailModal(true);
+  const handleViewDetail = (userId) => {
+    const measurement = measurements[userId];
+    if (measurement) {
+      setSelectedMeasurement(measurement);
+      setShowDetailModal(true);
+    }
   };
 
   const closeDetailModal = () => {
@@ -279,44 +283,26 @@ const MeasureList = () => {
         let response;
         
         if (editingMeasurement) {
-          try {
-            // Delete old measurement
-            await axios.delete(`${API_URL}/${editingMeasurement.measurementId}`);
-            
-            // Create new measurement
-            response = await axios.post(API_URL, measurementData);
-            
-            // Update measurements state with the new data
-            setMeasurements(prevMeasurements => {
-              const updatedMeasurements = { ...prevMeasurements };
-              updatedMeasurements[selectedUserId] = response.data;
-              return updatedMeasurements;
-            });
-            
-            toast.success('Measurement updated successfully!');
-          } catch (error) {
-            console.error('Error updating measurement:', error);
-            toast.error('Failed to update measurement. Please try again.');
-            return;
-          }
+          // Update measurement
+          await axios.delete(`${API_URL}/${editingMeasurement.measurementId}`);
+          response = await axios.post(API_URL, measurementData);
+          
+          setMeasurements(prevMeasurements => ({
+            ...prevMeasurements,
+            [selectedUserId]: response.data
+          }));
+          
+          toast.success('Measurement updated successfully!');
         } else {
-          try {
-            // Create new measurement
-            response = await axios.post(API_URL, measurementData);
-            
-            // Update measurements state with the new data
-            setMeasurements(prevMeasurements => {
-              const updatedMeasurements = { ...prevMeasurements };
-              updatedMeasurements[selectedUserId] = response.data;
-              return updatedMeasurements;
-            });
-            
-            toast.success('Measurement created successfully!');
-          } catch (error) {
-            console.error('Error creating measurement:', error);
-            toast.error('Failed to create measurement. Please try again.');
-            return;
-          }
+          // Create new measurement
+          response = await axios.post(API_URL, measurementData);
+          
+          setMeasurements(prevMeasurements => ({
+            ...prevMeasurements,
+            [selectedUserId]: response.data
+          }));
+          
+          toast.success('Measurement created successfully!');
         }
 
         // Reset form and states
@@ -340,6 +326,38 @@ const MeasureList = () => {
   // Handle search input change
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+  };
+
+  // Cập nhật state measurements ngay sau khi thêm hoặc cập nhật
+  const handleAddOrUpdateMeasurement = async (measurementData) => {
+    try {
+      let response;
+      if (editingMeasurement) {
+        // Update measurement
+        response = await axios.put(`${API_URL}/${editingMeasurement.measurementId}`, measurementData);
+        setMeasurements(prevMeasurements => ({
+          ...prevMeasurements,
+          [measurementData.userId]: response.data
+        }));
+        toast.success('Measurement updated successfully!');
+      } else {
+        // Create new measurement
+        response = await axios.post(API_URL, measurementData);
+        setMeasurements(prevMeasurements => ({
+          ...prevMeasurements,
+          [measurementData.userId]: response.data
+        }));
+        toast.success('Measurement created successfully!');
+      }
+
+      // Reset form and states
+      setShowCreateModal(false);
+      createFormik.resetForm();
+      setEditingMeasurement(null);
+    } catch (error) {
+      console.error('Error saving measurement:', error);
+      toast.error('An unexpected error occurred. Please try again.');
+    }
   };
 
   return (
@@ -391,13 +409,13 @@ const MeasureList = () => {
                       <>
                         <button 
                           className="btn-view"
-                          onClick={() => handleViewDetail(measurement)}
+                          onClick={() => handleViewDetail(user.userId)}
                         >
                           View Details
                         </button>
                         <button 
                           className="btn-edit"
-                          onClick={() => handleEdit(measurement)}
+                          onClick={() => handleEdit(user.userId)}
                         >
                           Edit
                         </button>

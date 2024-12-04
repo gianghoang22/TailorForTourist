@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import {
   Button,
@@ -21,17 +21,18 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
-  FormControl,
-  InputLabel,
-  Select,
   MenuItem,
-  Grid,
+  InputAdornment,
 } from "@mui/material";
 import { Edit, Visibility, Add, Delete } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
-import UpdateOrderForm from './UpdateOrderForm';
+import { OrderChart } from "./DashboardCharts";
+import Autocomplete from '@mui/material/Autocomplete';
+import debounce from 'lodash/debounce';
+import Address from '../../../layouts/components/Address/Address';
 
 const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
+const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
 
 // Custom styling for components using `styled`
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -53,6 +54,23 @@ const api = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
 });
+
+const convertVNDToUSD = async (amountInVND) => {
+  try {
+    const response = await axios.get(`https://v6.exchangerate-api.com/v6/${EXCHANGE_API_KEY}/latest/VND`);
+    if (response.status === 200) {
+      const usdRate = response.data.conversion_rates.USD;
+      const amountInUSD = amountInVND * usdRate;
+      return Number(amountInUSD.toFixed(2));
+    }
+    throw new Error('Failed to fetch exchange rate');
+  } catch (error) {
+    console.error('Error converting VND to USD:', error);
+    // Fallback rate if API fails
+    const fallbackRate = 0.00004; // Approximately 1 USD = 25,000 VND
+    return Number((amountInVND * fallbackRate).toFixed(2));
+  }
+};
 
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
@@ -79,76 +97,159 @@ const OrderList = () => {
   });
   const [orderDetails, setOrderDetails] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [updateOrderId, setUpdateOrderId] = useState(null);
-  const [updateFormOpen, setUpdateFormOpen] = useState(false);
-  const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
-  const [fabrics, setFabrics] = useState([]);
-  const [linings, setLinings] = useState([]);
-  const [styleOptions, setStyleOptions] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [createOrderForm, setCreateOrderForm] = useState({
-    userID: 2,
-    storeId: 1,
-    voucherId: 16,
-    shipperPartnerId: 1,
+    storeId: 0,
+    voucherId: 0,
+    shipperPartnerId: 0,
     shippedDate: "",
     note: "",
-    paid: true,
+    paid: false,
+    guestName: "",
+    guestEmail: "",
+    guestAddress: "",
     deposit: 0,
     shippingFee: 0,
-    deliveryMethod: "Pick up",
+    deliveryMethod: "",
     products: [],
     customProducts: []
   });
+  const [selectedUser, setSelectedUser] = useState(null);
   const [stores, setStores] = useState([]);
   const [vouchers, setVouchers] = useState([]);
-  const [shippers, setShippers] = useState([]);
+  const [nearestStore, setNearestStore] = useState(null);
+  const [openProductDialog, setOpenProductDialog] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [productQuantity, setProductQuantity] = useState(1);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [fabrics, setFabrics] = useState([]);
+  const [linings, setLinings] = useState([]);
+  const [styleOptions, setStyleOptions] = useState([]);
+  const [openCustomDialog, setOpenCustomDialog] = useState(false);
+  const [selectedFabric, setSelectedFabric] = useState(null);
+  const [selectedLining, setSelectedLining] = useState(null);
+  const [selectedStyleOptions, setSelectedStyleOptions] = useState([]);
+  const [customQuantity, setCustomQuantity] = useState(1);
+  const [measurementId, setMeasurementId] = useState('');
+  const [measurements, setMeasurements] = useState([]);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
-
-  useEffect(() => {
-    const fetchRequiredData = async () => {
+    const fetchStores = async () => {
       try {
-        const [
-          usersRes,
-          storesRes, 
-          vouchersRes,
-          shippersRes,
-          productsRes,
-          fabricsRes,
-          liningsRes,
-          styleOptionsRes
-        ] = await Promise.all([
-          api.get("/User"),
-          api.get("/Store"),
-          api.get("/Voucher/valid"),
-          api.get("/ShipperPartner"),
-          api.get("/Product/products/custom-false"),
-          api.get("/Fabrics"),
-          api.get("/Linings"),
-          api.get("/StyleOption")
-        ]);
-
-        setUsers(usersRes.data);
-        setStores(storesRes.data);
-        setVouchers(vouchersRes.data);
-        setShippers(shippersRes.data);
-        setProducts(productsRes.data);
-        setFabrics(fabricsRes.data);
-        setLinings(liningsRes.data);
-        setStyleOptions(styleOptionsRes.data);
+        const response = await api.get('/Store');
+        console.log('Stores:', response.data);
+        setStores(response.data);
       } catch (error) {
-        console.error("Error fetching data:", error);
-        setSnackbarMessage("Failed to load required data");
-        setSnackbarSeverity("error");
+        console.error('Error fetching stores:', error);
+        setSnackbarMessage('Error loading stores');
+        setSnackbarSeverity('error');
         setSnackbarOpen(true);
       }
     };
 
-    fetchRequiredData();
+    fetchStores();
   }, []);
+
+  useEffect(() => {
+    const fetchVouchers = async () => {
+      try {
+        const response = await api.get('/Voucher/valid');
+        console.log('Valid Vouchers:', response.data);
+        setVouchers(response.data);
+      } catch (error) {
+        console.error('Error fetching vouchers:', error);
+        setSnackbarMessage('Error loading vouchers');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    };
+
+    fetchVouchers();
+  }, []);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await api.get('/Product/products/custom-false');
+        setProducts(response.data);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setSnackbarMessage('Error loading products');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    const fetchCustomData = async () => {
+      try {
+        // Fetch fabrics
+        const fabricsResponse = await api.get('/Fabrics');
+        setFabrics(fabricsResponse.data);
+
+        // Fetch linings
+        const liningsResponse = await api.get('/Linings');
+        setLinings(liningsResponse.data);
+
+        // Fetch style options
+        const styleOptionsResponse = await api.get('/StyleOption');
+        setStyleOptions(styleOptionsResponse.data);
+      } catch (error) {
+        console.error('Error fetching custom data:', error);
+        setSnackbarMessage('Error loading custom data');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    };
+
+    fetchCustomData();
+  }, []);
+
+  useEffect(() => {
+    const fetchMeasurements = async () => {
+      if (selectedUser?.userId) {
+        try {
+          const response = await api.get(`/Measurement?userId=${selectedUser.userId}`);
+          console.log('Selected User ID:', selectedUser.userId);
+          console.log('Measurements for user:', response.data);
+          setMeasurements(response.data);
+        } catch (error) {
+          console.error('Error fetching measurements:', error);
+          setSnackbarMessage('Error loading measurements');
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+        }
+      } else {
+        setMeasurements([]); // Reset measurements khi không có user được chọn
+      }
+    };
+
+    fetchMeasurements();
+  }, [selectedUser]);
+
+  const searchUsers = useCallback(
+    debounce(async (query) => {
+      if (!query) return;
+      try {
+        const response = await api.get(`/user?roleId=3&search=${query}`);
+        console.log('Search Results:', response.data);
+        const filteredUsers = response.data.filter(user => user.roleId === 3);
+        setUsers(filteredUsers);
+      } catch (error) {
+        console.error('Error searching users:', error);
+        setSnackbarMessage('Error searching users');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    }, 500),
+    []
+  );
 
   const fetchOrders = async () => {
     try {
@@ -176,15 +277,12 @@ const OrderList = () => {
       if (isEditMode) {
         await api.put(`/Orders/${formState.id}`, formState);
         setSnackbarMessage("Order updated successfully");
-      } else {
-        await api.post("/Orders", formState);
-        setSnackbarMessage("Order created successfully");
+        setSnackbarSeverity("success");
+        fetchOrders(); // Refresh the order list
       }
-      setSnackbarSeverity("success");
-      fetchOrders(); // Refresh the order list
     } catch (error) {
       console.error("Error submitting form:", error);
-      setSnackbarMessage(`Failed to ${isEditMode ? "update" : "create"} order`);
+      setSnackbarMessage("Failed to update order");
       setSnackbarSeverity("error");
     }
     setSnackbarOpen(true);
@@ -193,13 +291,12 @@ const OrderList = () => {
   const handleEdit = (order) => {
     setFormState(order);
     setIsEditMode(true);
-    setUpdateOrderId(order.id);
-    setUpdateFormOpen(true);
+    setOpen(true);
   };
 
   const handleViewDetails = async (orderId) => {
     try {
-      const response = await api.get(`/Orders/${orderId}`);
+      const response = await api.get(`/Orders/${orderId}/details`);
       setOrderDetails(response.data);
       setDetailsOpen(true);
     } catch (error) {
@@ -217,437 +314,234 @@ const OrderList = () => {
     setSnackbarOpen(false);
   };
 
-  const handleUpdateSuccess = () => {
-    fetchOrders(); // Refresh the orders list
-  };
-
-  const handleCreateOrderSubmit = async (event) => {
-    event.preventDefault();
+  const handleCreateOrder = async () => {
+    setIsCreatingOrder(true);
     try {
-      await api.post("/Orders/staffcreateorder", createOrderForm);
-      setSnackbarMessage("Order created successfully");
-      setSnackbarSeverity("success");
-      setOpen(false);
-      fetchOrders();
+      // Log form data trước khi format
+      console.log('Original Form Data:', createOrderForm);
+
+      const formattedShippedDate = createOrderForm.shippedDate 
+        ? new Date(createOrderForm.shippedDate).toISOString().split('T')[0]
+        : null;
+      console.log('Formatted Shipped Date:', formattedShippedDate);
+
+      // Log products trước khi format
+      console.log('Original Products:', createOrderForm.products);
+
+      const formattedProducts = createOrderForm.products.map(product => {
+        const formatted = {
+          productID: product.productID,
+          quantity: product.quantity,
+          price: product.price || 0
+        };
+        console.log('Formatted Product:', formatted);
+        return formatted;
+      });
+
+      const orderPayload = {
+        userId: selectedUser?.userId || null,
+        storeId: createOrderForm.storeId,
+        voucherId: createOrderForm.voucherId || null,
+        shipperPartnerId: null,
+        shippedDate: formattedShippedDate,
+        note: createOrderForm.note || '',
+        paid: createOrderForm.paid || false,
+        guestName: createOrderForm.guestName,
+        guestEmail: createOrderForm.guestEmail,
+        guestAddress: createOrderForm.guestAddress,
+        deposit: createOrderForm.deposit || 0,
+        shippingFee: createOrderForm.shippingFee || 0,
+        deliveryMethod: createOrderForm.deliveryMethod,
+        products: formattedProducts,
+        customProducts: createOrderForm.customProducts || []
+      };
+
+      // Log payload cuối cùng
+      console.log('Final API Request Payload:', orderPayload);
+      console.log('Selected User:', selectedUser);
+      console.log('Products Array:', formattedProducts);
+      console.log('Custom Products Array:', orderPayload.customProducts);
+
+      try {
+        const response = await api.post('/Orders/staffcreateorder', orderPayload);
+        console.log('API Response Success:', response.data);
+        setSnackbarMessage('Order created successfully');
+        setSnackbarSeverity('success');
+        setOpen(false);
+        fetchOrders();
+      } catch (error) {
+        console.log('API Error Response:', error.response);
+        console.log('API Error Data:', error.response?.data);
+        console.log('API Error Status:', error.response?.status);
+        console.log('API Error Message:', error.response?.data?.message);
+        console.log('API Error Details:', error.response?.data?.errors);
+        
+        // Log full error object
+        console.error('Full Error Object:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          headers: error.response?.headers,
+          config: error.response?.config
+        });
+
+        setSnackbarMessage(
+          error.response?.data?.message || 
+          'Failed to create order'
+        );
+        setSnackbarSeverity('error');
+      }
     } catch (error) {
-      console.error("Error creating order:", error);
-      setSnackbarMessage("Failed to create order");
-      setSnackbarSeverity("error");
+      console.error('Error in form processing:', error);
+      setSnackbarMessage('Error processing form data');
+      setSnackbarSeverity('error');
+    } finally {
+      setIsCreatingOrder(false);
+      setSnackbarOpen(true);
     }
-    setSnackbarOpen(true);
   };
 
-  const CreateOrderDialog = () => (
-    <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
-      <DialogTitle>Create New Order</DialogTitle>
-      <DialogContent>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          {/* Basic Order Information */}
-          <Grid item xs={6}>
-            <FormControl fullWidth>
-              <InputLabel>User</InputLabel>
-              <Select
-                value={createOrderForm.userID}
-                onChange={(e) => setCreateOrderForm({
-                  ...createOrderForm,
-                  userID: e.target.value
-                })}
-              >
-                {users.map((user) => (
-                  <MenuItem key={user.id} value={user.id}>
-                    {user.userName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+  const handleCreateFormChange = (field, value) => {
+    setCreateOrderForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
-          <Grid item xs={6}>
-            <FormControl fullWidth>
-              <InputLabel>Store</InputLabel>
-              <Select
-                value={createOrderForm.storeId}
-                onChange={(e) => setCreateOrderForm({
-                  ...createOrderForm,
-                  storeId: e.target.value
-                })}
-              >
-                {stores.map((store) => (
-                  <MenuItem key={store.id} value={store.id}>
-                    {store.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+  const findNearestStore = (address) => {
+    const nearest = stores.reduce((prev, curr) => {
+      return prev;
+    }, stores[0]);
+    setNearestStore(nearest);
+  };
 
-          <Grid item xs={6}>
-            <FormControl fullWidth>
-              <InputLabel>Voucher</InputLabel>
-              <Select
-                value={createOrderForm.voucherId}
-                onChange={(e) => setCreateOrderForm({
-                  ...createOrderForm,
-                  voucherId: e.target.value
-                })}
-              >
-                {vouchers.map((voucher) => (
-                  <MenuItem key={voucher.id} value={voucher.id}>
-                    {voucher.code} - {voucher.discountAmount}%
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+  const calculateShippingFee = async (addressData) => {
+    console.log('Calculating Shipping Fee with data:', addressData);
+    
+    if (!addressData?.wardCode || !addressData?.districtId || !nearestStore) {
+      console.log('Missing required data:', {
+        wardCode: addressData?.wardCode,
+        districtId: addressData?.districtId,
+        nearestStore: nearestStore
+      });
+      setShippingFee(0);
+      return;
+    }
 
-          <Grid item xs={6}>
-            <FormControl fullWidth>
-              <InputLabel>Shipper Partner</InputLabel>
-              <Select
-                value={createOrderForm.shipperPartnerId}
-                onChange={(e) => setCreateOrderForm({
-                  ...createOrderForm,
-                  shipperPartnerId: e.target.value
-                })}
-              >
-                {shippers.map((shipper) => (
-                  <MenuItem key={shipper.id} value={shipper.id}>
-                    {shipper.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+    try {
+      const shippingPayload = {
+        serviceId: 0,
+        insuranceValue: 0,
+        coupon: "",
+        toWardCode: addressData.wardCode,
+        toDistrictId: parseInt(addressData.districtId),
+        fromDistrictId: nearestStore.districtID,
+        weight: 0,
+        length: 0,
+        width: 0,
+        height: 0,
+        shopCode: nearestStore.storeCode
+      };
 
-          {/* Guest Information */}
-          <Grid item xs={4}>
-            <TextField
-              fullWidth
-              label="Guest Name"
-              value={createOrderForm.guestName}
-              onChange={(e) => setCreateOrderForm({
-                ...createOrderForm,
-                guestName: e.target.value
-              })}
-            />
-          </Grid>
+      console.log('Shipping Fee Payload:', shippingPayload);
 
-          <Grid item xs={4}>
-            <TextField
-              fullWidth
-              label="Guest Email"
-              value={createOrderForm.guestEmail}
-              onChange={(e) => setCreateOrderForm({
-                ...createOrderForm,
-                guestEmail: e.target.value
-              })}
-            />
-          </Grid>
+      const response = await axios.post(
+        'https://localhost:7194/api/Shipping/calculate-fee',
+        shippingPayload
+      );
 
-          <Grid item xs={4}>
-            <TextField
-              fullWidth
-              label="Guest Address"
-              value={createOrderForm.guestAddress}
-              onChange={(e) => setCreateOrderForm({
-                ...createOrderForm,
-                guestAddress: e.target.value
-              })}
-            />
-          </Grid>
+      if (response.data) {
+        console.log('Shipping Fee Response (VND):', response.data.total);
+        const shippingFeeVND = response.data.total || 0;
+        const shippingFeeUSD = await convertVNDToUSD(shippingFeeVND);
+        console.log('Shipping Fee (USD):', shippingFeeUSD);
+        setCreateOrderForm(prev => ({
+          ...prev,
+          shippingFee: shippingFeeUSD
+        }));
+      }
+    } catch (error) {
+      console.error('Error calculating shipping fee:', error);
+      setSnackbarMessage('Error calculating shipping fee');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  };
 
-          {/* Order Details */}
-          <Grid item xs={4}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Deposit"
-              value={createOrderForm.deposit}
-              onChange={(e) => setCreateOrderForm({
-                ...createOrderForm,
-                deposit: parseFloat(e.target.value)
-              })}
-            />
-          </Grid>
+  useEffect(() => {
+    if (createOrderForm.deliveryMethod === 'Delivery' && 
+        createOrderForm.guestAddress && 
+        nearestStore) {
+      const addressData = {
+        wardCode: document.querySelector('input[name="wardCode"]')?.value,
+        districtId: document.querySelector('input[name="districtId"]')?.value,
+      };
+      if (addressData.wardCode && addressData.districtId) {
+        calculateShippingFee(addressData);
+      }
+    }
+  }, [createOrderForm.deliveryMethod, createOrderForm.guestAddress, nearestStore]);
 
-          <Grid item xs={4}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Shipping Fee"
-              value={createOrderForm.shippingFee}
-              onChange={(e) => setCreateOrderForm({
-                ...createOrderForm,
-                shippingFee: parseFloat(e.target.value)
-              })}
-            />
-          </Grid>
+  const handleAddProduct = () => {
+    if (selectedProduct && productQuantity > 0) {
+      // Log selected product để kiểm tra
+      console.log('Selected Product:', selectedProduct);
+      
+      const newProduct = {
+        productID: selectedProduct.productID,
+        quantity: productQuantity,
+        price: selectedProduct.price || 0
+      };
+      
+      // Log new product để kiểm tra
+      console.log('New Product:', newProduct);
+      
+      setSelectedProducts([...selectedProducts, newProduct]);
+      setCreateOrderForm(prev => ({
+        ...prev,
+        products: [...prev.products, newProduct]
+      }));
+      
+      // Reset form
+      setSelectedProduct(null);
+      setProductQuantity(1);
+      setOpenProductDialog(false);
+    }
+  };
 
-          <Grid item xs={4}>
-            <FormControl fullWidth>
-              <InputLabel>Delivery Method</InputLabel>
-              <Select
-                value={createOrderForm.deliveryMethod}
-                onChange={(e) => setCreateOrderForm({
-                  ...createOrderForm,
-                  deliveryMethod: e.target.value
-                })}
-              >
-                <MenuItem value="Pick up">Pick up</MenuItem>
-                <MenuItem value="Delivery">Delivery</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+  const handleAddCustomProduct = () => {
+    if (!selectedFabric || !selectedLining || selectedStyleOptions.length === 0 || !measurementId || customQuantity <= 0) {
+      setSnackbarMessage('Please fill all required fields');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+      return;
+    }
 
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              label="Note"
-              value={createOrderForm.note}
-              onChange={(e) => setCreateOrderForm({
-                ...createOrderForm,
-                note: e.target.value
-              })}
-            />
-          </Grid>
+    const newCustomProduct = {
+      productCode: `CUSTOM-${Date.now()}`,
+      categoryID: 5,
+      fabricID: selectedFabric.fabricID,
+      liningID: selectedLining.liningId,
+      measurementID: parseInt(measurementId),
+      quantity: customQuantity,
+      pickedStyleOptions: selectedStyleOptions.map(option => ({
+        styleOptionID: option.styleOptionId
+      }))
+    };
 
-          {/* Regular Products Section */}
-          <Grid item xs={12}>
-            <Typography variant="h6">Products</Typography>
-            <Button
-              variant="outlined"
-              onClick={() => setCreateOrderForm({
-                ...createOrderForm,
-                products: [...createOrderForm.products, {
-                  productID: 0,
-                  productCode: "",
-                  measurementID: 0,
-                  categoryID: 0,
-                  fabricID: 0,
-                  liningID: 0,
-                  size: "",
-                  quantity: 1,
-                  isCustom: false,
-                  imgURL: "",
-                  price: 0
-                }]
-              })}
-            >
-              Add Product
-            </Button>
+    setCreateOrderForm(prev => ({
+      ...prev,
+      customProducts: [...prev.customProducts, newCustomProduct]
+    }));
 
-            {createOrderForm.products.map((product, index) => (
-              <Grid container spacing={2} key={index} sx={{ mt: 1 }}>
-                <Grid item xs={3}>
-                  <FormControl fullWidth>
-                    <InputLabel>Product</InputLabel>
-                    <Select
-                      value={product.productID}
-                      onChange={(e) => {
-                        const newProducts = [...createOrderForm.products];
-                        const selectedProduct = products.find(p => p.id === e.target.value);
-                        newProducts[index] = {
-                          ...newProducts[index],
-                          productID: e.target.value,
-                          productCode: selectedProduct?.code || '',
-                          price: selectedProduct?.price || 0
-                        };
-                        setCreateOrderForm({
-                          ...createOrderForm,
-                          products: newProducts
-                        });
-                      }}
-                    >
-                      {products.map((p) => (
-                        <MenuItem key={p.id} value={p.id}>
-                          {p.name} - ${p.price}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={3}>
-                  <TextField
-                    fullWidth
-                    label="Size"
-                    value={product.size}
-                    onChange={(e) => {
-                      const newProducts = [...createOrderForm.products];
-                      newProducts[index].size = e.target.value;
-                      setCreateOrderForm({
-                        ...createOrderForm,
-                        products: newProducts
-                      });
-                    }}
-                  />
-                </Grid>
-
-                <Grid item xs={3}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Quantity"
-                    value={product.quantity}
-                    onChange={(e) => {
-                      const newProducts = [...createOrderForm.products];
-                      newProducts[index].quantity = parseInt(e.target.value);
-                      setCreateOrderForm({
-                        ...createOrderForm,
-                        products: newProducts
-                      });
-                    }}
-                  />
-                </Grid>
-
-                <Grid item xs={2}>
-                  <TextField
-                    fullWidth
-                    disabled
-                    label="Price"
-                    value={`$${product.price}`}
-                  />
-                </Grid>
-
-                <Grid item xs={1}>
-                  <IconButton
-                    onClick={() => {
-                      const newProducts = createOrderForm.products.filter((_, i) => i !== index);
-                      setCreateOrderForm({
-                        ...createOrderForm,
-                        products: newProducts
-                      });
-                    }}
-                  >
-                    <Delete />
-                  </IconButton>
-                </Grid>
-              </Grid>
-            ))}
-          </Grid>
-
-          {/* Custom Products Section */}
-          <Grid item xs={12}>
-            <Typography variant="h6">Custom Products</Typography>
-            <Button
-              variant="outlined"
-              onClick={() => setCreateOrderForm({
-                ...createOrderForm,
-                customProducts: [...createOrderForm.customProducts, {
-                  categoryID: 5,
-                  fabricID: "",
-                  liningID: "",
-                  measurementID: "",
-                  quantity: 1,
-                  pickedStyleOptions: []
-                }]
-              })}
-            >
-              Add Custom Product
-            </Button>
-
-            {createOrderForm.customProducts.map((customProduct, index) => (
-              <Grid container spacing={2} key={index} sx={{ mt: 1 }}>
-                <Grid item xs={3}>
-                  <FormControl fullWidth>
-                    <InputLabel>Fabric</InputLabel>
-                    <Select
-                      value={customProduct.fabricID}
-                      onChange={(e) => {
-                        const newCustomProducts = [...createOrderForm.customProducts];
-                        newCustomProducts[index].fabricID = e.target.value;
-                        setCreateOrderForm({
-                          ...createOrderForm,
-                          customProducts: newCustomProducts
-                        });
-                      }}
-                    >
-                      {fabrics.map((fabric) => (
-                        <MenuItem key={fabric.id} value={fabric.id}>
-                          {fabric.name} - ${fabric.price}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={3}>
-                  <FormControl fullWidth>
-                    <InputLabel>Lining</InputLabel>
-                    <Select
-                      value={customProduct.liningID}
-                      onChange={(e) => {
-                        const newCustomProducts = [...createOrderForm.customProducts];
-                        newCustomProducts[index].liningID = e.target.value;
-                        setCreateOrderForm({
-                          ...createOrderForm,
-                          customProducts: newCustomProducts
-                        });
-                      }}
-                    >
-                      {linings.map((lining) => (
-                        <MenuItem key={lining.id} value={lining.id}>
-                          {lining.name} - ${lining.price}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={5}>
-                  <FormControl fullWidth>
-                    <InputLabel>Style Options</InputLabel>
-                    <Select
-                      multiple
-                      value={customProduct.pickedStyleOptions.map(option => option.styleOptionID)}
-                      onChange={(e) => {
-                        const newCustomProducts = [...createOrderForm.customProducts];
-                        newCustomProducts[index].pickedStyleOptions = e.target.value.map(id => ({
-                          styleOptionID: id
-                        }));
-                        setCreateOrderForm({
-                          ...createOrderForm,
-                          customProducts: newCustomProducts
-                        });
-                      }}
-                    >
-                      {styleOptions.map((style) => (
-                        <MenuItem key={style.id} value={style.id}>
-                          {style.name} - ${style.price}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={1}>
-                  <IconButton
-                    onClick={() => {
-                      const newCustomProducts = createOrderForm.customProducts.filter((_, i) => i !== index);
-                      setCreateOrderForm({
-                        ...createOrderForm,
-                        customProducts: newCustomProducts
-                      });
-                    }}
-                  >
-                    <Delete />
-                  </IconButton>
-                </Grid>
-              </Grid>
-            ))}
-          </Grid>
-        </Grid>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setOpen(false)}>Cancel</Button>
-        <Button onClick={handleCreateOrderSubmit} variant="contained" color="primary">
-          Create Order
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
+    // Reset form
+    setSelectedFabric(null);
+    setSelectedLining(null);
+    setSelectedStyleOptions([]);
+    setCustomQuantity(1);
+    setMeasurementId('');
+    setOpenCustomDialog(false);
+  };
 
   if (loading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
@@ -657,6 +551,14 @@ const OrderList = () => {
       <Typography variant="h4" sx={{ mb: 2 }}>
         Order Management
       </Typography>
+
+      {/* Add Chart Section */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Orders Overview
+        </Typography>
+        {loading ? <CircularProgress /> : <OrderChart data={orders} />}
+      </Paper>
 
       <StyledButton
         variant="contained"
@@ -684,16 +586,6 @@ const OrderList = () => {
         Add Order
       </StyledButton>
 
-      <Button
-        onClick={() => {
-          console.log("Test button clicked");
-          setUpdateOrderId(1); // Test với mt ID cụ thể
-          setUpdateFormOpen(true);
-        }}
-      >
-        Test Update Form
-      </Button>
-
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
           <TableHead>
@@ -710,10 +602,10 @@ const OrderList = () => {
           </TableHead>
           <TableBody>
             {orders.map((order) => (
-              <TableRow key={order.id} hover>
-                <TableCell>{order.id}</TableCell>
-                <TableCell>{order.customerName}</TableCell>
-                <TableCell>{order.status}</TableCell>
+              <TableRow key={order.orderId} hover>
+                <TableCell>{order.orderId}</TableCell>
+                <TableCell>{order.guestName}</TableCell>
+                <TableCell>{order.status || 'Pending'}</TableCell>
                 <TableCell>{order.paymentId}</TableCell>
                 <TableCell>
                   {new Date(order.orderDate).toLocaleDateString()}
@@ -735,7 +627,7 @@ const OrderList = () => {
                   </Tooltip>
                   <Tooltip title="View Details">
                     <IconButton
-                      onClick={() => handleViewDetails(order.id)}
+                      onClick={() => handleViewDetails(order.orderId)}
                       sx={{ color: "primary.main" }}
                     >
                       <Visibility />
@@ -748,68 +640,7 @@ const OrderList = () => {
         </Table>
       </TableContainer>
 
-      {/* Dialog for Add/Edit Order Form */}
-      <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>{isEditMode ? "Edit Order" : "Add Order"}</DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            Please fill out the form below to {isEditMode ? "edit" : "add"} an
-            order.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Customer Name"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={formState.customerName}
-            onChange={(e) =>
-              setFormState({ ...formState, customerName: e.target.value })
-            }
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            label="Order Status"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={formState.status}
-            onChange={(e) =>
-              setFormState({ ...formState, status: e.target.value })
-            }
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            label="Total Price"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={formState.totalPrice}
-            onChange={(e) =>
-              setFormState({
-                ...formState,
-                totalPrice: parseFloat(e.target.value),
-              })
-            }
-          />
-          {/* Add other fields as needed */}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)} color="secondary">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleFormSubmit}
-            variant="contained"
-            color="primary"
-          >
-            {isEditMode ? "Update" : "Create"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      
 
       {/* Dialog for Order Details */}
       <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)}>
@@ -818,16 +649,16 @@ const OrderList = () => {
           {orderDetails ? (
             <div>
               <Typography>
-                <strong>Order ID:</strong> {orderDetails.id}
+                <strong>Order ID:</strong> {orderDetails.orderId}
               </Typography>
               <Typography>
-                <strong>Customer:</strong> {orderDetails.customerName}
+                <strong>Customer:</strong> {orderDetails.guestName}
               </Typography>
               <Typography>
-                <strong>Status:</strong> {orderDetails.status}
+                <strong>Status:</strong> {orderDetails.status || 'Pending'}
               </Typography>
               <Typography>
-                <strong>Payment ID:</strong> {orderDetails.paymentId}
+                <strong>Payment ID:</strong> {orderDetails.paymentId || 'N/A'}
               </Typography>
               <Typography>
                 <strong>Order Date:</strong>{" "}
@@ -840,13 +671,23 @@ const OrderList = () => {
                   : "Pending"}
               </Typography>
               <Typography>
-                <strong>Total Price:</strong> $
-                {orderDetails.totalPrice.toFixed(2)}
-                console.log(orders); // or the relevant data source
+                <strong>Total Price:</strong> ${orderDetails.totalPrice.toFixed(2)}
               </Typography>
               <Typography>
                 <strong>Note:</strong> {orderDetails.note || "N/A"}
               </Typography>
+              <Typography>
+                <strong>Order Details:</strong>
+              </Typography>
+              <ul>
+                {orderDetails.orderDetails.map((detail, index) => (
+                  <li key={index}>
+                    <Typography>
+                      Product ID: {detail.productId}, Quantity: {detail.quantity}, Price: ${detail.price}
+                    </Typography>
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : (
             <CircularProgress />
@@ -874,12 +715,676 @@ const OrderList = () => {
         </Alert>
       </Snackbar>
 
-      <UpdateOrderForm
-        orderId={updateOrderId}
-        open={updateFormOpen}
-        onClose={() => setUpdateFormOpen(false)}
-        onUpdateSuccess={handleUpdateSuccess}
-      />
+      {/* Create Order Dialog */}
+      <Dialog open={open && !isEditMode} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Create New Order</DialogTitle>
+        <DialogContent>
+          {isCreatingOrder ? (
+            <CircularProgress />
+          ) : (
+            <>
+              <Autocomplete
+                options={users}
+                getOptionLabel={(option) => 
+                  option ? `${option.name || ''} (${option.email || ''})` : ''
+                }
+                onInputChange={(_, newValue) => {
+                  console.log('Searching for:', newValue);
+                  searchUsers(newValue);
+                }}
+                onChange={(_, newValue) => {
+                  console.log('Selected user:', newValue);
+                  setSelectedUser(newValue);
+                  if (newValue) {
+                    setCreateOrderForm(prev => ({
+                      ...prev,
+                      guestName: newValue.name || '',
+                      guestEmail: newValue.email || '',
+                      guestAddress: newValue.address || ''
+                    }));
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Search Customers"
+                    margin="normal"
+                    variant="outlined"
+                    fullWidth
+                    helperText="Search for customers by name or email"
+                  />
+                )}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <Typography variant="body1">{option.name}</Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        {option.email}
+                      </Typography>
+                    </div>
+                  </li>
+                )}
+                loading={users.length === 0}
+                loadingText="Searching..."
+                noOptionsText="No customers found"
+                clearOnBlur={false}
+                clearOnEscape
+              />
+              
+              <TextField
+                label="Guest Name"
+                value={createOrderForm.guestName}
+                onChange={(e) => handleCreateFormChange('guestName', e.target.value)}
+                disabled={selectedUser !== null}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Guest Email"
+                value={createOrderForm.guestEmail}
+                onChange={(e) => handleCreateFormChange('guestEmail', e.target.value)}
+                disabled={selectedUser !== null}
+                fullWidth
+                margin="normal"
+              />
+              {/* <TextField
+                label="Guest Address"
+                value={createOrderForm.guestAddress}
+                onChange={(e) => handleCreateFormChange('guestAddress', e.target.value)}
+                fullWidth
+                margin="normal"
+              /> */}
+              {/* <Autocomplete
+                options={stores}
+                getOptionLabel={(option) => option.name || ''}
+                value={stores.find(store => store.storeId === createOrderForm.storeId) || null}
+                onChange={(_, newValue) => {
+                  handleCreateFormChange('storeId', newValue ? newValue.storeId : 0);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Select Store"
+                    margin="normal"
+                    variant="outlined"
+                    fullWidth
+                    helperText="Select a store from the list"
+                  />
+                )}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <Typography variant="body1">{option.name}</Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        {option.address}
+                      </Typography>
+                    </div>
+                  </li>
+                )}
+                isOptionEqualToValue={(option, value) => option.storeId === value.storeId}
+                loading={stores.length === 0}
+                loadingText="Loading stores..."
+                noOptionsText="No stores found"
+              /> */}
+              <Autocomplete
+                options={vouchers}
+                getOptionLabel={(option) => option.voucherCode || ''}
+                value={vouchers.find(voucher => voucher.voucherId === createOrderForm.voucherId) || null}
+                onChange={(_, newValue) => {
+                  setCreateOrderForm(prev => ({
+                    ...prev,
+                    voucherId: newValue ? newValue.voucherId : null
+                  }));
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Select Voucher"
+                    margin="normal"
+                    variant="outlined"
+                    fullWidth
+                    helperText="Select a valid voucher"
+                  />
+                )}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <Typography variant="body1">{option.voucherCode}</Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        Discount: {option.discountAmount || option.discountPercent}
+                        {option.discountPercent ? '%' : '$'}
+                      </Typography>
+                    </div>
+                  </li>
+                )}
+                isOptionEqualToValue={(option, value) => option.voucherId === value.voucherId}
+                loading={vouchers.length === 0}
+                loadingText="Loading vouchers..."
+                noOptionsText="No valid vouchers found"
+              />
+              <TextField
+                label="Shipper Partner ID"
+                type="number"
+                value={createOrderForm.shipperPartnerId || ''}
+                onChange={(e) => handleCreateFormChange('shipperPartnerId', e.target.value ? parseInt(e.target.value) : null)}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                select
+                label="Delivery Method"
+                value={createOrderForm.deliveryMethod}
+                onChange={(e) => {
+                  const method = e.target.value;
+                  setCreateOrderForm(prev => ({
+                    ...prev,
+                    deliveryMethod: method,
+                    shippedDate: method === 'Pick up' ? '' : prev.shippedDate,
+                    shippingFee: method === 'Pick up' ? 0 : prev.shippingFee
+                  }));
+                }}
+                fullWidth
+                margin="normal"
+              >
+                <MenuItem value="Pick up">Pick up</MenuItem>
+                <MenuItem value="Delivery">Delivery</MenuItem>
+              </TextField>
+
+              {createOrderForm.deliveryMethod === 'Delivery' && (
+                <>
+                  <Autocomplete
+                    options={stores}
+                    getOptionLabel={(option) => option.name || ''}
+                    value={nearestStore || null}
+                    onChange={(_, newValue) => {
+                      setNearestStore(newValue);
+                      setCreateOrderForm(prev => ({
+                        ...prev,
+                        storeId: newValue ? newValue.storeId : 0
+                      }));
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Nearest Store"
+                        margin="normal"
+                        variant="outlined"
+                        fullWidth
+                        helperText="Select the nearest store"
+                      />
+                    )}
+                    renderOption={(props, option) => (
+                      <li {...props}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <Typography variant="body1">{option.name}</Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            {option.address}
+                          </Typography>
+                        </div>
+                      </li>
+                    )}
+                    isOptionEqualToValue={(option, value) => option.storeId === value.storeId}
+                    loading={stores.length === 0}
+                    loadingText="Loading stores..."
+                    noOptionsText="No stores found"
+                  />
+
+                  {nearestStore && (
+                    <Paper sx={{ p: 2, mt: 2, mb: 2, bgcolor: 'background.default' }}>
+                      <Typography variant="subtitle1" gutterBottom>
+                        Selected Store:
+                      </Typography>
+                      <Typography><strong>{nearestStore.name}</strong></Typography>
+                      <Typography>{nearestStore.address}</Typography>
+                    </Paper>
+                  )}
+
+                  <Address
+                    onAddressChange={async (address) => {
+                      console.log('Address changed:', address);
+                      setCreateOrderForm(prev => ({
+                        ...prev,
+                        guestAddress: address.fullAddress
+                      }));
+                      
+                      findNearestStore(address);
+
+                      if (address.wardCode && address.districtId && nearestStore) {
+                        await calculateShippingFee({
+                          wardCode: address.wardCode,
+                          districtId: address.districtId
+                        });
+                      }
+                    }}
+                  />
+                  
+                  <TextField
+                    label="Shipping Fee"
+                    type="number"
+                    value={createOrderForm.shippingFee || 0}
+                    disabled
+                    fullWidth
+                    margin="normal"
+                    InputProps={{
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                    }}
+                  />
+                </>
+              )}
+
+              {createOrderForm.deliveryMethod === 'Pick up' && (
+                <Autocomplete
+                  options={stores}
+                  getOptionLabel={(option) => option.name || ''}
+                  value={nearestStore || null}
+                  onChange={(_, newValue) => {
+                    setNearestStore(newValue);
+                    setCreateOrderForm(prev => ({
+                      ...prev,
+                      storeId: newValue ? newValue.storeId : 0
+                    }));
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Nearest Store"
+                      margin="normal"
+                      variant="outlined"
+                      fullWidth
+                      helperText="Select the nearest store"
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <li {...props}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant="body1">{option.name}</Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {option.address}
+                        </Typography>
+                      </div>
+                    </li>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.storeId === value.storeId}
+                  loading={stores.length === 0}
+                  loadingText="Loading stores..."
+                  noOptionsText="No stores found"
+                />
+              )}
+              <TextField
+                label="Shipped Date"
+                type="date"
+                value={createOrderForm.shippedDate}
+                onChange={(e) => handleCreateFormChange('shippedDate', e.target.value)}
+                fullWidth
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                label="Note"
+                value={createOrderForm.note}
+                onChange={(e) => handleCreateFormChange('note', e.target.value)}
+                fullWidth
+                margin="normal"
+                multiline
+                rows={2}
+              />
+              <TextField
+                label="Deposit"
+                type="number"
+                value={createOrderForm.deposit}
+                onChange={(e) => handleCreateFormChange('deposit', parseFloat(e.target.value))}
+                fullWidth
+                margin="normal"
+              />
+              
+              
+              {/* You might want to add more complex inputs for products and customProducts arrays */}
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setOpenProductDialog(true)}
+                startIcon={<Add />}
+                sx={{ mt: 2, mb: 2 }}
+              >
+                Add Products
+              </Button>
+
+              {selectedProducts.length > 0 && (
+                <TableContainer component={Paper} sx={{ mt: 2, mb: 2 }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Product Code</TableCell>
+                        <TableCell>Quantity</TableCell>
+                        <TableCell>Price</TableCell>
+                        <TableCell>Total</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {selectedProducts.map((product, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{product.productCode}</TableCell>
+                          <TableCell>{product.quantity}</TableCell>
+                          <TableCell>${product.price}</TableCell>
+                          <TableCell>${(product.price * product.quantity).toFixed(2)}</TableCell>
+                          <TableCell>
+                            <IconButton
+                              onClick={() => {
+                                const newProducts = selectedProducts.filter((_, i) => i !== index);
+                                setSelectedProducts(newProducts);
+                                setCreateOrderForm(prev => ({
+                                  ...prev,
+                                  products: newProducts
+                                }));
+                              }}
+                            >
+                              <Delete />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+
+              {/* Dialog để thêm sản phẩm */}
+              <Dialog 
+                open={openProductDialog} 
+                onClose={() => setOpenProductDialog(false)}
+                maxWidth="md"
+                fullWidth
+              >
+                <DialogTitle>Add Product</DialogTitle>
+                <DialogContent>
+                  <Autocomplete
+                    options={products}
+                    getOptionLabel={(option) => 
+                      option ? `${option.productCode} - $${option.price}` : ''
+                    }
+                    value={selectedProduct}
+                    onChange={(_, newValue) => {
+                      console.log('Selected Product:', newValue);
+                      setSelectedProduct(newValue);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Product"
+                        margin="normal"
+                        fullWidth
+                      />
+                    )}
+                    renderOption={(props, option) => (
+                      <li {...props}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <Typography variant="body1">
+                            {option.productCode} - ${option.price}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            {option.productName}
+                          </Typography>
+                        </div>
+                      </li>
+                    )}
+                    isOptionEqualToValue={(option, value) => 
+                      option.productID === value?.productID
+                    }
+                  />
+                  
+                  <TextField
+                    label="Quantity"
+                    type="number"
+                    value={productQuantity}
+                    onChange={(e) => setProductQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    fullWidth
+                    margin="normal"
+                    InputProps={{
+                      inputProps: { min: 1 }
+                    }}
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setOpenProductDialog(false)}>Cancel</Button>
+                  <Button onClick={handleAddProduct} color="primary" variant="contained">
+                    Add
+                  </Button>
+                </DialogActions>
+              </Dialog>
+
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={() => setOpenCustomDialog(true)}
+                startIcon={<Add />}
+                sx={{ mt: 2, mb: 2, ml: 2 }}
+              >
+                Add Custom Product
+              </Button>
+
+              {createOrderForm.customProducts.length > 0 && (
+                <TableContainer component={Paper} sx={{ mt: 2, mb: 2 }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Product Code</TableCell>
+                        <TableCell>Fabric</TableCell>
+                        <TableCell>Lining</TableCell>
+                        <TableCell>Style Options</TableCell>
+                        <TableCell>Quantity</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {createOrderForm.customProducts.map((product, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{product.productCode}</TableCell>
+                          <TableCell>
+                            {fabrics.find(f => f.fabricID === product.fabricID)?.fabricName}
+                          </TableCell>
+                          <TableCell>
+                            {linings.find(l => l.liningId === product.liningID)?.liningName}
+                          </TableCell>
+                          <TableCell>
+                            {product.pickedStyleOptions.map(style => 
+                              styleOptions.find(s => s.styleOptionId === style.styleOptionID)?.optionValue
+                            ).join(', ')}
+                          </TableCell>
+                          <TableCell>{product.quantity}</TableCell>
+                          <TableCell>
+                            <IconButton
+                              onClick={() => {
+                                const newCustomProducts = createOrderForm.customProducts.filter((_, i) => i !== index);
+                                setCreateOrderForm(prev => ({
+                                  ...prev,
+                                  customProducts: newCustomProducts
+                                }));
+                              }}
+                            >
+                              <Delete />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+
+              {/* Dialog cho custom product */}
+              <Dialog 
+                open={openCustomDialog} 
+                onClose={() => setOpenCustomDialog(false)}
+                maxWidth="md"
+                fullWidth
+              >
+                <DialogTitle>Add Custom Product</DialogTitle>
+                <DialogContent>
+                  {/* Fabric Selection */}
+                  <Autocomplete
+                    options={fabrics}
+                    getOptionLabel={(option) => 
+                      option ? `${option.fabricName} - $${option.price}` : ''
+                    }
+                    value={selectedFabric}
+                    onChange={(_, newValue) => setSelectedFabric(newValue)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Fabric"
+                        margin="normal"
+                        fullWidth
+                        required
+                      />
+                    )}
+                    renderOption={(props, option) => (
+                      <li {...props}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <Typography variant="body1">
+                            {option.fabricName} - ${option.price}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            {option.description}
+                          </Typography>
+                        </div>
+                      </li>
+                    )}
+                  />
+
+                  {/* Lining Selection */}
+                  <Autocomplete
+                    options={linings}
+                    getOptionLabel={(option) => 
+                      option ? option.liningName : ''
+                    }
+                    value={selectedLining}
+                    onChange={(_, newValue) => setSelectedLining(newValue)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Lining"
+                        margin="normal"
+                        fullWidth
+                        required
+                      />
+                    )}
+                    renderOption={(props, option) => (
+                      <li {...props}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <Typography variant="body1">{option.liningName}</Typography>
+                        </div>
+                      </li>
+                    )}
+                  />
+
+                  {/* Style Options Selection */}
+                  <Autocomplete
+                    multiple
+                    options={styleOptions}
+                    getOptionLabel={(option) => option.optionValue}
+                    value={selectedStyleOptions}
+                    onChange={(_, newValue) => setSelectedStyleOptions(newValue)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Style Options"
+                        margin="normal"
+                        fullWidth
+                        required
+                      />
+                    )}
+                    renderOption={(props, option) => (
+                      <li {...props}>
+                        <Typography>{option.optionValue}</Typography>
+                      </li>
+                    )}
+                  />
+
+                  {/* Measurement ID */}
+                  <Autocomplete
+                    options={measurements}
+                    getOptionLabel={(option) => {
+                      if (!option) return '';
+                      return `Measurement ID: ${option.measurementId} - User ID: ${option.userId}`;
+                    }}
+                    value={measurements.find(m => m.measurementId === parseInt(measurementId)) || null}
+                    onChange={(_, newValue) => {
+                      console.log('Selected Measurement:', newValue);
+                      setMeasurementId(newValue ? newValue.measurementId.toString() : '');
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Measurement"
+                        margin="normal"
+                        fullWidth
+                        required
+                        error={!measurementId && measurements.length === 0}
+                        helperText={
+                          !selectedUser 
+                            ? "Please select a customer first" 
+                            : measurements.length === 0 
+                              ? "No measurements found for this customer" 
+                              : ""
+                        }
+                      />
+                    )}
+                    renderOption={(props, option) => (
+                      <li {...props}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <Typography variant="body1">
+                            Measurement ID: {option.measurementId}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            User ID: {option.userId}
+                            {option.createdAt && ` - Created: ${new Date(option.createdAt).toLocaleDateString()}`}
+                          </Typography>
+                        </div>
+                      </li>
+                    )}
+                    disabled={!selectedUser}
+                    noOptionsText={
+                      selectedUser 
+                        ? "No measurements found for this customer" 
+                        : "Please select a customer first"
+                    }
+                  />
+
+                  {/* Quantity */}
+                  <TextField
+                    label="Quantity"
+                    type="number"
+                    value={customQuantity}
+                    onChange={(e) => setCustomQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    fullWidth
+                    margin="normal"
+                    required
+                    InputProps={{
+                      inputProps: { min: 1 }
+                    }}
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setOpenCustomDialog(false)}>Cancel</Button>
+                  <Button onClick={handleAddCustomProduct} color="primary" variant="contained">
+                    Add Custom Product
+                  </Button>
+                </DialogActions>
+              </Dialog>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleCreateOrder}
+                disabled={isCreatingOrder}
+              >
+                Create Order
+              </Button>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };

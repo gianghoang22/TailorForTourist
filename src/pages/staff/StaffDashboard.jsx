@@ -17,6 +17,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  Line,
+  LineChart,
 } from "recharts";
 import OrderList from "./staffManager/OrderList";
 import BookingList from "./staffManager/BookingList";
@@ -32,6 +34,17 @@ import {
   Inbox,
   Group,
   Logout,
+  TrendingUp,
+  AttachMoney,
+  People,
+  LocalShipping,
+  ThumbUp,
+  Timer,
+  SwapHoriz,
+  MonetizationOn,
+  ShoppingCart,
+  EventNote,
+  LocalMall,
 } from "@mui/icons-material";
 import "./StaffDashboard.scss";
 import { useNavigate } from "react-router-dom";
@@ -41,12 +54,14 @@ const BASE_URL = "https://localhost:7194/api";
 const StaffDashboard = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("orders");
+  const [activeChart, setActiveChart] = useState("orders");
   const [darkMode, setDarkMode] = useState(false);
   const [orderData, setOrderData] = useState([]);
   const [bookingData, setBookingData] = useState([]);
   const [shipmentData, setShipmentData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -114,125 +129,196 @@ const StaffDashboard = () => {
     navigate("/signin");
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  const StatCard = ({ title, value, icon, change, subtext, positive }) => (
+    <div className={`stat-card ${positive ? "positive" : ""}`}>
+      <div className="stat-card-header">
+        <h3>{title}</h3>
+        {icon}
+      </div>
+      <div className="stat-card-content">
+        <p className="value">{value}</p>
+        {change && (
+          <p className={`change ${positive ? "positive" : "negative"}`}>
+            {change}
+            {positive ? (
+              <TrendingUp />
+            ) : (
+              <TrendingUp style={{ transform: "rotate(180deg)" }} />
+            )}
+          </p>
+        )}
+        {subtext && <p className="subtext">{subtext}</p>}
+      </div>
+    </div>
+  );
+
+  const TabButton = ({ children, active, onClick }) => (
+    <button
+      className={`tab-button ${active ? "active" : ""}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+
+  const renderDashboardContent = () => {
+    if (activeSection === "dashboard") {
+      return (
+        <>
+          {/* Stats Overview */}
+          <div className="stat-cards">
+            <StatCard
+              title="Total Orders"
+              value={orderData.length}
+              icon={<ShoppingCart />}
+              change="+12%"
+              positive
+            />
+            <StatCard
+              title="Active Bookings"
+              value={bookingData.length}
+              icon={<EventNote />}
+              change="+5%"
+              positive
+            />
+            <StatCard
+              title="Pending Shipments"
+              value={shipmentData.length}
+              icon={<LocalShipping />}
+              subtext="in progress"
+            />
+          </div>
+
+          {/* Additional stat cards */}
+          <div className="stat-cards">
+            <StatCard
+              title="Revenue"
+              value={`$${totalRevenue}`}
+              icon={<MonetizationOn />}
+              change="+8%"
+              positive
+            />
+            <StatCard
+              title="Customer Satisfaction"
+              value="94%"
+              icon={<ThumbUp />}
+              change="+2%"
+              positive
+            />
+            <StatCard
+              title="Processing Time"
+              value="2.5 days"
+              icon={<Timer />}
+              change="-8%"
+              positive
+            />
+          </div>
+
+          {/* Charts Section */}
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Paper className="chart-container">
+                <Typography variant="h6">Orders Overview</Typography>
+                {loading ? (
+                  <div className="loading">Loading...</div>
+                ) : error ? (
+                  <div className="error">{error}</div>
+                ) : (
+                  <OrderChart data={orderData} />
+                )}
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Paper className="chart-container">
+                <Typography variant="h6">Booking Trends</Typography>
+                {loading ? (
+                  <div className="loading">Loading...</div>
+                ) : error ? (
+                  <div className="error">{error}</div>
+                ) : (
+                  <BookingChart data={bookingData} />
+                )}
+              </Paper>
+            </Grid>
+          </Grid>
+        </>
+      );
+    }
+
+    return renderDetails();
+  };
 
   return (
     <div className={`staff-dashboard ${darkMode ? "dark-mode" : ""}`}>
-      <Grid container>
-        {/* Sidebar */}
-        <Grid item xs={12} md={2} className="sidebar">
-          <div className="logo">
-            <Dashboard /> EmployeeHub
+      <div className="sidebar">
+        <div className="logo">
+          <Dashboard /> EmployeeHub
+        </div>
+        <div className="menu-items">
+          <Button
+            startIcon={<Dashboard />}
+            className={activeSection === "orders" ? "active" : ""}
+            onClick={() => setActiveSection("orders")}
+          >
+            Orders
+          </Button>
+          <Button
+            startIcon={<CalendarToday />}
+            className={activeSection === "bookings" ? "active" : ""}
+            onClick={() => setActiveSection("bookings")}
+          >
+            Bookings
+          </Button>
+          <Button
+            startIcon={<Inbox />}
+            className={activeSection === "shipments" ? "active" : ""}
+            onClick={() => setActiveSection("shipments")}
+          >
+            Shipments
+          </Button>
+          <Button
+            startIcon={<Group />}
+            className={activeSection === "measure" ? "active" : ""}
+            onClick={() => setActiveSection("measure")}
+          >
+            Measurement
+          </Button>
+          <Button
+            startIcon={<Group />}
+            className={activeSection === "account" ? "active" : ""}
+            onClick={() => setActiveSection("account")}
+          >
+            Create Account
+          </Button>
+          <Button
+            startIcon={<Logout />}
+            onClick={handleLogout}
+            className="logout-button"
+          >
+            Logout
+          </Button>
+        </div>
+      </div>
+
+      <div className="main-content">
+        <div className="header">
+          <Typography variant="h4" component="h1">
+            Dashboard Overview
+          </Typography>
+          <div className="header-actions">
+            <Button startIcon={<Search />}>Search</Button>
+            <Button startIcon={<Notifications />}>Notifications</Button>
+            <Button startIcon={<Mail />}>Messages</Button>
+            <Button onClick={() => setDarkMode(!darkMode)}>
+              {darkMode ? "Light Mode" : "Dark Mode"}
+            </Button>
           </div>
-          <div className="menu-items">
-            <Button
-              startIcon={<Dashboard />}
-              className={activeSection === "orders" ? "active" : ""}
-              onClick={() => setActiveSection("orders")}
-            >
-              Orders
-            </Button>
-            <Button
-              startIcon={<CalendarToday />}
-              className={activeSection === "bookings" ? "active" : ""}
-              onClick={() => setActiveSection("bookings")}
-            >
-              Bookings
-            </Button>
-            <Button
-              startIcon={<Inbox />}
-              className={activeSection === "shipments" ? "active" : ""}
-              onClick={() => setActiveSection("shipments")}
-            >
-              Shipments
-            </Button>
-            <Button
-              startIcon={<Group />}
-              className={activeSection === "measure" ? "active" : ""}
-              onClick={() => setActiveSection("measure")}
-            >
-              Measurement
-            </Button>
-            <Button
-              startIcon={<Group />}
-              className={activeSection === "account" ? "active" : ""}
-              onClick={() => setActiveSection("account")}
-            >
-              Create Account
-            </Button>
-            <Button
-              startIcon={<Logout />}
-              onClick={handleLogout}
-              className="logout-button"
-            >
-              Logout
-            </Button>
-          </div>
-        </Grid>
+        </div>
 
-        {/* Main Content */}
-        <Grid item xs={12} md={10} className="main-content">
-          {/* Header */}
-          <Paper className="header" elevation={0}>
-            <Typography variant="h4" component="h1">
-              Dashboard
-            </Typography>
-            <div className="header-actions">
-              <Button startIcon={<Search />}>Search</Button>
-              <Button startIcon={<Notifications />}>Notifications</Button>
-              <Button startIcon={<Mail />}>Messages</Button>
-              <Button onClick={() => setDarkMode(!darkMode)}>
-                {darkMode ? "Light Mode" : "Dark Mode"}
-              </Button>
-            </div>
-          </Paper>
-
-          {/* Dashboard Content */}
-          <Container maxWidth={false} className="dashboard-content">
-            <Grid container spacing={3}>
-              {/* Charts */}
-              <Grid item xs={12} md={4}>
-                <Paper className="chart-container">
-                  <Typography variant="h6">Orders</Typography>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={orderData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="orderDate" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="totalPrice" fill="#8884d8" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Paper className="chart-container">
-                  <Typography variant="h6">Bookings</Typography>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={bookingData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />{" "}
-                      {/* Updated to match bookingData structure */}
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="count" fill="#82ca9d" />{" "}
-                      {/* Updated to match bookingData structure */}
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Paper>
-              </Grid>
-
-              {/* Section for detailed view (CRUD operations) */}
-              <Grid item xs={12}>
-                <Paper className="details-container">{renderDetails()}</Paper>
-              </Grid>
-            </Grid>
-          </Container>
-        </Grid>
-      </Grid>
+        <Container maxWidth={false} className="dashboard-content">
+          {renderDashboardContent()}
+        </Container>
+      </div>
     </div>
   );
 };

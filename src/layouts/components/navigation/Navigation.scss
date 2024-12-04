@@ -11,12 +11,12 @@
     border-bottom: 1px solid #eee;
     padding: 5px 0;
     font-size: 12px;
-    
+
     .container-header {
       max-width: 1400px;
       margin: 0 auto;
       padding: 0 30px;
-      
+
       .top-menu {
         display: flex;
         justify-content: flex-end;
@@ -24,16 +24,16 @@
         margin: 0;
         padding: 0;
         list-style: none;
-        
+
         li {
           a {
             color: #666;
             text-decoration: none;
-            font-family: 'Playfair Display', serif;
+            font-family: "Playfair Display", serif;
             font-size: 12px;
             letter-spacing: 0.5px;
             transition: color 0.3s ease;
-            
+
             &:hover {
               color: #a4712a;
             }
@@ -48,28 +48,28 @@
     margin: 0 auto;
     padding: 15px 0;
     box-shadow: 0 4px 12px rgba(164, 113, 42, 0.1);
-    
+
     .container-header {
       height: 70px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      
+
       .logo {
         display: flex;
         align-items: center;
-        
+
         a {
           display: block;
         }
-        
+
         img {
           height: 40px;
           width: auto;
           max-width: 60px;
           display: block;
           transition: all 0.3s ease;
-          
+
           &:hover {
             transform: scale(1.05);
           }
@@ -85,10 +85,10 @@
 
           li {
             position: relative;
-            
+
             a {
               color: #2c2c2c;
-              font-family: 'Playfair Display', serif;
+              font-family: "Playfair Display", serif;
               font-size: 14px;
               font-weight: 500;
               padding: 10px 0;
@@ -96,9 +96,9 @@
               letter-spacing: 1px;
               position: relative;
               transition: all 0.3s ease;
-              
+
               &:after {
-                content: '';
+                content: "";
                 position: absolute;
                 bottom: 0;
                 left: 0;
@@ -107,7 +107,7 @@
                 background: #a4712a;
                 transition: width 0.3s ease;
               }
-              
+
               &:hover {
                 color: #a4712a;
                 &:after {
@@ -133,7 +133,7 @@
               li a {
                 padding: 8px 16px;
                 display: block;
-                
+
                 &:hover {
                   background: #f8f9fa;
                 }
@@ -150,26 +150,27 @@
       }
 
       .header-right-btn {
-        .login-btn, .logout-btn {
+        .login-btn,
+        .logout-btn {
           background: #a4712a;
           border: none;
           color: #fff;
           padding: 10px 28px;
           border-radius: 25px;
-          font-family: 'Playfair Display', serif;
+          font-family: "Playfair Display", serif;
           font-weight: 500;
           letter-spacing: 0.5px;
           transition: all 0.3s ease;
           text-decoration: none;
           display: inline-flex;
           align-items: center;
-          
+
           &:hover {
             background: darken(#a4712a, 10%);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(164, 113, 42, 0.2);
           }
-          
+
           svg {
             margin-right: 8px;
             font-size: 16px;
@@ -184,30 +185,36 @@
 @media (max-width: 991px) {
   .header-area .main-header {
     padding: 0 16px;
-    
+
     .container-header {
       height: 60px;
     }
 
     .mobile_menu {
       display: block;
-      
+
       .nav-trigger {
         width: 24px;
         height: 16px;
         position: relative;
         cursor: pointer;
-        
+
         span {
           height: 2px;
           width: 100%;
           background: #2c3e50;
           position: absolute;
           transition: 0.2s ease;
-          
-          &:nth-child(1) { top: 0; }
-          &:nth-child(2) { top: 7px; }
-          &:nth-child(3) { top: 14px; }
+
+          &:nth-child(1) {
+            top: 0;
+          }
+          &:nth-child(2) {
+            top: 7px;
+          }
+          &:nth-child(3) {
+            top: 14px;
+          }
         }
       }
     }
@@ -236,13 +243,13 @@
   display: inline-flex;
   align-items: center;
   transition: all 0.3s ease !important;
-  
+
   &:hover {
     background: darken(#a4712a, 10%);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(164, 113, 42, 0.2);
   }
-  
+
   svg {
     margin-right: 8px;
     font-size: 16px;

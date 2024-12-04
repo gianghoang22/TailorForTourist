@@ -386,3 +386,26 @@
     border-color: #007bff;
   }
 }
+
+.primary-button.create-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #45a049;
+  }
+
+  &:active {
+    background-color: #3e8e41;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
