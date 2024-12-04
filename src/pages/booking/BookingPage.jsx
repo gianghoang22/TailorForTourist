@@ -33,20 +33,24 @@ const BookingPage = () => {
     name: "",
     address: "",
     phone: "",
+    openTime: "",
+    closeTime: "",
   });
 
   useEffect(() => {
     fetchStores();
     fetchUserDetails();
-    if (!selectedTime) {
-      updateAvailableTimes(date);
-    }
-  }, [date]);
+  }, []);
 
   useEffect(() => {
-    fetchStores();
-    fetchUserDetails();
-  }, []);
+    if (selectedStoreInfo.openTime && selectedStoreInfo.closeTime) {
+      updateAvailableTimes(
+        date,
+        selectedStoreInfo.openTime,
+        selectedStoreInfo.closeTime
+      );
+    }
+  }, [date, selectedStoreInfo.openTime, selectedStoreInfo.closeTime]);
 
   const fetchUserDetails = async () => {
     const userId = localStorage.getItem("userID");
@@ -89,41 +93,39 @@ const BookingPage = () => {
           name: data[0].name,
           address: `${data[0].address}`,
           phone: data[0].contactNumber,
+          openTime: data[0].openTime,
+          closeTime: data[0].closeTime,
         });
-      } else {
-        setSelectedStoreInfo({
-          name: "",
-          address: "",
-          phone: "",
-        });
+        updateAvailableTimes(date, data[0].openTime, data[0].closeTime);
       }
     } catch (error) {
       console.error("Error fetching store data:", error);
     }
   };
 
-  const updateAvailableTimes = (selectedDate) => {
-    const times = [
-      "10:00 AM",
-      "10:30 AM",
-      "11:00 AM",
-      "11:30 AM",
-      "12:00 PM",
-      "12:30 PM",
-      "1:00 PM",
-      "1:30 PM",
-      "2:00 PM",
-      "2:30 PM",
-      "3:00 PM",
-      "3:30 PM",
-      "4:00 PM",
-      "4:30 PM",
-      "5:00 PM",
-      "5:30 PM",
-      "6:00 PM",
-      "6:30 PM",
-      "7:00 PM",
-    ];
+  const updateAvailableTimes = (selectedDate, openTime, closeTime) => {
+    if (!openTime || !closeTime) return;
+
+    const times = [];
+    const [openHour, openMinute] = openTime.split(":");
+    const [closeHour, closeMinute] = closeTime.split(":");
+
+    let currentTime = new Date();
+    currentTime.setHours(parseInt(openHour), parseInt(openMinute), 0);
+
+    const endTime = new Date();
+    endTime.setHours(parseInt(closeHour), parseInt(closeMinute), 0);
+
+    while (currentTime < endTime) {
+      const timeString = currentTime.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      times.push(timeString);
+      currentTime.setMinutes(currentTime.getMinutes() + 30);
+    }
+
     setAvailableTimes(times);
   };
 
@@ -143,18 +145,28 @@ const BookingPage = () => {
       (s) => s.storeId === parseInt(selectedStoreId)
     );
     if (selectedStore) {
+      const currentService = formData.service;
       setSelectedStoreInfo({
         name: selectedStore.name,
         address: `${selectedStore.address}`,
         phone: selectedStore.contactNumber,
+        openTime: selectedStore.openTime,
+        closeTime: selectedStore.closeTime,
       });
-    } else {
-      setSelectedStoreInfo({
-        name: "",
-        address: "",
-        phone: "",
-      });
+      updateAvailableTimes(
+        date,
+        selectedStore.openTime,
+        selectedStore.closeTime
+      );
+      setFormData((prev) => ({
+        ...prev,
+        service: currentService,
+      }));
     }
+  };
+
+  const handleTimeSelection = (time) => {
+    setSelectedTime(time);
   };
 
   const validatePhone = (phone) => {
@@ -182,88 +194,58 @@ const BookingPage = () => {
       time: `${time}:00`,
       note: formData.description,
       status: "pending",
-      storeId: selectedStoreId,
+      storeId: parseInt(selectedStoreId),
       service: formData.service,
     };
 
     const userId = localStorage.getItem("userID");
 
     if (userId) {
-      // For logged-in users
-      bookingData.userId = userId;
+      bookingData.userId = parseInt(userId);
       bookingData.guestName = formData.fullName;
       bookingData.guestEmail = formData.email;
       bookingData.guestPhone = formData.phone;
     } else {
-      // For guests
       bookingData.guestName = formData.fullName.trim();
       bookingData.guestEmail = formData.email;
       bookingData.guestPhone = formData.phone;
     }
 
-    // Validation checks
-    let isValid = true;
-
-    if (!bookingData.guestName) {
-      setPhoneError("Please provide your name.");
-      isValid = false;
-    }
-
-    if (date <= new Date()) {
-      setDateError("Please select a future date.");
-      isValid = false;
-    } else {
-      setDateError("");
-    }
-
-    if (!selectedTime) {
-      setTimeError("Please select an available time.");
-      isValid = false;
-    } else {
-      setTimeError("");
-    }
-
-    if (!userId) {
-      isValid = validatePhone(formData.phone) && isValid;
-    }
-
-    if (!formData.service) {
-      setServiceError("Please select a service.");
-      isValid = false;
-    } else {
-      setServiceError("");
-    }
-
-    if (!isValid) return;
+    console.log("Sending booking data:", bookingData);
 
     try {
-      const response = await fetch(
-        "https://localhost:7194/api/Booking/guest-booking",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify(bookingData),
-        }
-      );
+      const endpoint = userId
+        ? "https://localhost:7194/api/Booking/loggedin-user-booking"
+        : "https://localhost:7194/api/Booking/guest-booking";
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(bookingData),
+      });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error(
-          "Error creating booking:",
-          response.statusText,
-          errorData
-        );
-        return; // Stop execution if there's an error
+        let errorMessage = "Failed to create booking";
+        try {
+          const errorData = await response.json();
+          console.error("Server error response:", errorData);
+          errorMessage = errorData.message || errorData.title || errorMessage;
+        } catch (e) {
+          console.error("Raw response:", await response.text());
+          errorMessage = response.statusText || errorMessage;
+        }
+        console.error("Error creating booking:", errorMessage);
+        return;
       }
 
       const result = await response.json();
       console.log("Booking successful:", result);
       navigate("/booking-thanks");
     } catch (error) {
-      console.error("Error submitting booking:", error);
+      console.error("Error submitting booking:", error.message);
     }
   };
 
@@ -332,6 +314,13 @@ const BookingPage = () => {
     });
   };
 
+  const handleServiceSelection = (service) => {
+    setFormData((prev) => ({
+      ...prev,
+      service: service,
+    }));
+  };
+
   return (
     <motion.div
       className="booking-page"
@@ -360,9 +349,13 @@ const BookingPage = () => {
 
               <div className="location-info">
                 <img
-                  src="https://your-store-image-url.jpg"
+                  src="https://placehold.co/400x300"
                   alt={selectedStoreInfo.name}
                   className="location-image"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.style.display = "none";
+                  }}
                 />
                 <div className="store-details">
                   <div className="detail-item">
@@ -403,7 +396,8 @@ const BookingPage = () => {
             <h3>Hours</h3>
             <ul>
               <li>
-                <span>Monday - Sunday:</span> 10:00 am - 7:00 pm
+                <span>Monday - Sunday:</span> {selectedStoreInfo.openTime} -{" "}
+                {selectedStoreInfo.closeTime}
               </li>
             </ul>
           </div>
@@ -477,11 +471,7 @@ const BookingPage = () => {
                     <motion.div
                       key={service}
                       className={`service-card ${formData.service === service ? "selected" : ""}`}
-                      onClick={() =>
-                        handleInputChange({
-                          target: { name: "service", value: service },
-                        })
-                      }
+                      onClick={() => handleServiceSelection(service)}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -514,7 +504,7 @@ const BookingPage = () => {
                       <motion.button
                         key={index}
                         className={`time-slot ${selectedTime === time ? "selected" : ""}`}
-                        onClick={() => setSelectedTime(time)}
+                        onClick={() => handleTimeSelection(time)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
