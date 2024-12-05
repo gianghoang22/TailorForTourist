@@ -84,7 +84,7 @@ const OrderList = () => {
   const [formState, setFormState] = useState({
     id: "",
     customerName: "",
-    status: "",
+    status: "pending",
     paymentId: "",
     storeId: "",
     voucherId: "",
@@ -567,7 +567,7 @@ const OrderList = () => {
           setFormState({
             id: "",
             customerName: "",
-            status: "",
+            status: "pending",
             paymentId: "",
             storeId: "",
             voucherId: "",
