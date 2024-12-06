@@ -35,7 +35,17 @@ const BookingPage = () => {
     phone: "",
     openTime: "",
     closeTime: "",
+    imgUrl: "",
   });
+
+  const [userOrders, setUserOrders] = useState([]);
+  const [productCodes, setProductCodes] = useState([]);
+  const [productNote, setProductNote] = useState("");
+  const [productOrderMap, setProductOrderMap] = useState({});
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
 
   useEffect(() => {
     fetchStores();
@@ -52,12 +62,18 @@ const BookingPage = () => {
     }
   }, [date, selectedStoreInfo.openTime, selectedStoreInfo.closeTime]);
 
+  useEffect(() => {
+    if (["Return", "Exchange", "Fix"].includes(formData.service)) {
+      fetchUserOrders();
+    }
+  }, [formData.service]);
+
   const fetchUserDetails = async () => {
-    const userId = localStorage.getItem("userID");
-    if (userId) {
+    const userID = localStorage.getItem("userID");
+    if (userID) {
       try {
         const response = await fetch(
-          `https://localhost:7194/api/User/${userId}`,
+          `https://localhost:7194/api/User/${userID}`,
           {
             method: "GET",
             headers: {
@@ -95,6 +111,7 @@ const BookingPage = () => {
           phone: data[0].contactNumber,
           openTime: data[0].openTime,
           closeTime: data[0].closeTime,
+          imgUrl: data[0].imgUrl,
         });
         updateAvailableTimes(date, data[0].openTime, data[0].closeTime);
       }
@@ -131,10 +148,28 @@ const BookingPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+
+    if (name === "productCode") {
+      const orderId = productOrderMap[value];
+      const newProductNote = `Order ID: ${orderId}, Product Code: ${value}`;
+      setProductNote(newProductNote);
+      setFormData((prev) => ({
+        ...prev,
+        description: `${newProductNote}${prev.description.replace(productNote, "")}`,
+      }));
+    } else if (name === "description") {
+      setFormData((prev) => ({
+        ...prev,
+        description: productNote
+          ? `${productNote} ${value.substring(value.indexOf(productNote) + productNote.length)}`
+          : value,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleStoreChange = (e) => {
@@ -152,6 +187,7 @@ const BookingPage = () => {
         phone: selectedStore.contactNumber,
         openTime: selectedStore.openTime,
         closeTime: selectedStore.closeTime,
+        imgUrl: selectedStore.imgUrl,
       });
       updateAvailableTimes(
         date,
@@ -183,47 +219,89 @@ const BookingPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate service selection
+    if (!formData.service) {
+      setServiceError("Please select a service.");
+      return;
+    } else {
+      setServiceError("");
+    }
+
+    // Validate product selection for specific services
+    if (
+      ["Return", "Exchange", "Fix"].includes(formData.service) &&
+      !productNote
+    ) {
+      setServiceError("Please select a product for the chosen service.");
+      return;
+    } else {
+      setServiceError("");
+    }
+
+    // Validate booking date is not today or earlier
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    if (selectedDate <= today) {
+      setDateError("Please select a date from tomorrow onwards.");
+      return;
+    } else {
+      setDateError("");
+    }
+
     const bookingDate = date.toISOString().split("T")[0];
-    const time =
-      selectedTime.includes("AM") || selectedTime.includes("PM")
-        ? convertTimeTo24Hour(selectedTime)
-        : selectedTime;
+    let time = selectedTime;
+
+    // Convert time to proper format
+    if (selectedTime.includes("AM") || selectedTime.includes("PM")) {
+      time = convertTimeTo24Hour(selectedTime);
+    }
+    // Ensure time is in HH:mm:ss format
+    time = time.split(":").slice(0, 2).join(":") + ":00";
 
     const bookingData = {
+      bookingId: 0,
+      userId: parseInt(localStorage.getItem("userID")),
       bookingDate,
-      time: `${time}:00`,
+      time,
       note: formData.description,
-      status: "pending",
+      status: "Pending",
       storeId: parseInt(selectedStoreId),
+      guestName: formData.fullName,
+      guestEmail: formData.email,
+      guestPhone: formData.phone,
       service: formData.service,
+      assistStaffName: "",
     };
-
-    const userId = localStorage.getItem("userID");
-
-    if (userId) {
-      bookingData.userId = parseInt(userId);
-      bookingData.guestName = formData.fullName;
-      bookingData.guestEmail = formData.email;
-      bookingData.guestPhone = formData.phone;
-    } else {
-      bookingData.guestName = formData.fullName.trim();
-      bookingData.guestEmail = formData.email;
-      bookingData.guestPhone = formData.phone;
-    }
 
     console.log("Sending booking data:", bookingData);
 
     try {
-      const endpoint = userId
+      // Determine if user is logged in
+      const isLoggedIn = localStorage.getItem("token");
+
+      // Restrict guest users to "Tailor" service only
+      if (!isLoggedIn && formData.service !== "Tailor") {
+        setServiceError("Guest users can only book the Tailor service.");
+        return;
+      }
+
+      const endpoint = isLoggedIn
         ? "https://localhost:7194/api/Booking/loggedin-user-booking"
         : "https://localhost:7194/api/Booking/guest-booking";
 
+      const headers = {
+        "Content-Type": "application/json",
+        ...(isLoggedIn && {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        }),
+      };
+
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers,
         body: JSON.stringify(bookingData),
       });
 
@@ -231,7 +309,8 @@ const BookingPage = () => {
         let errorMessage = "Failed to create booking";
         try {
           const errorData = await response.json();
-          console.error("Server error response:", errorData);
+          console.error("Server error details:", errorData);
+          console.error("Validation errors:", errorData.errors);
           errorMessage = errorData.message || errorData.title || errorMessage;
         } catch (e) {
           console.error("Raw response:", await response.text());
@@ -253,15 +332,117 @@ const BookingPage = () => {
     const [time, modifier] = time12h.split(" ");
     let [hours, minutes] = time.split(":");
 
-    if (hours === "12") {
-      hours = "00";
+    hours = parseInt(hours);
+
+    if (hours === 12) {
+      hours = modifier === "PM" ? 12 : 0;
+    } else if (modifier === "PM") {
+      hours += 12;
     }
 
-    if (modifier === "PM") {
-      hours = parseInt(hours, 10) + 12;
-    }
+    // Ensure hours and minutes are two digits
+    const formattedHours = hours.toString().padStart(2, "0");
+    return `${formattedHours}:${minutes}`;
+  };
 
-    return `${hours}:${minutes}`;
+  const fetchUserOrders = async () => {
+    const userID = localStorage.getItem("userID");
+    if (!userID) return;
+
+    try {
+      const response = await fetch(
+        `https://localhost:7194/api/Orders/user/${userID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      const orders = await response.json();
+      const finishedOrders = orders.filter(
+        (order) => order.status === "Finish"
+      );
+
+      const productMapping = {};
+      const productCodesData = await Promise.all(
+        finishedOrders.map(async (order) => {
+          try {
+            const details = await fetchOrderDetails(order.orderId);
+            if (!Array.isArray(details) || details.length === 0) {
+              console.log(`No details found for order ${order.orderId}`);
+              return [];
+            }
+
+            const products = await Promise.all(
+              details.map(async (detail) => {
+                if (detail && detail.productId) {
+                  const product = await fetchProductInfo(detail.productId);
+                  if (product && product.productCode) {
+                    productMapping[product.productCode] = order.orderId;
+                  }
+                  return product;
+                }
+                return null;
+              })
+            );
+
+            return products.filter((product) => product !== null);
+          } catch (error) {
+            console.error(`Error processing order ${order.orderId}:`, error);
+            return [];
+          }
+        })
+      );
+
+      const allProducts = productCodesData
+        .flat()
+        .filter((product) => product && product.productCode);
+      const uniqueProductCodes = [
+        ...new Set(allProducts.map((p) => p.productCode)),
+      ];
+      setProductCodes(uniqueProductCodes);
+      setProductOrderMap(productMapping);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    }
+  };
+
+  const fetchOrderDetails = async (orderId) => {
+    try {
+      const response = await fetch(
+        `https://localhost:7194/api/Orders/${orderId}/details`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      const data = await response.json();
+      return data.orderDetails || [];
+    } catch (error) {
+      console.error("Error fetching order details:", error);
+      return [];
+    }
+  };
+
+  const fetchProductInfo = async (productId) => {
+    if (!productId) return null;
+
+    try {
+      const response = await fetch(
+        `https://localhost:7194/api/Product/basic/${productId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      const data = await response.json();
+      return data || null;
+    } catch (error) {
+      console.error(`Error fetching product info for ID ${productId}:`, error);
+      return null;
+    }
   };
 
   // Add these animation variants
@@ -315,10 +496,19 @@ const BookingPage = () => {
   };
 
   const handleServiceSelection = (service) => {
-    setFormData((prev) => ({
-      ...prev,
-      service: service,
-    }));
+    if (!["Return", "Exchange", "Fix"].includes(service)) {
+      setProductNote("");
+      setFormData((prev) => ({
+        ...prev,
+        service: service,
+        description: prev.description.replace(productNote, "").trim(),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        service: service,
+      }));
+    }
   };
 
   return (
@@ -349,12 +539,14 @@ const BookingPage = () => {
 
               <div className="location-info">
                 <img
-                  src="https://placehold.co/400x300"
+                  src={
+                    selectedStoreInfo.imgUrl || "https://placehold.co/400x300"
+                  }
                   alt={selectedStoreInfo.name}
                   className="location-image"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.style.display = "none";
+                    e.target.src = "https://placehold.co/400x300";
                   }}
                 />
                 <div className="store-details">
@@ -453,6 +645,7 @@ const BookingPage = () => {
 
             <div className="booking-form-container">
               <div className="form-section service-selection">
+                {serviceError && <p className="error">{serviceError}</p>}
                 <select
                   className="studio-select elegant-select"
                   onChange={handleStoreChange}
@@ -467,7 +660,10 @@ const BookingPage = () => {
                 </select>
 
                 <div className="service-grid">
-                  {["Tailor", "Return", "Exchange", "Fix"].map((service) => (
+                  {(localStorage.getItem("token")
+                    ? ["Tailor", "Return", "Exchange", "Fix"]
+                    : ["Tailor"]
+                  ).map((service) => (
                     <motion.div
                       key={service}
                       className={`service-card ${formData.service === service ? "selected" : ""}`}
@@ -482,6 +678,25 @@ const BookingPage = () => {
                     </motion.div>
                   ))}
                 </div>
+
+                {["Return", "Exchange", "Fix"].includes(formData.service) && (
+                  <div className="form-section">
+                    <label htmlFor="productCode">Select Product:</label>
+                    <select
+                      id="productCode"
+                      name="productCode"
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Select a product</option>
+                      {productCodes.map((code) => (
+                        <option key={code} value={code}>
+                          {code}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <motion.div
@@ -492,7 +707,7 @@ const BookingPage = () => {
                   <Calendar
                     onChange={setDate}
                     value={date}
-                    minDate={new Date()}
+                    minDate={tomorrow}
                     className="modern-calendar"
                   />
                 </div>
@@ -515,7 +730,21 @@ const BookingPage = () => {
                 </div>
               </motion.div>
 
-              {/* Keep the conditional rendering for the personal details form */}
+              <div className="form-group">
+                <label htmlFor="description">Description:</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder={
+                    ["Return", "Exchange", "Fix"].includes(formData.service)
+                      ? "Please provide additional details about your request..."
+                      : "Tell us about your requirements..."
+                  }
+                />
+              </div>
+
               <AnimatePresence mode="wait">
                 {selectedTime && (
                   <motion.form
@@ -556,15 +785,6 @@ const BookingPage = () => {
                         required
                       />
                       {phoneError && <p className="error">{phoneError}</p>}
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="description">Description:</label>
-                      <textarea
-                        id="description"
-                        name="description"
-                        value={formData.description}
-                        onChange={handleInputChange}
-                      />
                     </div>
                     <button type="submit" className="submit-button">
                       Book Appointment
