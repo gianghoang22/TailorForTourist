@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "./Cart.scss";
+import "./cart.scss";
 import { Link, useNavigate } from "react-router-dom";
 import { Navigation } from "../../layouts/components/navigation/Navigation.jsx";
 import { Footer } from "../../layouts/components/footer/Footer.jsx";
 import { toast } from "react-toastify";
-import {
-  getGuestCart,
-  updateGuestCartQuantity,
-  removeFromGuestCart,
-} from "../../utils/cartUtil";
+
 
 const Cart = () => {
   const [apiCart, setApiCart] = useState(null);
