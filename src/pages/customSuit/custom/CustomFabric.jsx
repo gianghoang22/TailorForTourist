@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { addToCart } from "../../../utils/cartUtil";
 import { toast } from "react-toastify";
-import "./customFabric.scss";
+import "./CustomFabric.scss";
 
 import all_icon from "../../../assets/img/filter/icon-fabricFilter-all.jpg";
 import new_icon from "../../../assets/img/filter/icon-fabricFilter-new.jpg";
