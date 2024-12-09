@@ -317,32 +317,60 @@ const OrderHistory = () => {
           style={customStyles}
           contentLabel="Order Details Modal"
         >
-          <h2>Order Details for {selectedOrder}</h2>
-          {orderDetails.length > 0 ? (
-            <table className="order-details-table">
-              <thead>
-                <tr>
-                  <th>ProductCode/</th>
-                  <th>Quantity/</th>
-                  <th>Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orderDetails.map((detail) => (
-                  <tr key={detail.productId}>
-                    <td>{detail.productCode}</td>
-                    <td>{detail.quantity}</td>
-                    <td>${detail.price?.toFixed(2) || "N/A"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>Loading details...</p>
-          )}
-          <button onClick={() => setModalIsOpen(false)} className="close-modal">
-            Close
-          </button>
+          <div className="order-details-modal">
+            <div className="modal-header">
+              <h2>Order Details #{selectedOrder}</h2>
+              <button onClick={() => setModalIsOpen(false)} className="close-button">
+                ×
+              </button>
+            </div>
+            
+            {orderDetails.length > 0 ? (
+              <>
+                <div className="order-details-content">
+                  <div className="order-items">
+                    {orderDetails.map((detail) => (
+                      <div key={detail.productId} className="order-item">
+                        <div className="product-info">
+                          <span className="product-code">{detail.productCode}</span>
+                          <div className="quantity-price">
+                            <span className="quantity">{detail.quantity} items</span>
+                            <span className="price">${detail.price?.toFixed(2) || "N/A"}</span>
+                          </div>
+                        </div>
+                        <div className="item-total">
+                          <span>Subtotal:</span>
+                          <span className="total-amount">
+                            ${(detail.quantity * detail.price)?.toFixed(2) || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="order-summary">
+                    <h3>Order Summary</h3>
+                    <div className="summary-row">
+                      <span>Total Items:</span>
+                      <span>{orderDetails.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                    </div>
+                    <div className="summary-row total">
+                      <span>Total Amount:</span>
+                      <span>
+                        ${orderDetails
+                          .reduce((sum, item) => sum + item.quantity * item.price, 0)
+                          .toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="loading">
+                <p>Loading order details...</p>
+              </div>
+            )}
+          </div>
         </Modal>
 
         <Modal

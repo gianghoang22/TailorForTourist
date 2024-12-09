@@ -38,6 +38,22 @@ import Address from "../../../layouts/components/Address/Address";
 const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = "6aa988b722d995b95e483312";
 
+const fetchStoreByStaffId = async (staffId) => {
+  const response = await fetch(`${BASE_URL}/Store/GetStoreByStaff/${staffId}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch store");
+  }
+  return response.json();
+};
+
+const fetchOrdersByStoreId = async (storeId) => {
+  const response = await fetch(`${BASE_URL}/Orders/store/${storeId}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch orders");
+  }
+  return response.json();
+};
+
 // Custom styling for components using `styled`
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: "bold",
@@ -261,24 +277,27 @@ const OrderList = () => {
     []
   );
 
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("/Orders");
-      setOrders(response.data);
-      setSnackbarMessage("Orders loaded successfully");
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-      setError("Failed to load orders. Please try again later.");
-      setSnackbarMessage("Failed to load orders");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const userId = localStorage.getItem("userID");
+        console.log("Retrieved userId from localStorage:", userId);
+
+        if (!userId) {
+          throw new Error("User ID not found");
+        }
+        const storeData = await fetchStoreByStaffId(userId);
+        const ordersData = await fetchOrdersByStoreId(storeData.storeId);
+        setOrders(Array.isArray(ordersData) ? ordersData : [ordersData]);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();

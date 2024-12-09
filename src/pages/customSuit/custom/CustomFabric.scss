@@ -123,6 +123,23 @@ img {
     align-items: stretch;
     align-content: flex-start;
     -webkit-align-content: flex-start;
+
+    .fabric-item {
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      padding: 10px;
+      
+
+      &:hover {
+        border-color: #ddd;
+      }
+
+      &.selected {
+        border-color: #a4712a;
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.2);
+      }
+    }
 }
 
 .fabric-img {

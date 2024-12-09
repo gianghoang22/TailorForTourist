@@ -358,14 +358,57 @@ const Checkout = () => {
   const handleConfirmOrder = async () => {
     try {
       setIsLoading(true);
-      // Basic validation
-      if (!guestName || !guestEmail || (!storeId && deliveryMethod === 'Pick up') || (!guestAddress && deliveryMethod === 'Delivery')) {
-        toast.error('Please fill in all required fields');
-        return;
+      
+      // Detailed validation
+      const errors = [];
+
+      // Validate name
+      if (!guestName.trim()) {
+        errors.push('Please enter your full name');
       }
 
+      // Validate email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!guestEmail.trim()) {
+        errors.push('Please enter your email');
+      } else if (!emailRegex.test(guestEmail)) {
+        errors.push('Please enter a valid email address');
+      }
+
+      // Validate delivery method and related fields
+      if (deliveryMethod === 'Pick up') {
+        if (!storeId) {
+          errors.push('Please select a store for pick up');
+        }
+      } else if (deliveryMethod === 'Delivery') {
+        if (!guestAddress.trim()) {
+          errors.push('Please enter your delivery address');
+        }
+        if (!nearestStore) {
+          errors.push('Please select the nearest store');
+        }
+        // Validate ward and district for shipping calculation
+        const wardCode = document.querySelector('input[name="wardCode"]')?.value;
+        const districtId = document.querySelector('input[name="districtId"]')?.value;
+        if (!wardCode || !districtId) {
+          errors.push('Please select a valid delivery address with ward and district');
+        }
+      }
+
+      // Validate cart
+      if (!apiCart?.cartItems?.length) {
+        errors.push('Your cart is empty');
+      }
+
+      // Validate payment
       if (!isPaid) {
-        toast.error('Please complete payment before confirming order');
+        errors.push('Please complete payment before confirming order');
+      }
+
+      // Show all validation errors if any
+      if (errors.length > 0) {
+        errors.forEach(error => toast.error(error));
+        setIsLoading(false);
         return;
       }
 
@@ -373,28 +416,75 @@ const Checkout = () => {
         ? discountedShippingFee 
         : shippingFee;
 
-      // Create base params object
-      const baseParams = {
-        guestName,
-        guestEmail,
-        guestAddress,
-        deposit: 0,
-        shippingfee: finalShippingFee,
-        deliverymethod: deliveryMethod,
-        storeId: parseInt(storeId),
+      // Lấy thông tin cart từ state
+      const cartItems = apiCart?.cartItems || [];
+      
+      // Tạo request body với thông tin cart
+      const requestBody = {
+        cartItems: cartItems.map(item => {
+          if (item.isCustom) {
+            return {
+              quantity: parseInt(item.quantity),
+              price: parseFloat(item.price) || 0,
+              isCustom: true,
+              customProduct: {
+                productCode: item.customProduct.productCode,
+                categoryID: parseInt(item.customProduct.categoryID),
+                fabricID: parseInt(item.customProduct.fabricID),
+                liningID: parseInt(item.customProduct.liningID),
+                measurementID: parseInt(item.customProduct.measurementID),
+                pickedStyleOptions: item.customProduct.pickedStyleOptions.map(opt => ({
+                  styleOptionID: parseInt(opt.styleOptionID)
+                }))
+              },
+              product: null
+            };
+          } else {
+            return {
+              quantity: parseInt(item.quantity),
+              price: parseFloat(item.price) || 0,
+              isCustom: false,
+              customProduct: null,
+              product: {
+                productID: parseInt(item.product.productID),
+                productCode: item.product.productCode,
+                categoryID: parseInt(item.product.categoryID),
+                size: item.product.size,
+                price: parseFloat(item.product.price) || 0,
+                imgURL: item.product.imgURL
+              }
+            };
+          }
+        })
       };
 
-      // Only add voucherId if a voucher is selected and valid
+      // Tạo query parameters
+      const queryParams = new URLSearchParams({
+        guestName: guestName.trim(),
+        guestEmail: guestEmail.trim(),
+        guestAddress: guestAddress.trim(),
+        deposit: '0',
+        shippingfee: finalShippingFee.toString(),
+        deliverymethod: deliveryMethod,
+        storeId: storeId.toString()
+      });
+
+      // Thêm voucherId nếu có
       if (selectedVoucher && selectedVoucher.voucherId) {
-        baseParams.voucherId = selectedVoucher.voucherId;
+        queryParams.append('voucherId', selectedVoucher.voucherId.toString());
       }
 
-      const queryParams = new URLSearchParams(baseParams).toString();
-
       const token = localStorage.getItem('token');
+      
+      // Tạo URL với query string đúng cách
+      const url = `${CHECKOUT_API.confirmOrder}?${queryParams.toString()}`;
+      
+      console.log('Request URL:', url);
+      console.log('Request Body:', JSON.stringify(requestBody, null, 2));
+
       const response = await axios.post(
-        `${CHECKOUT_API.confirmOrder}?${queryParams}`,
-        null,
+        url,
+        requestBody,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -413,7 +503,14 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error('Error confirming order:', error);
-      toast.error(error.response?.data?.message || 'Failed to confirm order. Please try again.');
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+      }
+      toast.error(
+        error.response?.data?.message || 
+        error.response?.data?.title ||
+        'Failed to confirm order. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }

@@ -49,7 +49,7 @@ import StoreManagement from "../pages/admin/StoreManagement";
 import LiningManagement from "../pages/admin/LiningManagement";
 import VoucherManagement from "../pages/admin/VoucherManagement";
 
-import Payment from "../pages/payment/payment";
+import Payment from "../pages/payment/Payment.jsx";
 import ContactUs from "../pages/contact/ContactUs";
 import OrderDetails from "../pages/orderDetails/OrderDetails";
 import CreatePassword from "../pages/signIn/CreatePassword";

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import { addToCart } from "../../../utils/cartUtil";
 import "./CustomStyle.scss";
 import { toast } from "react-toastify";
 
@@ -230,26 +229,30 @@ const CustomStyle = () => {
   };
 
   const handleOptionValueClick = (styleOption) => {
-    setSelectedOptions((prev) => ({
-      ...prev,
-      [styleOption.optionType]: styleOption.styleOptionId,
-    }));
+    setSelectedOptions((prev) => {
+      const newSelectedOptions = {
+        ...prev,
+        [styleOption.optionType]: styleOption.styleOptionId,
+      };
+      
+      // Update localStorage with the new selections
+      const selections = Object.values(newSelectedOptions);
+      localStorage.setItem("styleOptionId", JSON.stringify(selections));
+      
+      // Log the updated selections
+      console.log("Selected options:", newSelectedOptions);
+      
+      return newSelectedOptions;
+    });
 
     setSelectedImages((prev) => ({
       ...prev,
       [styleOption.optionType]: optionTypeImages[styleOption.optionValue],
     }));
 
-    const selections = Object.values(selectedOptions);
-    if (!selections.includes(styleOption.styleOptionId)) {
-      selections.push(styleOption.styleOptionId);
-    }
-
-    localStorage.setItem("styleOptionId", JSON.stringify(selections));
     toast.success(
       `${styleOption.optionType} updated to ${styleOption.optionValue}`
     );
-    console.log("Selected options:", selectedOptions);
   };
 
   const getOptionValues = (styleId, optionType) => {

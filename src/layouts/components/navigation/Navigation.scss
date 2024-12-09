@@ -44,7 +44,7 @@
   }
 
   .main-header {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
     padding: 15px 0;
     box-shadow: 0 4px 12px rgba(164, 113, 42, 0.1);
@@ -79,7 +79,7 @@
       .main-menu {
         ul#navigation {
           display: flex;
-          gap: 28px;
+          gap: 24px;
           margin: 0;
           padding: 0;
 
@@ -155,7 +155,7 @@
           background: #a4712a;
           border: none;
           color: #fff;
-          padding: 10px 28px;
+          padding: 8px 12px;
           border-radius: 25px;
           font-family: "Playfair Display", serif;
           font-weight: 500;
@@ -235,7 +235,7 @@
 .booking-btn {
   background: #a4712a;
   color: #fff !important;
-  padding: 10px 28px !important;
+  padding: 8px 12px !important;
   border-radius: 25px;
   font-weight: 500;
   letter-spacing: 0.5px;

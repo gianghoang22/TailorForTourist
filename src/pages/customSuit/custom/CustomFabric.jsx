@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { addToCart } from "../../../utils/cartUtil";
 import { toast } from "react-toastify";
-import "./customFabric.scss";
+import "./CustomFabric.scss";
 
 import all_icon from "../../../assets/img/filter/icon-fabricFilter-all.jpg";
 import new_icon from "../../../assets/img/filter/icon-fabricFilter-new.jpg";
@@ -79,7 +79,6 @@ const CustomFabric = () => {
 
     // Lưu fabricId vào localStorage
     localStorage.setItem("selectedFabricID", fabric.fabricID);
-
     addToCart({
       id: fabric.fabricID,
       name: fabric.fabricName,
@@ -146,6 +145,7 @@ const CustomFabric = () => {
                 <li
                   key={fabric.fabricID}
                   onClick={() => handleFabricClick(fabric)}
+                  className={`fabric-item ${selectedFabric && selectedFabric.fabricID === fabric.fabricID ? "selected" : ""}`}
                 >
                   <div className="fabric-img">
                     {fabric.imageUrl ? (

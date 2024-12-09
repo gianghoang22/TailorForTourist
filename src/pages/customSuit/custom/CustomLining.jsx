@@ -75,7 +75,13 @@ const CustomLining = () => {
         setLinings(data);
 
         // Auto-select first lining if none selected
-        if (!localStorage.getItem("liningId") && data.length > 0) {
+        const savedLiningId = localStorage.getItem("liningId");
+        if (savedLiningId) {
+          const savedLining = data.find(l => l.liningId === parseInt(savedLiningId));
+          if (savedLining) {
+            setSelectedLining(savedLining);
+          }
+        } else if (data.length > 0) {
           handleLiningClick(data[0]);
         }
       } catch (error) {
@@ -89,7 +95,7 @@ const CustomLining = () => {
 
   const handleLiningClick = (lining) => {
     setSelectedLining(lining);
-    localStorage.setItem("liningId", lining.liningId); // Save the selected lining ID to localStorage
+    localStorage.setItem("liningId", lining.liningId);
     addToCart({
       id: lining.liningId,
       type: "lining",
