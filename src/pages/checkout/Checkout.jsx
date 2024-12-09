@@ -458,28 +458,32 @@ const Checkout = () => {
         })
       };
 
-      // Create query parameters object
-      const queryParams = {
-        guestName: encodeURIComponent(guestName.trim()),
-        guestEmail: encodeURIComponent(guestEmail.trim()),
-        guestAddress: encodeURIComponent(guestAddress.trim()),
-        deposit: 0,
-        shippingfee: finalShippingFee,
+      // Tạo query parameters
+      const queryParams = new URLSearchParams({
+        guestName: guestName.trim(),
+        guestEmail: guestEmail.trim(),
+        guestAddress: guestAddress.trim(),
+        deposit: '0',
+        shippingfee: finalShippingFee.toString(),
         deliverymethod: deliveryMethod,
-        storeId: parseInt(storeId),
-      };
+        storeId: storeId.toString()
+      });
 
-      // Add voucherId if exists
+      // Thêm voucherId nếu có
       if (selectedVoucher && selectedVoucher.voucherId) {
-        queryParams.voucherId = selectedVoucher.voucherId;
+        queryParams.append('voucherId', selectedVoucher.voucherId.toString());
       }
 
       const token = localStorage.getItem('token');
+      
+      // Tạo URL với query string đúng cách
+      const url = `${CHECKOUT_API.confirmOrder}?${queryParams.toString()}`;
+      
+      console.log('Request URL:', url);
       console.log('Request Body:', JSON.stringify(requestBody, null, 2));
-      console.log('Query Params:', queryParams);
 
       const response = await axios.post(
-        `${CHECKOUT_API.confirmOrder}?${queryParams}`,
+        url,
         requestBody,
         {
           headers: {
