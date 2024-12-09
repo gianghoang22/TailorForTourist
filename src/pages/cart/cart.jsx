@@ -140,8 +140,7 @@ const Cart = () => {
 
   const getDisplayProductCode = (fullCode) => {
     if (!fullCode) return "";
-    // Extract just the base part before the timestamp
-    return fullCode.split("2024")[0]; // This will show just "SUIT576"
+    return fullCode.split("2024")[0]; 
   };
 
   const removeFromCart = async (productCode) => {

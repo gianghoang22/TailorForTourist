@@ -79,7 +79,6 @@ const CustomFabric = () => {
 
     // Lưu fabricId vào localStorage
     localStorage.setItem("selectedFabricID", fabric.fabricID);
-
     addToCart({
       id: fabric.fabricID,
       name: fabric.fabricName,
@@ -146,6 +145,7 @@ const CustomFabric = () => {
                 <li
                   key={fabric.fabricID}
                   onClick={() => handleFabricClick(fabric)}
+                  className={`fabric-item ${selectedFabric && selectedFabric.fabricID === fabric.fabricID ? "selected" : ""}`}
                 >
                   <div className="fabric-img">
                     {fabric.imageUrl ? (

@@ -5,6 +5,7 @@ import logo from "./../../../assets/img/icon/matcha.png"; // Adjust the path as 
 import { useNavigate, Link } from "react-router-dom";
 import { FaSignInAlt, FaSignOutAlt, FaCalendarAlt } from "react-icons/fa"; // Import icons
 
+
 export const Navigation = () => {
   const navigate = useNavigate();
 
@@ -29,20 +30,20 @@ export const Navigation = () => {
       <div className="main-header header-sticky">
         <div className="container-header d-flex justify-content-between align-items-center">
           <div className="logo">
-            <a href="/">
+            <Link to='/'>
               <img
                 src={logo}
                 alt="Logo"
                 style={{ width: "160px", height: "auto" }}
               />{" "}
               {/* Adjust the width as needed */}
-            </a>
+            </Link>
           </div>
           <nav className="main-menu d-none d-lg-block">
             <div className="main-menu f-right d-none d-lg-block">
               <ul id="navigation" className="d-flex justify-content-between">
                 <li>
-                  <a href="#">SUITS</a>
+                  <a>SUITS</a>
                   <ul className="submenu">
                     <li>
                       <Link to="/custom-suits">DESIGN YOUR SUITS</Link>
@@ -53,89 +54,89 @@ export const Navigation = () => {
                   </ul>
                 </li>
                 <li>
-                  <a href="#">BLAZERS</a>
+                  <a>BLAZERS</a>
                   <ul className="submenu">
                     <li>
-                      <a href="#">BLAZERS COLLECTION</a>
+                      <Link to='/product-collection'>BLAZERS COLLECTION</Link>
                     </li>
                   </ul>
                 </li>
                 <li>
-                  <a href="#">SHIRTS</a>
+                  <a>SHIRTS</a>
                   <ul className="submenu">
                     <li>
-                      <a href="#">SHIRTS COLLECTIONS</a>
+                      <Link to='/product-collection'>SHIRTS COLLECTIONS</Link>
                     </li>
                   </ul>
                 </li>
                 <li>
-                  <a href="#">PANTS</a>
+                  <a>PANTS</a>
                   <ul className="submenu">
                     <li>
-                      <a href="#">PANTS COLLECTIONS</a>
+                      <Link to='/product-collection'>PANTS COLLECTIONS</Link>
                     </li>
                   </ul>
                 </li>
                 <li>
-                  <a href="#">COAT</a>
+                  <Link to='/product-collection'>COAT</Link>
                 </li>
                 <li>
-                  <a href="#">WOMEN</a>
+                  <a>WOMEN</a>
                   <ul className="submenu">
                     <li>
-                      <a href="#">SUITS</a>
+                      <Link to='/product-collection'>SUITS</Link>
                     </li>
                     <li>
-                      <a href="#">PANTS</a>
+                      <Link to='/product-collection'>PANTS</Link>
                     </li>
                     <li>
-                      <a href="#">BLAZERS</a>
+                      <Link to='/product-collection'>BLAZERS</Link>
                     </li>
                     <li>
-                      <a href="#">DRESS</a>
+                      <Link to='/product-collection'>DRESS</Link>
                     </li>
                     <li>
-                      <a href="#">SKIRT</a>
+                      <Link to='/product-collection'>SKIRT</Link>
                     </li>
                     <li>
-                      <a href="#">TOP & BLOUSE</a>
+                      <Link to='/product-collection'>TOP & BLOUSE</Link>
                     </li>
                     <li>
-                      <a href="#">OVERCOAT</a>
+                      <Link to='/product-collection'>OVERCOAT</Link>
                     </li>
                     <li>
-                      <a href="#">BUSINESS DRESS</a>
+                      <Link to='/product-collection'>BUSINESS DRESS</Link>
                     </li>
                     <li>
-                      <a href="#">BUSINESS SHIRTS</a>
+                      <Link to='/product-collection'>BUSINESS SHIRTS</Link>
                     </li>
                   </ul>
                 </li>
                 <li>
-                  <a href="#">WEDDING</a>
+                  <a>WEDDING</a>
                   <ul className="submenu">
                     <li>
-                      <a href="#">GROOM</a>
+                      <Link to='/product-collection'>GROOM</Link>
                     </li>
                     <li>
-                      <a href="#">BRIDESMAID</a>
+                      <Link to='/product-collection'>BRIDESMAID</Link>
                     </li>
                     <li>
-                      <a href="#">BRIDE</a>
+                      <Link to='/product-collection'>BRIDE</Link>
                     </li>
                   </ul>
                 </li>
                 <li>
-                  <a href="#">ACCESSORIES</a>
+                  <a>ACCESSORIES</a>
                   <ul className="submenu">
                     <li>
-                      <a href="#">TIES</a>
+                      <Link to='/product-collection'>TIES</Link>
                     </li>
                     <li>
-                      <a href="#">BOW TIES</a>
+                      <Link to='/product-collection'>BOW TIES</Link>
                     </li>
                     <li>
-                      <a href="#">MASKS</a>
+                      <Link to='/product-collection'>MASKS</Link>
                     </li>
                   </ul>
                 </li>
@@ -157,7 +158,7 @@ export const Navigation = () => {
               </ul>
             </div>
           </nav>
-          <div className="header-right-btn d-none d-lg-block ml-30">
+          <div className="header-right-btn d-none d-lg-block ml-30" style={{padding: "0 12px"}}>
             {/* Render Booking button for all users, but restrict access in logic */}
             {(isLoggedIn && roleID === "customer") || !isLoggedIn ? (
                   <li>

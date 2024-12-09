@@ -7,6 +7,9 @@ import Sidebar from "../../layouts/components/sidebar/Sidebar";
 import { Footer } from "../../layouts/components/footer/Footer";
 import { Navigation } from "../../layouts/components/navigation/Navigation";
 import { motion } from "framer-motion";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 // ProductItem Component
 const ProductItem = ({ product }) => (
@@ -143,6 +146,41 @@ const ProductPage = () => {
     },
   };
 
+  const bannerSliderSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3000,
+    fade: true,
+    cssEase: "linear"
+  };
+
+  const bannerSlides = [
+    {
+      image: "https://images.unsplash.com/photo-1580657018950-c7f7d6a6d990?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      title: "Men's Suit",
+      description: "Beautiful men's suits, updated with the latest trend styles."
+    },
+    {
+      image: "https://images.unsplash.com/photo-1634729108541-516d16ddceec?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Thay thế bằng URL thật
+      title: "Wedding Collection",
+      description: "Discover our new Wedding collection with premium quality"
+    },
+    {
+      image: "https://images.unsplash.com/photo-1475721042966-f829c9b42aab?q=80&w=1769&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Thay thế bằng URL thật
+      title: "Wedding Collection",
+      description: "Discover our new Wedding collection with premium quality"
+    },
+    {
+      image: "https://images.pexels.com/photos/4427813/pexels-photo-4427813.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", // Thay thế bằng URL thật
+      title: "Luxury Fashion Coats",
+      description: "Luxurious wool blends and premium fabrics, tailored to perfection for the modern gentleman."
+    }
+  ];
+
   return (
     <motion.div
       initial="initial"
@@ -152,28 +190,31 @@ const ProductPage = () => {
     >
       <Navigation />
 
-      {/* Animated Banner Section */}
+      {/* Thay thế phần Banner cũ bằng Slick Slider */}
       <motion.div className="banner-container" variants={bannerVariants}>
-        <motion.img
-          src="https://owen.vn/media/catalog/category/veston_2.jpg"
-          className="banner-image"
-          alt="Men's Suit"
-          initial={{ scale: 1.2 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.5 }}
-        />
-        <motion.div
-          className="banner-category"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-        >
-          <h1 className="banner-title">Men's Suit</h1>
-          <div className="banner-description">
-            Beautiful men's suits, updated with the latest trend styles, made
-            from OWEN's premium materials, giving gentlemen a sophisticated look
-          </div>
-        </motion.div>
+        <Slider {...bannerSliderSettings}>
+          {bannerSlides.map((slide, index) => (
+            <div key={index} className="banner-slide">
+              <motion.img
+                src={slide.image}
+                className="banner-image"
+                alt={slide.title}
+                initial={{ scale: 1.2 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 1.5 }}
+              />
+              <motion.div
+                className="banner-category"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+              >
+                <h1 className="banner-title">{slide.title}</h1>
+                <div className="banner-description">{slide.description}</div>
+              </motion.div>
+            </div>
+          ))}
+        </Slider>
       </motion.div>
 
       {/* Animated Main Content Section */}
@@ -190,7 +231,7 @@ const ProductPage = () => {
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.8 }}
           >
-            <Sidebar onSelectSubcategory={fetchProductsByCategory} />
+          <Sidebar onSelectSubcategory={fetchProductsByCategory} />
           </motion.div>
 
           <motion.div

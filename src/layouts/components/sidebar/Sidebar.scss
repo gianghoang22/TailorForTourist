@@ -1,23 +1,65 @@
-.menu {
-    list-style: none;
-    padding-left: 15px;
+.widget_nav_menu {
+  // background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  // box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  .menu-widget-container {
+    .menu {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      // Parent categories
+      > li {
+        margin-bottom: 15px;
+        
+        > a {
+          display: block;
+          font-size: 16px;
+          font-weight: 600;
+          color: #333;
+          padding: 8px 0;
+          border-bottom: 2px solid #eee;
+          cursor: pointer;
+          
+          &:hover {
+            color: #007bff;
+          }
+        }
+
+        // Subcategories
+        ul.menu {
+          padding-left: 15px;
+          
+          li {
+            margin: 8px 0;
+            
+            a {
+              display: block;
+              font-size: 14px;
+              color: #666;
+              padding: 5px 10px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              
+              &:hover {
+                color: #a4712a;
+                background-color: #f8f9fa;
+                border-radius: 4px;
+              }
+              
+              &.selected {
+                color: #fff;
+                background-color: #a4712a;
+                border-radius: 4px;
+                font-weight: 500;
+              }
+            }
+          }
+        }
+      }
+    }
   }
-  
-  .widget_nav_menu .menu li {
-    display: block;
-  }
-  
-  .dropdown {
-    position: relative;
-  }
-  
-  .menu .menu-item a {
-    color: inherit;
-    cursor: pointer;
-    text-decoration: none;
-  }
-  
-  .menu .menu-item a.selected {
-    color: #a4712a; /* Color for selected subcategory */
-  }
+}
   
