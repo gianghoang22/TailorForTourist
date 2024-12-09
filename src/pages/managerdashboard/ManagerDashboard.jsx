@@ -24,6 +24,7 @@ import {
   FormControl,
   InputLabel,
   Box,
+  Typography,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -63,6 +64,13 @@ const ManagerDashboard = () => {
   const [processStatusFilter, setProcessStatusFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [dashboardStats, setDashboardStats] = useState({
+    totalOrders: 0,
+    pendingOrders: 0,
+    processingOrders: 0,
+    completedOrders: 0,
+    revenue: 0,
+  });
 
   const filteredOrders = useMemo(() => {
     if (!Array.isArray(orders)) return [];
@@ -544,6 +552,51 @@ const ManagerDashboard = () => {
     </Box>
   );
 
+  useEffect(() => {
+    const stats = {
+      totalOrders: orders.length,
+      pendingOrders: orders.filter((o) => o.status === "Pending").length,
+      processingOrders: orders.filter((o) => o.status === "Processing").length,
+      completedOrders: orders.filter((o) => o.status === "Finish").length,
+      revenue: orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0),
+    };
+    setDashboardStats(stats);
+  }, [orders]);
+
+  const StatisticsSummary = () => (
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "repeat(5, 1fr)",
+        gap: 2,
+        mb: 4,
+      }}
+    >
+      <Paper sx={{ p: 2, textAlign: "center" }}>
+        <Typography variant="h6">{dashboardStats.totalOrders}</Typography>
+        <Typography color="textSecondary">Total Orders</Typography>
+      </Paper>
+      <Paper sx={{ p: 2, textAlign: "center", bgcolor: "#fff3e0" }}>
+        <Typography variant="h6">{dashboardStats.pendingOrders}</Typography>
+        <Typography color="textSecondary">Pending</Typography>
+      </Paper>
+      <Paper sx={{ p: 2, textAlign: "center", bgcolor: "#e3f2fd" }}>
+        <Typography variant="h6">{dashboardStats.processingOrders}</Typography>
+        <Typography color="textSecondary">Processing</Typography>
+      </Paper>
+      <Paper sx={{ p: 2, textAlign: "center", bgcolor: "#e8f5e9" }}>
+        <Typography variant="h6">{dashboardStats.completedOrders}</Typography>
+        <Typography color="textSecondary">Completed</Typography>
+      </Paper>
+      <Paper sx={{ p: 2, textAlign: "center", bgcolor: "#f3e5f5" }}>
+        <Typography variant="h6">
+          ${dashboardStats.revenue.toFixed(2)}
+        </Typography>
+        <Typography color="textSecondary">Total Revenue</Typography>
+      </Paper>
+    </Box>
+  );
+
   return (
     <div className="manager-dashboard">
       <div className="flex">
@@ -580,6 +633,14 @@ const ManagerDashboard = () => {
                   to="/manager/statistics"
                 >
                   <i className="fas fa-chart-bar"></i> Statistics
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className={`${location.pathname === "/manager/voucheravailable" ? "active" : ""}`}
+                  to="/manager/voucheravailable"
+                >
+                  <i className="fas fa-chart-bar"></i> Voucher
                 </Link>
               </li>
               <li>
@@ -667,6 +728,7 @@ const ManagerDashboard = () => {
           ) : (
             location.pathname === "/manager" && (
               <>
+                <StatisticsSummary />
                 <FilterControls />
                 <TableContainer component={Paper}>
                   <Table>

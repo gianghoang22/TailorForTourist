@@ -23,16 +23,20 @@ import {
   Alert,
   MenuItem,
   InputAdornment,
+  Select,
+  FormControl,
+  InputLabel,
+  Box,
 } from "@mui/material";
 import { Edit, Visibility, Add, Delete } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { OrderChart } from "./DashboardCharts";
-import Autocomplete from '@mui/material/Autocomplete';
-import debounce from 'lodash/debounce';
-import Address from '../../../layouts/components/Address/Address';
+import Autocomplete from "@mui/material/Autocomplete";
+import debounce from "lodash/debounce";
+import Address from "../../../layouts/components/Address/Address";
 
 const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
-const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
+const EXCHANGE_API_KEY = "6aa988b722d995b95e483312";
 
 // Custom styling for components using `styled`
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -57,15 +61,17 @@ const api = axios.create({
 
 const convertVNDToUSD = async (amountInVND) => {
   try {
-    const response = await axios.get(`https://v6.exchangerate-api.com/v6/${EXCHANGE_API_KEY}/latest/VND`);
+    const response = await axios.get(
+      `https://v6.exchangerate-api.com/v6/${EXCHANGE_API_KEY}/latest/VND`
+    );
     if (response.status === 200) {
       const usdRate = response.data.conversion_rates.USD;
       const amountInUSD = amountInVND * usdRate;
       return Number(amountInUSD.toFixed(2));
     }
-    throw new Error('Failed to fetch exchange rate');
+    throw new Error("Failed to fetch exchange rate");
   } catch (error) {
-    console.error('Error converting VND to USD:', error);
+    console.error("Error converting VND to USD:", error);
     // Fallback rate if API fails
     const fallbackRate = 0.00004; // Approximately 1 USD = 25,000 VND
     return Number((amountInVND * fallbackRate).toFixed(2));
@@ -98,7 +104,7 @@ const OrderList = () => {
   const [orderDetails, setOrderDetails] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [users, setUsers] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [createOrderForm, setCreateOrderForm] = useState({
     storeId: 0,
     voucherId: 0,
@@ -113,7 +119,7 @@ const OrderList = () => {
     shippingFee: 0,
     deliveryMethod: "",
     products: [],
-    customProducts: []
+    customProducts: [],
   });
   const [selectedUser, setSelectedUser] = useState(null);
   const [stores, setStores] = useState([]);
@@ -132,21 +138,23 @@ const OrderList = () => {
   const [selectedLining, setSelectedLining] = useState(null);
   const [selectedStyleOptions, setSelectedStyleOptions] = useState([]);
   const [customQuantity, setCustomQuantity] = useState(1);
-  const [measurementId, setMeasurementId] = useState('');
+  const [measurementId, setMeasurementId] = useState("");
   const [measurements, setMeasurements] = useState([]);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterDate, setFilterDate] = useState("all");
 
   useEffect(() => {
     fetchOrders();
     const fetchStores = async () => {
       try {
-        const response = await api.get('/Store');
-        console.log('Stores:', response.data);
+        const response = await api.get("/Store");
+        console.log("Stores:", response.data);
         setStores(response.data);
       } catch (error) {
-        console.error('Error fetching stores:', error);
-        setSnackbarMessage('Error loading stores');
-        setSnackbarSeverity('error');
+        console.error("Error fetching stores:", error);
+        setSnackbarMessage("Error loading stores");
+        setSnackbarSeverity("error");
         setSnackbarOpen(true);
       }
     };
@@ -157,13 +165,13 @@ const OrderList = () => {
   useEffect(() => {
     const fetchVouchers = async () => {
       try {
-        const response = await api.get('/Voucher/valid');
-        console.log('Valid Vouchers:', response.data);
+        const response = await api.get("/Voucher/valid");
+        console.log("Valid Vouchers:", response.data);
         setVouchers(response.data);
       } catch (error) {
-        console.error('Error fetching vouchers:', error);
-        setSnackbarMessage('Error loading vouchers');
-        setSnackbarSeverity('error');
+        console.error("Error fetching vouchers:", error);
+        setSnackbarMessage("Error loading vouchers");
+        setSnackbarSeverity("error");
         setSnackbarOpen(true);
       }
     };
@@ -174,12 +182,12 @@ const OrderList = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await api.get('/Product/products/custom-false');
+        const response = await api.get("/Product/products/custom-false");
         setProducts(response.data);
       } catch (error) {
-        console.error('Error fetching products:', error);
-        setSnackbarMessage('Error loading products');
-        setSnackbarSeverity('error');
+        console.error("Error fetching products:", error);
+        setSnackbarMessage("Error loading products");
+        setSnackbarSeverity("error");
         setSnackbarOpen(true);
       }
     };
@@ -190,20 +198,20 @@ const OrderList = () => {
     const fetchCustomData = async () => {
       try {
         // Fetch fabrics
-        const fabricsResponse = await api.get('/Fabrics');
+        const fabricsResponse = await api.get("/Fabrics");
         setFabrics(fabricsResponse.data);
 
         // Fetch linings
-        const liningsResponse = await api.get('/Linings');
+        const liningsResponse = await api.get("/Linings");
         setLinings(liningsResponse.data);
 
         // Fetch style options
-        const styleOptionsResponse = await api.get('/StyleOption');
+        const styleOptionsResponse = await api.get("/StyleOption");
         setStyleOptions(styleOptionsResponse.data);
       } catch (error) {
-        console.error('Error fetching custom data:', error);
-        setSnackbarMessage('Error loading custom data');
-        setSnackbarSeverity('error');
+        console.error("Error fetching custom data:", error);
+        setSnackbarMessage("Error loading custom data");
+        setSnackbarSeverity("error");
         setSnackbarOpen(true);
       }
     };
@@ -215,14 +223,16 @@ const OrderList = () => {
     const fetchMeasurements = async () => {
       if (selectedUser?.userId) {
         try {
-          const response = await api.get(`/Measurement?userId=${selectedUser.userId}`);
-          console.log('Selected User ID:', selectedUser.userId);
-          console.log('Measurements for user:', response.data);
+          const response = await api.get(
+            `/Measurement?userId=${selectedUser.userId}`
+          );
+          console.log("Selected User ID:", selectedUser.userId);
+          console.log("Measurements for user:", response.data);
           setMeasurements(response.data);
         } catch (error) {
-          console.error('Error fetching measurements:', error);
-          setSnackbarMessage('Error loading measurements');
-          setSnackbarSeverity('error');
+          console.error("Error fetching measurements:", error);
+          setSnackbarMessage("Error loading measurements");
+          setSnackbarSeverity("error");
           setSnackbarOpen(true);
         }
       } else {
@@ -238,13 +248,13 @@ const OrderList = () => {
       if (!query) return;
       try {
         const response = await api.get(`/user?roleId=3&search=${query}`);
-        console.log('Search Results:', response.data);
-        const filteredUsers = response.data.filter(user => user.roleId === 3);
+        console.log("Search Results:", response.data);
+        const filteredUsers = response.data.filter((user) => user.roleId === 3);
         setUsers(filteredUsers);
       } catch (error) {
-        console.error('Error searching users:', error);
-        setSnackbarMessage('Error searching users');
-        setSnackbarSeverity('error');
+        console.error("Error searching users:", error);
+        setSnackbarMessage("Error searching users");
+        setSnackbarSeverity("error");
         setSnackbarOpen(true);
       }
     }, 500),
@@ -318,23 +328,23 @@ const OrderList = () => {
     setIsCreatingOrder(true);
     try {
       // Log form data trước khi format
-      console.log('Original Form Data:', createOrderForm);
+      console.log("Original Form Data:", createOrderForm);
 
-      const formattedShippedDate = createOrderForm.shippedDate 
-        ? new Date(createOrderForm.shippedDate).toISOString().split('T')[0]
+      const formattedShippedDate = createOrderForm.shippedDate
+        ? new Date(createOrderForm.shippedDate).toISOString().split("T")[0]
         : null;
-      console.log('Formatted Shipped Date:', formattedShippedDate);
+      console.log("Formatted Shipped Date:", formattedShippedDate);
 
       // Log products trước khi format
-      console.log('Original Products:', createOrderForm.products);
+      console.log("Original Products:", createOrderForm.products);
 
-      const formattedProducts = createOrderForm.products.map(product => {
+      const formattedProducts = createOrderForm.products.map((product) => {
         const formatted = {
           productID: product.productID,
           quantity: product.quantity,
-          price: product.price || 0
+          price: product.price || 0,
         };
-        console.log('Formatted Product:', formatted);
+        console.log("Formatted Product:", formatted);
         return formatted;
       });
 
@@ -344,7 +354,7 @@ const OrderList = () => {
         voucherId: createOrderForm.voucherId || null,
         shipperPartnerId: null,
         shippedDate: formattedShippedDate,
-        note: createOrderForm.note || '',
+        note: createOrderForm.note || "",
         paid: createOrderForm.paid || false,
         guestName: createOrderForm.guestName,
         guestEmail: createOrderForm.guestEmail,
@@ -353,48 +363,50 @@ const OrderList = () => {
         shippingFee: createOrderForm.shippingFee || 0,
         deliveryMethod: createOrderForm.deliveryMethod,
         products: formattedProducts,
-        customProducts: createOrderForm.customProducts || []
+        customProducts: createOrderForm.customProducts || [],
       };
 
       // Log payload cuối cùng
-      console.log('Final API Request Payload:', orderPayload);
-      console.log('Selected User:', selectedUser);
-      console.log('Products Array:', formattedProducts);
-      console.log('Custom Products Array:', orderPayload.customProducts);
+      console.log("Final API Request Payload:", orderPayload);
+      console.log("Selected User:", selectedUser);
+      console.log("Products Array:", formattedProducts);
+      console.log("Custom Products Array:", orderPayload.customProducts);
 
       try {
-        const response = await api.post('/Orders/staffcreateorder', orderPayload);
-        console.log('API Response Success:', response.data);
-        setSnackbarMessage('Order created successfully');
-        setSnackbarSeverity('success');
+        const response = await api.post(
+          "/Orders/staffcreateorder",
+          orderPayload
+        );
+        console.log("API Response Success:", response.data);
+        setSnackbarMessage("Order created successfully");
+        setSnackbarSeverity("success");
         setOpen(false);
         fetchOrders();
       } catch (error) {
-        console.log('API Error Response:', error.response);
-        console.log('API Error Data:', error.response?.data);
-        console.log('API Error Status:', error.response?.status);
-        console.log('API Error Message:', error.response?.data?.message);
-        console.log('API Error Details:', error.response?.data?.errors);
-        
+        console.log("API Error Response:", error.response);
+        console.log("API Error Data:", error.response?.data);
+        console.log("API Error Status:", error.response?.status);
+        console.log("API Error Message:", error.response?.data?.message);
+        console.log("API Error Details:", error.response?.data?.errors);
+
         // Log full error object
-        console.error('Full Error Object:', {
+        console.error("Full Error Object:", {
           status: error.response?.status,
           statusText: error.response?.statusText,
           data: error.response?.data,
           headers: error.response?.headers,
-          config: error.response?.config
+          config: error.response?.config,
         });
 
         setSnackbarMessage(
-          error.response?.data?.message || 
-          'Failed to create order'
+          error.response?.data?.message || "Failed to create order"
         );
-        setSnackbarSeverity('error');
+        setSnackbarSeverity("error");
       }
     } catch (error) {
-      console.error('Error in form processing:', error);
-      setSnackbarMessage('Error processing form data');
-      setSnackbarSeverity('error');
+      console.error("Error in form processing:", error);
+      setSnackbarMessage("Error processing form data");
+      setSnackbarSeverity("error");
     } finally {
       setIsCreatingOrder(false);
       setSnackbarOpen(true);
@@ -402,9 +414,9 @@ const OrderList = () => {
   };
 
   const handleCreateFormChange = (field, value) => {
-    setCreateOrderForm(prev => ({
+    setCreateOrderForm((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -416,13 +428,13 @@ const OrderList = () => {
   };
 
   const calculateShippingFee = async (addressData) => {
-    console.log('Calculating Shipping Fee with data:', addressData);
-    
+    console.log("Calculating Shipping Fee with data:", addressData);
+
     if (!addressData?.wardCode || !addressData?.districtId || !nearestStore) {
-      console.log('Missing required data:', {
+      console.log("Missing required data:", {
         wardCode: addressData?.wardCode,
         districtId: addressData?.districtId,
-        nearestStore: nearestStore
+        nearestStore: nearestStore,
       });
       setShippingFee(0);
       return;
@@ -440,38 +452,40 @@ const OrderList = () => {
         length: 0,
         width: 0,
         height: 0,
-        shopCode: nearestStore.storeCode
+        shopCode: nearestStore.storeCode,
       };
 
-      console.log('Shipping Fee Payload:', shippingPayload);
+      console.log("Shipping Fee Payload:", shippingPayload);
 
       const response = await axios.post(
-        'https://localhost:7194/api/Shipping/calculate-fee',
+        "https://localhost:7194/api/Shipping/calculate-fee",
         shippingPayload
       );
 
       if (response.data) {
-        console.log('Shipping Fee Response (VND):', response.data.total);
+        console.log("Shipping Fee Response (VND):", response.data.total);
         const shippingFeeVND = response.data.total || 0;
         const shippingFeeUSD = await convertVNDToUSD(shippingFeeVND);
-        console.log('Shipping Fee (USD):', shippingFeeUSD);
-        setCreateOrderForm(prev => ({
+        console.log("Shipping Fee (USD):", shippingFeeUSD);
+        setCreateOrderForm((prev) => ({
           ...prev,
-          shippingFee: shippingFeeUSD
+          shippingFee: shippingFeeUSD,
         }));
       }
     } catch (error) {
-      console.error('Error calculating shipping fee:', error);
-      setSnackbarMessage('Error calculating shipping fee');
-      setSnackbarSeverity('error');
+      console.error("Error calculating shipping fee:", error);
+      setSnackbarMessage("Error calculating shipping fee");
+      setSnackbarSeverity("error");
       setSnackbarOpen(true);
     }
   };
 
   useEffect(() => {
-    if (createOrderForm.deliveryMethod === 'Delivery' && 
-        createOrderForm.guestAddress && 
-        nearestStore) {
+    if (
+      createOrderForm.deliveryMethod === "Delivery" &&
+      createOrderForm.guestAddress &&
+      nearestStore
+    ) {
       const addressData = {
         wardCode: document.querySelector('input[name="wardCode"]')?.value,
         districtId: document.querySelector('input[name="districtId"]')?.value,
@@ -480,28 +494,32 @@ const OrderList = () => {
         calculateShippingFee(addressData);
       }
     }
-  }, [createOrderForm.deliveryMethod, createOrderForm.guestAddress, nearestStore]);
+  }, [
+    createOrderForm.deliveryMethod,
+    createOrderForm.guestAddress,
+    nearestStore,
+  ]);
 
   const handleAddProduct = () => {
     if (selectedProduct && productQuantity > 0) {
       // Log selected product để kiểm tra
-      console.log('Selected Product:', selectedProduct);
-      
+      console.log("Selected Product:", selectedProduct);
+
       const newProduct = {
         productID: selectedProduct.productID,
         quantity: productQuantity,
-        price: selectedProduct.price || 0
+        price: selectedProduct.price || 0,
       };
-      
+
       // Log new product để kiểm tra
-      console.log('New Product:', newProduct);
-      
+      console.log("New Product:", newProduct);
+
       setSelectedProducts([...selectedProducts, newProduct]);
-      setCreateOrderForm(prev => ({
+      setCreateOrderForm((prev) => ({
         ...prev,
-        products: [...prev.products, newProduct]
+        products: [...prev.products, newProduct],
       }));
-      
+
       // Reset form
       setSelectedProduct(null);
       setProductQuantity(1);
@@ -510,9 +528,15 @@ const OrderList = () => {
   };
 
   const handleAddCustomProduct = () => {
-    if (!selectedFabric || !selectedLining || selectedStyleOptions.length === 0 || !measurementId || customQuantity <= 0) {
-      setSnackbarMessage('Please fill all required fields');
-      setSnackbarSeverity('error');
+    if (
+      !selectedFabric ||
+      !selectedLining ||
+      selectedStyleOptions.length === 0 ||
+      !measurementId ||
+      customQuantity <= 0
+    ) {
+      setSnackbarMessage("Please fill all required fields");
+      setSnackbarSeverity("error");
       setSnackbarOpen(true);
       return;
     }
@@ -524,14 +548,14 @@ const OrderList = () => {
       liningID: selectedLining.liningId,
       measurementID: parseInt(measurementId),
       quantity: customQuantity,
-      pickedStyleOptions: selectedStyleOptions.map(option => ({
-        styleOptionID: option.styleOptionId
-      }))
+      pickedStyleOptions: selectedStyleOptions.map((option) => ({
+        styleOptionID: option.styleOptionId,
+      })),
     };
 
-    setCreateOrderForm(prev => ({
+    setCreateOrderForm((prev) => ({
       ...prev,
-      customProducts: [...prev.customProducts, newCustomProduct]
+      customProducts: [...prev.customProducts, newCustomProduct],
     }));
 
     // Reset form
@@ -539,8 +563,53 @@ const OrderList = () => {
     setSelectedLining(null);
     setSelectedStyleOptions([]);
     setCustomQuantity(1);
-    setMeasurementId('');
+    setMeasurementId("");
     setOpenCustomDialog(false);
+  };
+
+  const getFilteredOrders = () => {
+    let filtered = [...orders];
+
+    // Filter by status
+    if (filterStatus !== "all") {
+      filtered = filtered.filter((order) => order.status === filterStatus);
+    }
+
+    // Filter by date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const lastWeekStart = new Date(today);
+    lastWeekStart.setDate(today.getDate() - 7);
+
+    const thisWeekStart = new Date(today);
+    thisWeekStart.setDate(today.getDate() - today.getDay());
+
+    switch (filterDate) {
+      case "today":
+        filtered = filtered.filter((order) => {
+          const orderDate = new Date(order.orderDate);
+          orderDate.setHours(0, 0, 0, 0);
+          return orderDate.getTime() === today.getTime();
+        });
+        break;
+      case "thisWeek":
+        filtered = filtered.filter((order) => {
+          const orderDate = new Date(order.orderDate);
+          return orderDate >= thisWeekStart && orderDate <= today;
+        });
+        break;
+      case "lastWeek":
+        filtered = filtered.filter((order) => {
+          const orderDate = new Date(order.orderDate);
+          return orderDate >= lastWeekStart && orderDate < thisWeekStart;
+        });
+        break;
+      default:
+        break;
+    }
+
+    return filtered;
   };
 
   if (loading) return <CircularProgress />;
@@ -557,8 +626,45 @@ const OrderList = () => {
         <Typography variant="h6" sx={{ mb: 2 }}>
           Orders Overview
         </Typography>
-        {loading ? <CircularProgress /> : <OrderChart data={orders} />}
+        {loading ? (
+          <CircularProgress />
+        ) : (
+          <OrderChart data={getFilteredOrders()} />
+        )}
       </Paper>
+
+      {/* Add Filter Controls HERE - right before the Add Order button */}
+      <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Status Filter</InputLabel>
+          <Select
+            value={filterStatus}
+            label="Status Filter"
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <MenuItem value="all">All Status</MenuItem>
+            <MenuItem value="pending">Pending</MenuItem>
+            <MenuItem value="processing">Processing</MenuItem>
+            <MenuItem value="shipped">Shipped</MenuItem>
+            <MenuItem value="delivered">Delivered</MenuItem>
+            <MenuItem value="cancelled">Cancelled</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Date Filter</InputLabel>
+          <Select
+            value={filterDate}
+            label="Date Filter"
+            onChange={(e) => setFilterDate(e.target.value)}
+          >
+            <MenuItem value="all">All Time</MenuItem>
+            <MenuItem value="today">Today</MenuItem>
+            <MenuItem value="thisWeek">This Week</MenuItem>
+            <MenuItem value="lastWeek">Last Week</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
 
       <StyledButton
         variant="contained"
@@ -601,11 +707,11 @@ const OrderList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {orders.map((order) => (
+            {getFilteredOrders().map((order) => (
               <TableRow key={order.orderId} hover>
                 <TableCell>{order.orderId}</TableCell>
                 <TableCell>{order.guestName}</TableCell>
-                <TableCell>{order.status || 'Pending'}</TableCell>
+                <TableCell>{order.status || "Pending"}</TableCell>
                 <TableCell>{order.paymentId}</TableCell>
                 <TableCell>
                   {new Date(order.orderDate).toLocaleDateString()}
@@ -640,8 +746,6 @@ const OrderList = () => {
         </Table>
       </TableContainer>
 
-      
-
       {/* Dialog for Order Details */}
       <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)}>
         <DialogTitle>Order Details</DialogTitle>
@@ -655,10 +759,10 @@ const OrderList = () => {
                 <strong>Customer:</strong> {orderDetails.guestName}
               </Typography>
               <Typography>
-                <strong>Status:</strong> {orderDetails.status || 'Pending'}
+                <strong>Status:</strong> {orderDetails.status || "Pending"}
               </Typography>
               <Typography>
-                <strong>Payment ID:</strong> {orderDetails.paymentId || 'N/A'}
+                <strong>Payment ID:</strong> {orderDetails.paymentId || "N/A"}
               </Typography>
               <Typography>
                 <strong>Order Date:</strong>{" "}
@@ -671,7 +775,8 @@ const OrderList = () => {
                   : "Pending"}
               </Typography>
               <Typography>
-                <strong>Total Price:</strong> ${orderDetails.totalPrice.toFixed(2)}
+                <strong>Total Price:</strong> $
+                {orderDetails.totalPrice.toFixed(2)}
               </Typography>
               <Typography>
                 <strong>Note:</strong> {orderDetails.note || "N/A"}
@@ -683,7 +788,8 @@ const OrderList = () => {
                 {orderDetails.orderDetails.map((detail, index) => (
                   <li key={index}>
                     <Typography>
-                      Product ID: {detail.productId}, Quantity: {detail.quantity}, Price: ${detail.price}
+                      Product ID: {detail.productId}, Quantity:{" "}
+                      {detail.quantity}, Price: ${detail.price}
                     </Typography>
                   </li>
                 ))}
@@ -716,7 +822,12 @@ const OrderList = () => {
       </Snackbar>
 
       {/* Create Order Dialog */}
-      <Dialog open={open && !isEditMode} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={open && !isEditMode}
+        onClose={() => setOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>Create New Order</DialogTitle>
         <DialogContent>
           {isCreatingOrder ? (
@@ -725,22 +836,22 @@ const OrderList = () => {
             <>
               <Autocomplete
                 options={users}
-                getOptionLabel={(option) => 
-                  option ? `${option.name || ''} (${option.email || ''})` : ''
+                getOptionLabel={(option) =>
+                  option ? `${option.name || ""} (${option.email || ""})` : ""
                 }
                 onInputChange={(_, newValue) => {
-                  console.log('Searching for:', newValue);
+                  console.log("Searching for:", newValue);
                   searchUsers(newValue);
                 }}
                 onChange={(_, newValue) => {
-                  console.log('Selected user:', newValue);
+                  console.log("Selected user:", newValue);
                   setSelectedUser(newValue);
                   if (newValue) {
-                    setCreateOrderForm(prev => ({
+                    setCreateOrderForm((prev) => ({
                       ...prev,
-                      guestName: newValue.name || '',
-                      guestEmail: newValue.email || '',
-                      guestAddress: newValue.address || ''
+                      guestName: newValue.name || "",
+                      guestEmail: newValue.email || "",
+                      guestAddress: newValue.address || "",
                     }));
                   }
                 }}
@@ -756,7 +867,7 @@ const OrderList = () => {
                 )}
                 renderOption={(props, option) => (
                   <li {...props}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
                       <Typography variant="body1">{option.name}</Typography>
                       <Typography variant="caption" color="textSecondary">
                         {option.email}
@@ -770,11 +881,13 @@ const OrderList = () => {
                 clearOnBlur={false}
                 clearOnEscape
               />
-              
+
               <TextField
                 label="Guest Name"
                 value={createOrderForm.guestName}
-                onChange={(e) => handleCreateFormChange('guestName', e.target.value)}
+                onChange={(e) =>
+                  handleCreateFormChange("guestName", e.target.value)
+                }
                 disabled={selectedUser !== null}
                 fullWidth
                 margin="normal"
@@ -782,7 +895,9 @@ const OrderList = () => {
               <TextField
                 label="Guest Email"
                 value={createOrderForm.guestEmail}
-                onChange={(e) => handleCreateFormChange('guestEmail', e.target.value)}
+                onChange={(e) =>
+                  handleCreateFormChange("guestEmail", e.target.value)
+                }
                 disabled={selectedUser !== null}
                 fullWidth
                 margin="normal"
@@ -828,12 +943,16 @@ const OrderList = () => {
               /> */}
               <Autocomplete
                 options={vouchers}
-                getOptionLabel={(option) => option.voucherCode || ''}
-                value={vouchers.find(voucher => voucher.voucherId === createOrderForm.voucherId) || null}
+                getOptionLabel={(option) => option.voucherCode || ""}
+                value={
+                  vouchers.find(
+                    (voucher) => voucher.voucherId === createOrderForm.voucherId
+                  ) || null
+                }
                 onChange={(_, newValue) => {
-                  setCreateOrderForm(prev => ({
+                  setCreateOrderForm((prev) => ({
                     ...prev,
-                    voucherId: newValue ? newValue.voucherId : null
+                    voucherId: newValue ? newValue.voucherId : null,
                   }));
                 }}
                 renderInput={(params) => (
@@ -848,16 +967,21 @@ const OrderList = () => {
                 )}
                 renderOption={(props, option) => (
                   <li {...props}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="body1">{option.voucherCode}</Typography>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <Typography variant="body1">
+                        {option.voucherCode}
+                      </Typography>
                       <Typography variant="caption" color="textSecondary">
-                        Discount: {option.discountAmount || option.discountPercent}
-                        {option.discountPercent ? '%' : '$'}
+                        Discount:{" "}
+                        {option.discountAmount || option.discountPercent}
+                        {option.discountPercent ? "%" : "$"}
                       </Typography>
                     </div>
                   </li>
                 )}
-                isOptionEqualToValue={(option, value) => option.voucherId === value.voucherId}
+                isOptionEqualToValue={(option, value) =>
+                  option.voucherId === value.voucherId
+                }
                 loading={vouchers.length === 0}
                 loadingText="Loading vouchers..."
                 noOptionsText="No valid vouchers found"
@@ -865,8 +989,13 @@ const OrderList = () => {
               <TextField
                 label="Shipper Partner ID"
                 type="number"
-                value={createOrderForm.shipperPartnerId || ''}
-                onChange={(e) => handleCreateFormChange('shipperPartnerId', e.target.value ? parseInt(e.target.value) : null)}
+                value={createOrderForm.shipperPartnerId || ""}
+                onChange={(e) =>
+                  handleCreateFormChange(
+                    "shipperPartnerId",
+                    e.target.value ? parseInt(e.target.value) : null
+                  )
+                }
                 fullWidth
                 margin="normal"
               />
@@ -876,11 +1005,11 @@ const OrderList = () => {
                 value={createOrderForm.deliveryMethod}
                 onChange={(e) => {
                   const method = e.target.value;
-                  setCreateOrderForm(prev => ({
+                  setCreateOrderForm((prev) => ({
                     ...prev,
                     deliveryMethod: method,
-                    shippedDate: method === 'Pick up' ? '' : prev.shippedDate,
-                    shippingFee: method === 'Pick up' ? 0 : prev.shippingFee
+                    shippedDate: method === "Pick up" ? "" : prev.shippedDate,
+                    shippingFee: method === "Pick up" ? 0 : prev.shippingFee,
                   }));
                 }}
                 fullWidth
@@ -890,17 +1019,17 @@ const OrderList = () => {
                 <MenuItem value="Delivery">Delivery</MenuItem>
               </TextField>
 
-              {createOrderForm.deliveryMethod === 'Delivery' && (
+              {createOrderForm.deliveryMethod === "Delivery" && (
                 <>
                   <Autocomplete
                     options={stores}
-                    getOptionLabel={(option) => option.name || ''}
+                    getOptionLabel={(option) => option.name || ""}
                     value={nearestStore || null}
                     onChange={(_, newValue) => {
                       setNearestStore(newValue);
-                      setCreateOrderForm(prev => ({
+                      setCreateOrderForm((prev) => ({
                         ...prev,
-                        storeId: newValue ? newValue.storeId : 0
+                        storeId: newValue ? newValue.storeId : 0,
                       }));
                     }}
                     renderInput={(params) => (
@@ -915,7 +1044,9 @@ const OrderList = () => {
                     )}
                     renderOption={(props, option) => (
                       <li {...props}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}
+                        >
                           <Typography variant="body1">{option.name}</Typography>
                           <Typography variant="caption" color="textSecondary">
                             {option.address}
@@ -923,41 +1054,51 @@ const OrderList = () => {
                         </div>
                       </li>
                     )}
-                    isOptionEqualToValue={(option, value) => option.storeId === value.storeId}
+                    isOptionEqualToValue={(option, value) =>
+                      option.storeId === value.storeId
+                    }
                     loading={stores.length === 0}
                     loadingText="Loading stores..."
                     noOptionsText="No stores found"
                   />
 
                   {nearestStore && (
-                    <Paper sx={{ p: 2, mt: 2, mb: 2, bgcolor: 'background.default' }}>
+                    <Paper
+                      sx={{ p: 2, mt: 2, mb: 2, bgcolor: "background.default" }}
+                    >
                       <Typography variant="subtitle1" gutterBottom>
                         Selected Store:
                       </Typography>
-                      <Typography><strong>{nearestStore.name}</strong></Typography>
+                      <Typography>
+                        <strong>{nearestStore.name}</strong>
+                      </Typography>
                       <Typography>{nearestStore.address}</Typography>
                     </Paper>
                   )}
 
                   <Address
                     onAddressChange={async (address) => {
-                      console.log('Address changed:', address);
-                      setCreateOrderForm(prev => ({
+                      console.log("Address changed:", address);
+                      setCreateOrderForm((prev) => ({
                         ...prev,
-                        guestAddress: address.fullAddress
+                        guestAddress: address.fullAddress,
                       }));
-                      
+
                       findNearestStore(address);
 
-                      if (address.wardCode && address.districtId && nearestStore) {
+                      if (
+                        address.wardCode &&
+                        address.districtId &&
+                        nearestStore
+                      ) {
                         await calculateShippingFee({
                           wardCode: address.wardCode,
-                          districtId: address.districtId
+                          districtId: address.districtId,
                         });
                       }
                     }}
                   />
-                  
+
                   <TextField
                     label="Shipping Fee"
                     type="number"
@@ -966,22 +1107,24 @@ const OrderList = () => {
                     fullWidth
                     margin="normal"
                     InputProps={{
-                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                      startAdornment: (
+                        <InputAdornment position="start">$</InputAdornment>
+                      ),
                     }}
                   />
                 </>
               )}
 
-              {createOrderForm.deliveryMethod === 'Pick up' && (
+              {createOrderForm.deliveryMethod === "Pick up" && (
                 <Autocomplete
                   options={stores}
-                  getOptionLabel={(option) => option.name || ''}
+                  getOptionLabel={(option) => option.name || ""}
                   value={nearestStore || null}
                   onChange={(_, newValue) => {
                     setNearestStore(newValue);
-                    setCreateOrderForm(prev => ({
+                    setCreateOrderForm((prev) => ({
                       ...prev,
-                      storeId: newValue ? newValue.storeId : 0
+                      storeId: newValue ? newValue.storeId : 0,
                     }));
                   }}
                   renderInput={(params) => (
@@ -996,7 +1139,7 @@ const OrderList = () => {
                   )}
                   renderOption={(props, option) => (
                     <li {...props}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
                         <Typography variant="body1">{option.name}</Typography>
                         <Typography variant="caption" color="textSecondary">
                           {option.address}
@@ -1004,7 +1147,9 @@ const OrderList = () => {
                       </div>
                     </li>
                   )}
-                  isOptionEqualToValue={(option, value) => option.storeId === value.storeId}
+                  isOptionEqualToValue={(option, value) =>
+                    option.storeId === value.storeId
+                  }
                   loading={stores.length === 0}
                   loadingText="Loading stores..."
                   noOptionsText="No stores found"
@@ -1014,7 +1159,9 @@ const OrderList = () => {
                 label="Shipped Date"
                 type="date"
                 value={createOrderForm.shippedDate}
-                onChange={(e) => handleCreateFormChange('shippedDate', e.target.value)}
+                onChange={(e) =>
+                  handleCreateFormChange("shippedDate", e.target.value)
+                }
                 fullWidth
                 margin="normal"
                 InputLabelProps={{ shrink: true }}
@@ -1022,7 +1169,7 @@ const OrderList = () => {
               <TextField
                 label="Note"
                 value={createOrderForm.note}
-                onChange={(e) => handleCreateFormChange('note', e.target.value)}
+                onChange={(e) => handleCreateFormChange("note", e.target.value)}
                 fullWidth
                 margin="normal"
                 multiline
@@ -1032,12 +1179,13 @@ const OrderList = () => {
                 label="Deposit"
                 type="number"
                 value={createOrderForm.deposit}
-                onChange={(e) => handleCreateFormChange('deposit', parseFloat(e.target.value))}
+                onChange={(e) =>
+                  handleCreateFormChange("deposit", parseFloat(e.target.value))
+                }
                 fullWidth
                 margin="normal"
               />
-              
-              
+
               {/* You might want to add more complex inputs for products and customProducts arrays */}
               <Button
                 variant="contained"
@@ -1067,15 +1215,19 @@ const OrderList = () => {
                           <TableCell>{product.productCode}</TableCell>
                           <TableCell>{product.quantity}</TableCell>
                           <TableCell>${product.price}</TableCell>
-                          <TableCell>${(product.price * product.quantity).toFixed(2)}</TableCell>
+                          <TableCell>
+                            ${(product.price * product.quantity).toFixed(2)}
+                          </TableCell>
                           <TableCell>
                             <IconButton
                               onClick={() => {
-                                const newProducts = selectedProducts.filter((_, i) => i !== index);
+                                const newProducts = selectedProducts.filter(
+                                  (_, i) => i !== index
+                                );
                                 setSelectedProducts(newProducts);
-                                setCreateOrderForm(prev => ({
+                                setCreateOrderForm((prev) => ({
                                   ...prev,
-                                  products: newProducts
+                                  products: newProducts,
                                 }));
                               }}
                             >
@@ -1090,8 +1242,8 @@ const OrderList = () => {
               )}
 
               {/* Dialog để thêm sản phẩm */}
-              <Dialog 
-                open={openProductDialog} 
+              <Dialog
+                open={openProductDialog}
                 onClose={() => setOpenProductDialog(false)}
                 maxWidth="md"
                 fullWidth
@@ -1100,12 +1252,12 @@ const OrderList = () => {
                 <DialogContent>
                   <Autocomplete
                     options={products}
-                    getOptionLabel={(option) => 
-                      option ? `${option.productCode} - $${option.price}` : ''
+                    getOptionLabel={(option) =>
+                      option ? `${option.productCode} - $${option.price}` : ""
                     }
                     value={selectedProduct}
                     onChange={(_, newValue) => {
-                      console.log('Selected Product:', newValue);
+                      console.log("Selected Product:", newValue);
                       setSelectedProduct(newValue);
                     }}
                     renderInput={(params) => (
@@ -1118,7 +1270,9 @@ const OrderList = () => {
                     )}
                     renderOption={(props, option) => (
                       <li {...props}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}
+                        >
                           <Typography variant="body1">
                             {option.productCode} - ${option.price}
                           </Typography>
@@ -1128,26 +1282,36 @@ const OrderList = () => {
                         </div>
                       </li>
                     )}
-                    isOptionEqualToValue={(option, value) => 
+                    isOptionEqualToValue={(option, value) =>
                       option.productID === value?.productID
                     }
                   />
-                  
+
                   <TextField
                     label="Quantity"
                     type="number"
                     value={productQuantity}
-                    onChange={(e) => setProductQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={(e) =>
+                      setProductQuantity(
+                        Math.max(1, parseInt(e.target.value) || 1)
+                      )
+                    }
                     fullWidth
                     margin="normal"
                     InputProps={{
-                      inputProps: { min: 1 }
+                      inputProps: { min: 1 },
                     }}
                   />
                 </DialogContent>
                 <DialogActions>
-                  <Button onClick={() => setOpenProductDialog(false)}>Cancel</Button>
-                  <Button onClick={handleAddProduct} color="primary" variant="contained">
+                  <Button onClick={() => setOpenProductDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleAddProduct}
+                    color="primary"
+                    variant="contained"
+                  >
                     Add
                   </Button>
                 </DialogActions>
@@ -1181,24 +1345,41 @@ const OrderList = () => {
                         <TableRow key={index}>
                           <TableCell>{product.productCode}</TableCell>
                           <TableCell>
-                            {fabrics.find(f => f.fabricID === product.fabricID)?.fabricName}
+                            {
+                              fabrics.find(
+                                (f) => f.fabricID === product.fabricID
+                              )?.fabricName
+                            }
                           </TableCell>
                           <TableCell>
-                            {linings.find(l => l.liningId === product.liningID)?.liningName}
+                            {
+                              linings.find(
+                                (l) => l.liningId === product.liningID
+                              )?.liningName
+                            }
                           </TableCell>
                           <TableCell>
-                            {product.pickedStyleOptions.map(style => 
-                              styleOptions.find(s => s.styleOptionId === style.styleOptionID)?.optionValue
-                            ).join(', ')}
+                            {product.pickedStyleOptions
+                              .map(
+                                (style) =>
+                                  styleOptions.find(
+                                    (s) =>
+                                      s.styleOptionId === style.styleOptionID
+                                  )?.optionValue
+                              )
+                              .join(", ")}
                           </TableCell>
                           <TableCell>{product.quantity}</TableCell>
                           <TableCell>
                             <IconButton
                               onClick={() => {
-                                const newCustomProducts = createOrderForm.customProducts.filter((_, i) => i !== index);
-                                setCreateOrderForm(prev => ({
+                                const newCustomProducts =
+                                  createOrderForm.customProducts.filter(
+                                    (_, i) => i !== index
+                                  );
+                                setCreateOrderForm((prev) => ({
                                   ...prev,
-                                  customProducts: newCustomProducts
+                                  customProducts: newCustomProducts,
                                 }));
                               }}
                             >
@@ -1213,8 +1394,8 @@ const OrderList = () => {
               )}
 
               {/* Dialog cho custom product */}
-              <Dialog 
-                open={openCustomDialog} 
+              <Dialog
+                open={openCustomDialog}
                 onClose={() => setOpenCustomDialog(false)}
                 maxWidth="md"
                 fullWidth
@@ -1224,8 +1405,8 @@ const OrderList = () => {
                   {/* Fabric Selection */}
                   <Autocomplete
                     options={fabrics}
-                    getOptionLabel={(option) => 
-                      option ? `${option.fabricName} - $${option.price}` : ''
+                    getOptionLabel={(option) =>
+                      option ? `${option.fabricName} - $${option.price}` : ""
                     }
                     value={selectedFabric}
                     onChange={(_, newValue) => setSelectedFabric(newValue)}
@@ -1240,7 +1421,9 @@ const OrderList = () => {
                     )}
                     renderOption={(props, option) => (
                       <li {...props}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}
+                        >
                           <Typography variant="body1">
                             {option.fabricName} - ${option.price}
                           </Typography>
@@ -1255,8 +1438,8 @@ const OrderList = () => {
                   {/* Lining Selection */}
                   <Autocomplete
                     options={linings}
-                    getOptionLabel={(option) => 
-                      option ? option.liningName : ''
+                    getOptionLabel={(option) =>
+                      option ? option.liningName : ""
                     }
                     value={selectedLining}
                     onChange={(_, newValue) => setSelectedLining(newValue)}
@@ -1271,8 +1454,12 @@ const OrderList = () => {
                     )}
                     renderOption={(props, option) => (
                       <li {...props}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <Typography variant="body1">{option.liningName}</Typography>
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}
+                        >
+                          <Typography variant="body1">
+                            {option.liningName}
+                          </Typography>
                         </div>
                       </li>
                     )}
@@ -1284,7 +1471,9 @@ const OrderList = () => {
                     options={styleOptions}
                     getOptionLabel={(option) => option.optionValue}
                     value={selectedStyleOptions}
-                    onChange={(_, newValue) => setSelectedStyleOptions(newValue)}
+                    onChange={(_, newValue) =>
+                      setSelectedStyleOptions(newValue)
+                    }
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -1305,13 +1494,19 @@ const OrderList = () => {
                   <Autocomplete
                     options={measurements}
                     getOptionLabel={(option) => {
-                      if (!option) return '';
+                      if (!option) return "";
                       return `Measurement ID: ${option.measurementId} - User ID: ${option.userId}`;
                     }}
-                    value={measurements.find(m => m.measurementId === parseInt(measurementId)) || null}
+                    value={
+                      measurements.find(
+                        (m) => m.measurementId === parseInt(measurementId)
+                      ) || null
+                    }
                     onChange={(_, newValue) => {
-                      console.log('Selected Measurement:', newValue);
-                      setMeasurementId(newValue ? newValue.measurementId.toString() : '');
+                      console.log("Selected Measurement:", newValue);
+                      setMeasurementId(
+                        newValue ? newValue.measurementId.toString() : ""
+                      );
                     }}
                     renderInput={(params) => (
                       <TextField
@@ -1322,31 +1517,34 @@ const OrderList = () => {
                         required
                         error={!measurementId && measurements.length === 0}
                         helperText={
-                          !selectedUser 
-                            ? "Please select a customer first" 
-                            : measurements.length === 0 
-                              ? "No measurements found for this customer" 
+                          !selectedUser
+                            ? "Please select a customer first"
+                            : measurements.length === 0
+                              ? "No measurements found for this customer"
                               : ""
                         }
                       />
                     )}
                     renderOption={(props, option) => (
                       <li {...props}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}
+                        >
                           <Typography variant="body1">
                             Measurement ID: {option.measurementId}
                           </Typography>
                           <Typography variant="caption" color="textSecondary">
                             User ID: {option.userId}
-                            {option.createdAt && ` - Created: ${new Date(option.createdAt).toLocaleDateString()}`}
+                            {option.createdAt &&
+                              ` - Created: ${new Date(option.createdAt).toLocaleDateString()}`}
                           </Typography>
                         </div>
                       </li>
                     )}
                     disabled={!selectedUser}
                     noOptionsText={
-                      selectedUser 
-                        ? "No measurements found for this customer" 
+                      selectedUser
+                        ? "No measurements found for this customer"
                         : "Please select a customer first"
                     }
                   />
@@ -1356,18 +1554,28 @@ const OrderList = () => {
                     label="Quantity"
                     type="number"
                     value={customQuantity}
-                    onChange={(e) => setCustomQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={(e) =>
+                      setCustomQuantity(
+                        Math.max(1, parseInt(e.target.value) || 1)
+                      )
+                    }
                     fullWidth
                     margin="normal"
                     required
                     InputProps={{
-                      inputProps: { min: 1 }
+                      inputProps: { min: 1 },
                     }}
                   />
                 </DialogContent>
                 <DialogActions>
-                  <Button onClick={() => setOpenCustomDialog(false)}>Cancel</Button>
-                  <Button onClick={handleAddCustomProduct} color="primary" variant="contained">
+                  <Button onClick={() => setOpenCustomDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleAddCustomProduct}
+                    color="primary"
+                    variant="contained"
+                  >
                     Add Custom Product
                   </Button>
                 </DialogActions>
@@ -1384,7 +1592,6 @@ const OrderList = () => {
           )}
         </DialogContent>
       </Dialog>
-
     </div>
   );
 };

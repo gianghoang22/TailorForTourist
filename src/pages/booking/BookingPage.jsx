@@ -102,18 +102,43 @@ const BookingPage = () => {
     try {
       const response = await fetch("https://localhost:7194/api/Store");
       const data = await response.json();
-      setAvailableStores(data);
-      if (data.length > 0) {
-        setSelectedStoreId(data[0].storeId);
+
+      const processedData = data.map((store) => ({
+        ...store,
+        imgUrl: store.imgUrl.startsWith("http")
+          ? store.imgUrl
+          : store.imgUrl.startsWith("/")
+            ? `https://localhost:7194${store.imgUrl}`
+            : `https://localhost:7194/api/Store/image/${store.imgUrl}`,
+      }));
+
+      console.log("Store data received:", processedData);
+      processedData.forEach((store) => {
+        console.log(`Store: ${store.name}, Raw Image URL: ${store.imgUrl}`);
+        console.log(
+          `Store: ${store.name}, Processed Image URL: ${processedData.find((s) => s.name === store.name).imgUrl}`
+        );
+      });
+
+      setAvailableStores(processedData);
+      if (processedData.length > 0) {
+        setSelectedStoreId(processedData[0].storeId);
         setSelectedStoreInfo({
-          name: data[0].name,
-          address: `${data[0].address}`,
-          phone: data[0].contactNumber,
-          openTime: data[0].openTime,
-          closeTime: data[0].closeTime,
-          imgUrl: data[0].imgUrl,
+          name: processedData[0].name,
+          address: `${processedData[0].address}`,
+          phone: processedData[0].contactNumber,
+          openTime: processedData[0].openTime,
+          closeTime: processedData[0].closeTime,
+          imgUrl: processedData[0].imgUrl,
         });
-        updateAvailableTimes(date, data[0].openTime, data[0].closeTime);
+        console.log(
+          `Selected store image URL (final): ${processedData[0].imgUrl}`
+        );
+        updateAvailableTimes(
+          date,
+          processedData[0].openTime,
+          processedData[0].closeTime
+        );
       }
     } catch (error) {
       console.error("Error fetching store data:", error);

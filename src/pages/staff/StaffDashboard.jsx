@@ -105,6 +105,15 @@ const StaffDashboard = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab");
+    if (tabParam === "bookings") {
+      // Set your tab value to the bookings tab
+      setTabValue("bookings"); // or whatever value you use for the bookings tab
+    }
+  }, []);
+
   const renderDetails = () => {
     switch (activeSection) {
       case "orders":

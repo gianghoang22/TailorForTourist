@@ -56,6 +56,7 @@ import CreatePassword from "../pages/signIn/CreatePassword";
 import ProtectedRoute from "../pages/ProtectedRoute/ProtectedRoute";
 import TailorDashboard from "../pages/tailor/TailorDashboard";
 import Feedback from "../pages/profile/Feedback";
+import VoucherAvailable from "../pages/managerdashboard/VoucherAvailable";
 export const routes = [
   {
     path: "/",
@@ -111,6 +112,10 @@ export const routes = [
       {
         path: "shipment",
         element: <ShipmentTracker />,
+      },
+      {
+        path: "voucheravailable",
+        element: <VoucherAvailable />,
       },
     ],
   },
