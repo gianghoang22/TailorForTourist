@@ -218,7 +218,7 @@ const OrderHistory = () => {
                     <th>Status</th>
                     <th>Total Price</th>
                     <th>Deposit</th>
-                    <th>Payment Method</th>
+                    <th>Payment</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -247,16 +247,16 @@ const OrderHistory = () => {
                               className={`status ${
                                 order.status
                                   ? order.status.toLowerCase()
-                                  : "unknown"
+                                  : ""
                               }`}
                             >
-                              {order.status || "Unknown"}
+                              {order.status || ""}
                             </span>
                           </td>
-                          <td>${order.totalPrice?.toFixed(2) || "N/A"}</td>
-                          <td>${order.deposit?.toFixed(2) || "N/A"}</td>
+                          <td>${order.totalPrice?.toFixed(2) || ""}</td>
+                          <td>${order.deposit?.toFixed(2) || ""}</td>
                           <td>
-                            {paymentMethod ? paymentMethod.method : "N/A"}
+                            {paymentMethod ? paymentMethod.method : "Paypal"}
                           </td>
                           <td>
                             <button

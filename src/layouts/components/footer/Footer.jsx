@@ -12,7 +12,7 @@ export const Footer = () => {
     </div>
     <div className="all">
         <div className="ft-infos-row">
-            <article className='info-item'>
+            <article className='info-item-ft'>
                 <div id="nav_menu-2" className="widget_nav_menu">
                     <h3 className='ft-tt'>POLICIES</h3>
                     <div className="menu-ft1-container">
@@ -36,7 +36,7 @@ export const Footer = () => {
                     </div>
                 </div>
             </article>
-            <article className='info-item'>
+            <article className='info-item-ft'>
                 <div id="nav_menu-3" className="widget_nav_menu">
                     <h3 className='ft-tt'>QUESTIONS</h3>
                     <div className="menu-ft2-container">
@@ -57,7 +57,7 @@ export const Footer = () => {
                     </div>
                 </div>
             </article>
-            <article className='info-item'>
+            <article className='info-item-ft'>
                 <div id="nav_menu-4" className="widget_nav_menu">
                     <h3 className='ft-tt'>EXPERIENCES</h3>
                     <div className="menu-ft3-container">
@@ -75,7 +75,7 @@ export const Footer = () => {
                     </div>
                 </div>
             </article>
-            <article className='info-item'>
+            <article className='info-item-ft'>
                 <div id="text-2" className="widget_text">
                     <h3 className="ft-tt">RECEIVE OUR NEWSLETTER</h3>
                         <div className="textwidget">
