@@ -15,6 +15,11 @@ import {
   Typography,
 } from "@mui/material";
 import { BookingChart } from "./DashboardCharts";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { Grid, Stack, TextField } from "@mui/material";
+import ClearIcon from "@mui/icons-material/Clear";
 
 const BASE_URL = "https://localhost:7194/api";
 
@@ -52,6 +57,62 @@ const BookingList = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dateFilter, setDateFilter] = useState("all");
+  const [customDateRange, setCustomDateRange] = useState({
+    startDate: null,
+    endDate: null,
+  });
+
+  const handleDateFilterChange = (event) => {
+    setDateFilter(event.target.value);
+    if (event.target.value !== "custom") {
+      setCustomDateRange({ startDate: null, endDate: null });
+    }
+  };
+
+  const filterBookings = (bookings) => {
+    const now = new Date();
+    return bookings.filter((booking) => {
+      const bookingDate = new Date(booking.bookingDate);
+
+      let dateMatch = true;
+      switch (dateFilter) {
+        case "today":
+          dateMatch = bookingDate.toDateString() === now.toDateString();
+          break;
+        case "thisWeek":
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(startOfWeek.getDate() + 6);
+          dateMatch = bookingDate >= startOfWeek && bookingDate <= endOfWeek;
+          break;
+        case "thisMonth":
+          dateMatch =
+            bookingDate.getMonth() === now.getMonth() &&
+            bookingDate.getFullYear() === now.getFullYear();
+          break;
+        case "lastMonth":
+          const lastMonth = new Date(now);
+          lastMonth.setMonth(now.getMonth() - 1);
+          dateMatch =
+            bookingDate.getMonth() === lastMonth.getMonth() &&
+            bookingDate.getFullYear() === lastMonth.getFullYear();
+          break;
+        case "custom":
+          if (customDateRange.startDate && customDateRange.endDate) {
+            dateMatch =
+              bookingDate >= customDateRange.startDate &&
+              bookingDate <= customDateRange.endDate;
+          }
+          break;
+        default:
+          dateMatch = true;
+      }
+
+      return dateMatch;
+    });
+  };
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -132,6 +193,152 @@ const BookingList = () => {
         Booking Management
       </Typography>
 
+      {/* Stats Summary Section */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={3}>
+          <Paper sx={{ p: 2, textAlign: "center" }}>
+            <Typography variant="h6" color="primary">
+              Total Bookings
+            </Typography>
+            <Typography variant="h4">
+              {filterBookings(bookings).length}
+            </Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <Paper sx={{ p: 2, textAlign: "center" }}>
+            <Typography variant="h6" color="success.main">
+              Confirmed
+            </Typography>
+            <Typography variant="h4">
+              {
+                filterBookings(bookings).filter(
+                  (b) => b.status.toLowerCase() === "confirmed"
+                ).length
+              }
+            </Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <Paper sx={{ p: 2, textAlign: "center" }}>
+            <Typography variant="h6" color="warning.main">
+              Pending
+            </Typography>
+            <Typography variant="h4">
+              {
+                filterBookings(bookings).filter(
+                  (b) => b.status.toLowerCase() === "pending"
+                ).length
+              }
+            </Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <Paper sx={{ p: 2, textAlign: "center" }}>
+            <Typography variant="h6" color="error.main">
+              Cancelled
+            </Typography>
+            <Typography variant="h4">
+              {
+                filterBookings(bookings).filter(
+                  (b) => b.status.toLowerCase() === "cancel"
+                ).length
+              }
+            </Typography>
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* Enhanced Filter Section */}
+      <Paper sx={{ p: 3, mb: 3, backgroundColor: "#f8f9fa" }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+          <Typography
+            variant="h6"
+            sx={{ color: "primary.main", fontWeight: 600 }}
+          >
+            Filter Bookings
+          </Typography>
+          <Button
+            startIcon={<ClearIcon />}
+            onClick={() => {
+              setDateFilter("all");
+              setCustomDateRange({ startDate: null, endDate: null });
+            }}
+          >
+            Clear Filters
+          </Button>
+        </Box>
+
+        <Box sx={{ mb: 3 }}>
+          <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+            {["today", "thisWeek", "thisMonth", "lastMonth"].map((period) => (
+              <Chip
+                key={period}
+                label={
+                  period.charAt(0).toUpperCase() +
+                  period.slice(1).replace(/([A-Z])/g, " $1")
+                }
+                onClick={() => setDateFilter(period)}
+                color={dateFilter === period ? "primary" : "default"}
+                variant={dateFilter === period ? "filled" : "outlined"}
+                sx={{ textTransform: "capitalize" }}
+              />
+            ))}
+          </Stack>
+        </Box>
+
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                backgroundColor: "white",
+                borderRadius: 2,
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
+                Custom Date Range
+              </Typography>
+
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Stack spacing={2}>
+                  <DatePicker
+                    label="Start Date"
+                    value={customDateRange.startDate}
+                    onChange={(newValue) => {
+                      setDateFilter("custom");
+                      setCustomDateRange((prev) => ({
+                        ...prev,
+                        startDate: newValue,
+                      }));
+                    }}
+                    slotProps={{
+                      textField: { size: "small", fullWidth: true },
+                    }}
+                  />
+                  <DatePicker
+                    label="End Date"
+                    value={customDateRange.endDate}
+                    onChange={(newValue) => {
+                      setDateFilter("custom");
+                      setCustomDateRange((prev) => ({
+                        ...prev,
+                        endDate: newValue,
+                      }));
+                    }}
+                    minDate={customDateRange.startDate}
+                    slotProps={{
+                      textField: { size: "small", fullWidth: true },
+                    }}
+                  />
+                </Stack>
+              </LocalizationProvider>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Paper>
+
       {/* Add Chart Section */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
@@ -161,7 +368,7 @@ const BookingList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {bookings.map((booking) => (
+            {filterBookings(bookings).map((booking) => (
               <TableRow key={booking.bookingId}>
                 <TableCell>{booking.bookingId}</TableCell>
                 <TableCell>{booking.guestName}</TableCell>

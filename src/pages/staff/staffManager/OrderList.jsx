@@ -23,13 +23,21 @@ import {
   Alert,
   MenuItem,
   InputAdornment,
+  Grid,
+  Box,
+  Stack,
+  Chip,
 } from "@mui/material";
-import { Edit, Visibility, Add, Delete } from "@mui/icons-material";
+import { Edit, Visibility, Add, Delete, FilterList } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { OrderChart } from "./DashboardCharts";
-import Autocomplete from '@mui/material/Autocomplete';
-import debounce from 'lodash/debounce';
-import Address from '../../../layouts/components/Address/Address';
+import Autocomplete from "@mui/material/Autocomplete";
+import debounce from "lodash/debounce";
+import Address from "../../../layouts/components/Address/Address";
+import Slider from "@mui/material/Slider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
@@ -151,6 +159,77 @@ const OrderList = () => {
   const [measurementId, setMeasurementId] = useState('');
   const [measurements, setMeasurements] = useState([]);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [dateFilter, setDateFilter] = useState("all");
+  const [priceFilter, setPriceFilter] = useState({ min: 0, max: Infinity });
+  const [priceRange, setPriceRange] = useState([0, 1000]); // Default range, adjust as needed
+  const [customDateRange, setCustomDateRange] = useState({
+    startDate: null,
+    endDate: null,
+  });
+
+  const handleDateFilterChange = (event) => {
+    setDateFilter(event.target.value);
+    if (event.target.value !== "custom") {
+      setCustomDateRange({ startDate: null, endDate: null });
+    }
+  };
+
+  const filterOrders = (orders) => {
+    const now = new Date();
+    return orders.filter((order) => {
+      const orderDate = new Date(order.orderDate);
+      const totalPrice = order.totalPrice || 0;
+
+      let dateMatch = true;
+      switch (dateFilter) {
+        case "today":
+          dateMatch = orderDate.toDateString() === now.toDateString();
+          break;
+        case "thisWeek":
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(startOfWeek.getDate() + 6);
+          dateMatch = orderDate >= startOfWeek && orderDate <= endOfWeek;
+          break;
+        case "thisMonth":
+          dateMatch =
+            orderDate.getMonth() === now.getMonth() &&
+            orderDate.getFullYear() === now.getFullYear();
+          break;
+        case "lastMonth":
+          const lastMonth = new Date(now);
+          lastMonth.setMonth(now.getMonth() - 1);
+          dateMatch =
+            orderDate.getMonth() === lastMonth.getMonth() &&
+            orderDate.getFullYear() === lastMonth.getFullYear();
+          break;
+        case "custom":
+          if (customDateRange.startDate && customDateRange.endDate) {
+            dateMatch =
+              orderDate >= customDateRange.startDate &&
+              orderDate <= customDateRange.endDate;
+          }
+          break;
+        default:
+          dateMatch = true;
+      }
+
+      const priceMatch =
+        totalPrice >= priceFilter.min && totalPrice <= priceFilter.max;
+
+      return dateMatch && priceMatch;
+    });
+  };
+
+  const handlePriceFilterChange = (min, max) => {
+    setPriceFilter({ min, max });
+  };
+
+  const handlePriceRangeChange = (event, newValue) => {
+    setPriceRange(newValue);
+    handlePriceFilterChange(newValue[0], newValue[1]);
+  };
 
   useEffect(() => {
     const fetchVouchers = async () => {
@@ -555,12 +634,166 @@ const OrderList = () => {
         Order Management
       </Typography>
 
-      {/* Add Chart Section */}
+      {/* Chart Section */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
           Orders Overview
         </Typography>
         {loading ? <CircularProgress /> : <OrderChart data={orders} />}
+      </Paper>
+
+      {/* Enhanced Filter Section */}
+      <Paper sx={{ p: 3, mb: 3, backgroundColor: "#f8f9fa" }}>
+        <Typography
+          variant="h6"
+          sx={{ mb: 3, color: "primary.main", fontWeight: 600 }}
+        >
+          <FilterList sx={{ mr: 1, verticalAlign: "middle" }} />
+          Filter Orders
+        </Typography>
+
+        <Grid container spacing={3}>
+          {/* Date Filter Column */}
+          <Grid item xs={12} md={6}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                backgroundColor: "white",
+                borderRadius: 2,
+                height: "100%",
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
+                Date Range
+              </Typography>
+
+              <Box sx={{ px: 2, pb: 2 }}>
+                <TextField
+                  select
+                  label="Select Period"
+                  value={dateFilter}
+                  onChange={handleDateFilterChange}
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  size="small"
+                >
+                  <MenuItem value="all">All Time</MenuItem>
+                  <MenuItem value="today">Today</MenuItem>
+                  <MenuItem value="thisWeek">This Week</MenuItem>
+                  <MenuItem value="thisMonth">This Month</MenuItem>
+                  <MenuItem value="lastMonth">Last Month</MenuItem>
+                  <MenuItem value="custom">Custom Range</MenuItem>
+                </TextField>
+
+                {dateFilter === "custom" && (
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Stack spacing={2}>
+                      <DatePicker
+                        label="Start Date"
+                        value={customDateRange.startDate}
+                        onChange={(newValue) => {
+                          setCustomDateRange((prev) => ({
+                            ...prev,
+                            startDate: newValue,
+                          }));
+                        }}
+                        slotProps={{ textField: { size: "small" } }}
+                      />
+                      <DatePicker
+                        label="End Date"
+                        value={customDateRange.endDate}
+                        onChange={(newValue) => {
+                          setCustomDateRange((prev) => ({
+                            ...prev,
+                            endDate: newValue,
+                          }));
+                        }}
+                        minDate={customDateRange.startDate}
+                        slotProps={{ textField: { size: "small" } }}
+                      />
+                    </Stack>
+                  </LocalizationProvider>
+                )}
+              </Box>
+            </Paper>
+          </Grid>
+
+          {/* Price Range Column */}
+          <Grid item xs={12} md={6}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                backgroundColor: "white",
+                borderRadius: 2,
+                height: "100%",
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
+                Price Range
+              </Typography>
+
+              <Box sx={{ px: 2, pb: 2 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 1 }}
+                >
+                  Select price range (USD)
+                </Typography>
+                <Typography variant="h6" sx={{ mb: 2, color: "primary.main" }}>
+                  ${priceRange[0]} - ${priceRange[1]}
+                </Typography>
+                <Slider
+                  value={priceRange}
+                  onChange={handlePriceRangeChange}
+                  valueLabelDisplay="auto"
+                  min={0}
+                  max={1000}
+                  sx={{
+                    "& .MuiSlider-thumb": {
+                      height: 24,
+                      width: 24,
+                      backgroundColor: "#fff",
+                      border: "2px solid currentColor",
+                      "&:focus, &:hover, &.Mui-active, &.Mui-focusVisible": {
+                        boxShadow: "inherit",
+                      },
+                    },
+                    "& .MuiSlider-valueLabel": {
+                      backgroundColor: "primary.main",
+                    },
+                  }}
+                />
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
+
+        {/* Active Filters Display */}
+        <Box sx={{ mt: 2 }}>
+          <Stack direction="row" spacing={1} flexWrap="wrap">
+            {dateFilter !== "all" && (
+              <Chip
+                label={`Date: ${dateFilter}`}
+                onDelete={() => setDateFilter("all")}
+                color="primary"
+                variant="outlined"
+                size="small"
+              />
+            )}
+            {(priceRange[0] > 0 || priceRange[1] < 1000) && (
+              <Chip
+                label={`Price: $${priceRange[0]} - $${priceRange[1]}`}
+                onDelete={() => setPriceRange([0, 1000])}
+                color="primary"
+                variant="outlined"
+                size="small"
+              />
+            )}
+          </Stack>
+        </Box>
       </Paper>
 
       <StyledButton
@@ -598,13 +831,12 @@ const OrderList = () => {
               <StyledTableCell>Status</StyledTableCell>
               <StyledTableCell>Payment ID</StyledTableCell>
               <StyledTableCell>Order Date</StyledTableCell>
-              {/* <StyledTableCell>Shipped Date</StyledTableCell> */}
               <StyledTableCell>Total Price</StyledTableCell>
               <StyledTableCell>Actions</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {orders.map((order) => (
+            {filterOrders(orders).map((order) => (
               <TableRow key={order.orderId} hover>
                 <TableCell>{order.orderId}</TableCell>
                 <TableCell>{order.guestName}</TableCell>
@@ -613,12 +845,9 @@ const OrderList = () => {
                 <TableCell>
                   {new Date(order.orderDate).toLocaleDateString()}
                 </TableCell>
-                {/* <TableCell>
-                  {order.shippedDate
-                    ? new Date(order.shippedDate).toLocaleDateString()
-                    : ""}
-                </TableCell>{" "} */}
-                {order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}$
+                <TableCell>
+                  {order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}$
+                </TableCell>
                 <TableCell>
                   <Tooltip title="Edit Order">
                     <IconButton
@@ -661,18 +890,12 @@ const OrderList = () => {
                 <strong>Status:</strong> {orderDetails.status || 'Pending'}
               </Typography>
               <Typography>
-                <strong>Payment ID:</strong> {orderDetails.paymentId || ''}
+                <strong>Payment ID:</strong> {orderDetails.paymentId || ""}
               </Typography>
               <Typography>
                 <strong>Order Date:</strong>{" "}
                 {new Date(orderDetails.orderDate).toLocaleString()}
               </Typography>
-              {/* <Typography>
-                <strong>Shipped Date:</strong>{" "}
-                {orderDetails.shippedDate
-                  ? new Date(orderDetails.shippedDate).toLocaleString()
-                  : "Pending"}
-              </Typography> */}
               <Typography>
                 <strong>Total Price:</strong> ${orderDetails.totalPrice.toFixed(2)}
               </Typography>
