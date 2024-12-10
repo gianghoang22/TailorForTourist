@@ -14,7 +14,7 @@ const CustomSuit = () => {
       <header id="header">
         <div className="all">
           <div className="logo">
-            <a href="#" className="custom-logo-link" rel="home">
+            <Link to='/' className="custom-logo-link" rel="home">
               <img
                 width="306"
                 height="81"
@@ -22,7 +22,7 @@ const CustomSuit = () => {
                 className="custom-logo"
                 alt="Matcha Vest"
               />
-            </a>
+            </Link>
           </div>
           <nav>
             <ul className="customMenu">

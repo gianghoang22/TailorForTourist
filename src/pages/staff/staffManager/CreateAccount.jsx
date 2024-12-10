@@ -12,7 +12,7 @@ const CreateAccount = () => {
     status: 'active',
     isConfirmed: true,
     roleId: 3,
-    phone: '0987654321'
+    phone: ''
   });
 
   const [message, setMessage] = useState('');
@@ -41,7 +41,7 @@ const CreateAccount = () => {
         status: 'active',
         isConfirmed: true,
         roleId: 3,
-        phone: '0987654321'
+        phone: ''
       });
 
       console.log(response.data);
