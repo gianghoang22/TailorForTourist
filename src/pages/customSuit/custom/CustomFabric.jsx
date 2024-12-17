@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { addToCart } from "../../../utils/cartUtil";
+import { addToCart, clearCustomizationCache } from "../../../utils/cartUtil";
 import { toast } from "react-toastify";
 import "./CustomFabric.scss";
 
@@ -76,15 +76,13 @@ const CustomFabric = () => {
 
   const handleFabricClick = (fabric) => {
     setSelectedFabric(fabric);
-
-    // Lưu fabricId vào localStorage
     localStorage.setItem("selectedFabricID", fabric.fabricID);
     addToCart({
       id: fabric.fabricID,
       name: fabric.fabricName,
       price: fabric.price,
       imageUrl: fabric.imageUrl,
-      type: "fabric",
+      type: "fabric"
     });
   };
 
@@ -93,12 +91,25 @@ const CustomFabric = () => {
     fabric.fabricName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleNextClick = (e) => {
+  const handleNextClick = () => {
     if (!selectedFabric) {
-      e.preventDefault(); // Prevent navigation
-      toast.error("Please select a fabric before continuing");
+      toast.error("Please select a fabric first");
       return;
     }
+
+    // Clear tất cả style data khi chuyển sang trang style
+    clearCustomizationCache();
+    
+    // Clear các state liên quan đến style trong localStorage
+    localStorage.removeItem("styleOptionId");
+    localStorage.removeItem("selectedStyles");
+    localStorage.removeItem("selectedImages");
+    localStorage.removeItem("selectedOptionValues");
+    localStorage.removeItem("selectedOptions");
+
+    // Chuyển đến trang style
+    navigate("/custom-suits/style");
+    toast.success("Fabric selected successfully. Please choose your styles.");
   };
 
   if (loading) return <div>Loading...</div>;
@@ -190,9 +201,12 @@ const CustomFabric = () => {
         )}
 
         <div className="next-btn">
-          <Link to="/custom-suits/style" onClick={handleNextClick}>
-            <button className="navigation-button">Go to Style</button>
-          </Link>
+          <button
+            className='navigation-button'
+            onClick={handleNextClick}
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>

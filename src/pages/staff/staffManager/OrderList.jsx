@@ -27,6 +27,7 @@ import {
   Box,
   Stack,
   Chip,
+  TablePagination,
 } from "@mui/material";
 import { Edit, Visibility, Add, Delete, FilterList } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
@@ -96,6 +97,16 @@ const convertVNDToUSD = async (amountInVND) => {
   }
 };
 
+const fetchUserDetails = async (userId) => {
+  try {
+    const response = await api.get(`/User/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    return null;
+  }
+};
+
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -158,6 +169,7 @@ const OrderList = () => {
   const [customQuantity, setCustomQuantity] = useState(1);
   const [measurementId, setMeasurementId] = useState('');
   const [measurements, setMeasurements] = useState([]);
+  const [measurementsWithUserDetails, setMeasurementsWithUserDetails] = useState([]);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [dateFilter, setDateFilter] = useState("all");
   const [priceFilter, setPriceFilter] = useState({ min: 0, max: Infinity });
@@ -166,6 +178,8 @@ const OrderList = () => {
     startDate: null,
     endDate: null,
   });
+  const [page, setPage] = useState(0);
+  const [rowsPerPage] = useState(10);
 
   const handleDateFilterChange = (event) => {
     setDateFilter(event.target.value);
@@ -296,6 +310,18 @@ const OrderList = () => {
           console.log('Selected User ID:', selectedUser.userId);
           console.log('Measurements for user:', response.data);
           setMeasurements(response.data);
+
+          // Fetch user details for each measurement
+          const measurementsWithUsers = await Promise.all(
+            response.data.map(async (measurement) => {
+              const userDetails = await fetchUserDetails(measurement.userId);
+              return {
+                ...measurement,
+                userDetails
+              };
+            })
+          );
+          setMeasurementsWithUserDetails(measurementsWithUsers);
         } catch (error) {
           console.error('Error fetching measurements:', error);
           setSnackbarMessage('Error loading measurements');
@@ -303,7 +329,8 @@ const OrderList = () => {
           setSnackbarOpen(true);
         }
       } else {
-        setMeasurements([]); // Reset measurements khi không có user được chọn
+        setMeasurements([]);
+        setMeasurementsWithUserDetails([]);
       }
     };
 
@@ -571,6 +598,7 @@ const OrderList = () => {
       
       const newProduct = {
         productID: selectedProduct.productID,
+        productCode: selectedProduct.productCode,
         quantity: productQuantity,
         price: selectedProduct.price || 0
       };
@@ -623,6 +651,32 @@ const OrderList = () => {
     setCustomQuantity(1);
     setMeasurementId('');
     setOpenCustomDialog(false);
+  };
+
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        const response = await api.get('/Store');
+        setStores(response.data);
+        console.log('Stores fetched:', response.data);
+      } catch (error) {
+        console.error('Error fetching stores:', error);
+        setSnackbarMessage('Error loading stores');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    };
+
+    fetchStores();
+  }, []);
+
+  const paginatedOrders = filterOrders(orders).slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
   };
 
   if (loading) return <CircularProgress />;
@@ -836,7 +890,7 @@ const OrderList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filterOrders(orders).map((order) => (
+            {paginatedOrders.map((order) => (
               <TableRow key={order.orderId} hover>
                 <TableCell>{order.orderId}</TableCell>
                 <TableCell>{order.guestName}</TableCell>
@@ -870,6 +924,26 @@ const OrderList = () => {
             ))}
           </TableBody>
         </Table>
+        <TablePagination
+          rowsPerPageOptions={[10]}
+          component="div"
+          count={filterOrders(orders).length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          sx={{
+            '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+              margin: '0',
+            },
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            '.MuiTablePagination-actions': {
+              marginLeft: 'auto',
+              marginRight: 'auto'
+            }
+          }}
+        />
       </TableContainer>
 
       
@@ -1088,14 +1162,14 @@ const OrderList = () => {
                 loadingText="Loading vouchers..."
                 noOptionsText="No valid vouchers found"
               />
-              <TextField
+              {/* <TextField
                 label="Shipper Partner ID"
                 type="number"
                 value={createOrderForm.shipperPartnerId || ''}
                 onChange={(e) => handleCreateFormChange('shipperPartnerId', e.target.value ? parseInt(e.target.value) : null)}
                 fullWidth
                 margin="normal"
-              />
+              /> */}
               <TextField
                 select
                 label="Delivery Method"
@@ -1529,12 +1603,13 @@ const OrderList = () => {
 
                   {/* Measurement ID */}
                   <Autocomplete
-                    options={measurements}
+                    options={measurementsWithUserDetails}
                     getOptionLabel={(option) => {
                       if (!option) return '';
-                      return `Measurement ID: ${option.measurementId} - User ID: ${option.userId}`;
+                      const user = option.userDetails;
+                      return `Measurement ID: ${option.measurementId} - ${user?.name || ''} (${user?.email || ''})`;
                     }}
-                    value={measurements.find(m => m.measurementId === parseInt(measurementId)) || null}
+                    value={measurementsWithUserDetails.find(m => m.measurementId === parseInt(measurementId)) || null}
                     onChange={(_, newValue) => {
                       console.log('Selected Measurement:', newValue);
                       setMeasurementId(newValue ? newValue.measurementId.toString() : '');
@@ -1546,11 +1621,11 @@ const OrderList = () => {
                         margin="normal"
                         fullWidth
                         required
-                        error={!measurementId && measurements.length === 0}
+                        error={!measurementId && measurementsWithUserDetails.length === 0}
                         helperText={
                           !selectedUser 
                             ? "Please select a customer first" 
-                            : measurements.length === 0 
+                            : measurementsWithUserDetails.length === 0 
                               ? "No measurements found for this customer" 
                               : ""
                         }
@@ -1563,7 +1638,7 @@ const OrderList = () => {
                             Measurement ID: {option.measurementId}
                           </Typography>
                           <Typography variant="caption" color="textSecondary">
-                            User ID: {option.userId}
+                            {option.userDetails?.name} ({option.userDetails?.email})
                             {option.createdAt && ` - Created: ${new Date(option.createdAt).toLocaleDateString()}`}
                           </Typography>
                         </div>

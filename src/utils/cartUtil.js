@@ -1,57 +1,79 @@
 import { toast } from 'react-toastify';
 
-const CART_KEY = 'shopping_cart';
+export const CART_KEY = 'shopping_cart';
 const GUEST_CART_KEY = 'guestCart';
 
+export const clearCustomizationCache = () => {
+  localStorage.removeItem("styleOptionId");
+  localStorage.removeItem("selectedStyles");
+  localStorage.removeItem("selectedImages");
+  localStorage.removeItem("selectedOptionValues");
+  localStorage.removeItem("selectedOptions");
+};
+
 export const addToCart = (item) => {
-  const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+  let cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+  console.log("Current Cart before adding:", cart);
+  console.log("Adding Item:", item);
 
   if (item.type === 'fabric') {
+    cart = [];
+    
     const newSuit = {
       id: `SUIT-${item.id}`,
       fabricId: item.id,
       type: 'SUIT',
       complete: false,
+      styles: [],
+      lining: null
     };
     cart.push(newSuit);
-    toast.success(`Fabric ${item.name} added to a new suit`);
   } else if (item.type === 'style') {
-    const lastIncompleteSuit = cart.find(suit => suit.type === 'SUIT' && !suit.complete);
-
-    if (lastIncompleteSuit) {
-      lastIncompleteSuit.styles = lastIncompleteSuit.styles || [];
-      lastIncompleteSuit.styles.push(item);
-      toast.success(`Style option added to your suit`);
-    } else {
-      toast.error('Please select a fabric first to start a new suit');
-      return;
+    const lastSuit = cart[cart.length - 1];
+    if (lastSuit && !lastSuit.complete) {
+      lastSuit.styles = lastSuit.styles || [];
+      const existingStyleIndex = lastSuit.styles.findIndex(
+        style => style.optionType === item.optionType
+      );
+      if (existingStyleIndex !== -1) {
+        lastSuit.styles[existingStyleIndex] = item;
+      } else {
+        lastSuit.styles.push(item);
+      }
+      checkAndMarkComplete(lastSuit);
     }
   } else if (item.type === 'lining') {
-    const lastIncompleteSuit = cart.find(suit => suit.type === 'SUIT' && !suit.complete);
-
-    if (lastIncompleteSuit) {
-      lastIncompleteSuit.lining = item;
-      toast.success(`Lining added to your suit`);
-    } else {
-      toast.error('Please select a fabric first to start a new suit');
-      return;
+    const lastSuit = cart[cart.length - 1];
+    if (lastSuit && !lastSuit.complete) {
+      lastSuit.lining = item;
+      checkAndMarkComplete(lastSuit);
     }
   }
 
-  // Mark suit as complete if fabric, style, and lining are selected
-  cart.forEach((suit) => {
-    if (suit.type === 'SUIT' && suit.fabricId && suit.styles && suit.styles.length > 0 && suit.lining) {
-      suit.complete = true;
-    }
-  });
-
+  console.log("Updated Cart:", cart);
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
-  console.log("Cart after adding item:", cart); // Log to check cart contents
+  return cart;
+};
+
+const checkAndMarkComplete = (suit) => {
+  if (
+    suit.fabricId &&
+    suit.styles && suit.styles.length > 0 &&
+    suit.lining
+  ) {
+    suit.complete = true;
+    console.log("Suit marked as complete:", suit);
+  }
+};
+
+export const getLastCompleteSuit = () => {
+  const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+  return cart.find(suit => suit.complete === true);
 };
 
 export const getCart = () => {
   const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-  console.log("Retrieved Cart:", cart); // Log to check cart retrieval
+  console.log("Retrieved Cart:", cart);
   return cart;
 };
 

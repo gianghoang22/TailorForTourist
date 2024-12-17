@@ -90,9 +90,7 @@ const OrderHistory = () => {
     fetch(`https://localhost:7194/api/Orders/${orderId}/details`)
       .then((response) => {
         if (!response.ok) {
-          throw new Error(
-            "Please make payment for order so that you could view details"
-          );
+          throw new Error("Please make payment for order so that you could view details");
         }
         return response.json();
       })
@@ -103,9 +101,8 @@ const OrderHistory = () => {
         return orderData.orderDetails;
       })
       .then((detailsArray) => {
-        // Fetch product details for each item in the order
         const productDetailsPromises = detailsArray.map((item) =>
-          fetch(`https://localhost:7194/api/Product/basic/${item.productId}`)
+          fetch(`https://localhost:7194/api/Product/details/${item.productId}`)
             .then((response) => {
               if (!response.ok) {
                 throw new Error("Failed to fetch product details");
@@ -116,6 +113,9 @@ const OrderHistory = () => {
               ...item,
               productCode: product.productCode,
               price: product.price,
+              fabricName: product.fabricName,
+              liningName: product.liningName,
+              styleOptions: product.styleOptions
             }))
         );
 
@@ -320,42 +320,63 @@ const OrderHistory = () => {
           <div className="order-details-modal">
             <div className="modal-header">
               <h2>Order Details #{selectedOrder}</h2>
-              <button onClick={() => setModalIsOpen(false)} className="close-button">
-                ×
-              </button>
+              <button onClick={() => setModalIsOpen(false)} className="close-button">×</button>
             </div>
-            
+
             {orderDetails.length > 0 ? (
-              <>
-                <div className="order-details-content">
-                  <div className="order-items">
-                    {orderDetails.map((detail) => (
-                      <div key={detail.productId} className="order-item">
-                        <div className="product-info">
-                          <span className="product-code">{detail.productCode}</span>
-                          <div className="quantity-price">
-                            <span className="quantity">{detail.quantity} items</span>
-                            <span className="price">${detail.price?.toFixed(2) || "N/A"}</span>
-                          </div>
-                        </div>
-                        <div className="item-total">
-                          <span>Subtotal:</span>
-                          <span className="total-amount">
-                            ${(detail.quantity * detail.price)?.toFixed(2) || "N/A"}
-                          </span>
+              <div className="order-details-content">
+                {orderDetails.map((detail) => (
+                  <div key={detail.productId} className="product-card">
+                    <div className="product-header">
+                      <div className="product-title">
+                        <h3>{detail.productCode}</h3>
+                        <span className="quantity-badge">{detail.quantity} items</span>
+                      </div>
+                      <div className="product-price">${detail.price?.toFixed(2) || "N/A"}</div>
+                    </div>
+
+                    <div className="product-details-grid">
+                      <div className="detail-section">
+                        <h4>Fabric Details</h4>
+                        <p>{detail.fabricName}</p>
+                      </div>
+
+                      <div className="detail-section">
+                        <h4>Lining Details</h4>
+                        <p>{detail.liningName}</p>
+                      </div>
+
+                      <div className="detail-section style-section">
+                        <h4>Style Specifications</h4>
+                        <div className="style-options-grid">
+                          {detail.styleOptions && detail.styleOptions.map((style, index) => (
+                            <div key={index} className="style-option-item">
+                              <span className="option-type">{style.optionType}</span>
+                              <span className="option-value">{style.optionValue}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))}
+                    </div>
+
+                    <div className="product-footer">
+                      <div className="subtotal">
+                        <span>Subtotal</span>
+                        <span className="amount">${(detail.quantity * detail.price)?.toFixed(2) || "N/A"}</span>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div className="order-summary">
-                    <h3>Order Summary</h3>
+                ))}
+
+                <div className="order-summary-card">
+                  <h3>Order Summary</h3>
+                  <div className="summary-content">
                     <div className="summary-row">
-                      <span>Total Items:</span>
+                      <span>Total Items</span>
                       <span>{orderDetails.reduce((sum, item) => sum + item.quantity, 0)}</span>
                     </div>
                     <div className="summary-row total">
-                      <span>Total Amount:</span>
+                      <span>Total Amount</span>
                       <span>
                         ${orderDetails
                           .reduce((sum, item) => sum + item.quantity * item.price, 0)
@@ -364,9 +385,10 @@ const OrderHistory = () => {
                     </div>
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
-              <div className="loading">
+              <div className="loading-state">
+                <div className="loading-spinner"></div>
                 <p>Loading order details...</p>
               </div>
             )}

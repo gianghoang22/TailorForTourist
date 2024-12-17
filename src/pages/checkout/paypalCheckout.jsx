@@ -11,36 +11,10 @@ const PayPalCheckoutButton = ({
   const validAmount = parseFloat(amount) || 0;
   const validShippingFee = parseFloat(shippingFee) || 0;
 
-  // Tính toán giảm giá dựa trên loại voucher
-  const calculateDiscount = () => {
-    if (!selectedVoucher) return 0;
-
-    if (selectedVoucher.voucherCode.substring(0, 8) === "FREESHIP") {
-      // Voucher free ship
-      return validShippingFee * selectedVoucher.discountNumber;
-    } else if (selectedVoucher.voucherCode.substring(0, 7) === "BIGSALE") {
-      // Voucher giảm giá sản phẩm
-      return validAmount * selectedVoucher.discountNumber;
-    }
-    return 0;
-  };
-
-  const discount = calculateDiscount();
-  // Tính subtotal sau khi áp dụng giảm giá
-  const discountedAmount =
-    selectedVoucher?.voucherCode.substring(0, 7) === "BIGSALE"
-      ? validAmount - discount
-      : validAmount;
-
-  // Tính shipping fee sau khi áp dụng giảm giá
-  const finalShippingFee =
-    selectedVoucher?.voucherCode.substring(0, 8) === "FREESHIP"
-      ? validShippingFee - discount
-      : validShippingFee;
-
-  // Tổng cộng cuối cùng
-  const subtotal = discountedAmount + finalShippingFee;
-  const finalPrice = isDeposit ? subtotal * 0.5 : subtotal;
+  // Tính tổng cộng cuối cùng
+  const finalPrice = isDeposit 
+    ? (validAmount + validShippingFee) * 0.5 
+    : validAmount + validShippingFee;
 
   useEffect(() => {
     const renderPayPalButton = () => {
@@ -55,11 +29,11 @@ const PayPalCheckoutButton = ({
               }
 
               const payableItemTotal = isDeposit
-                ? discountedAmount * 0.5
-                : discountedAmount;
+                ? finalPrice * 0.5
+                : finalPrice;
               const payableShipping = isDeposit
-                ? finalShippingFee * 0.5
-                : finalShippingFee;
+                ? finalPrice * 0.5 - validShippingFee
+                : validShippingFee;
 
               return actions.order.create({
                 purchase_units: [
@@ -88,9 +62,8 @@ const PayPalCheckoutButton = ({
                 onSuccess({
                   ...details,
                   isDeposit,
-                  depositAmount: isDeposit ? subtotal * 0.5 : 0,
+                  depositAmount: isDeposit ? finalPrice * 0.5 : 0,
                   appliedVoucher: selectedVoucher,
-                  discount: discount,
                 });
               });
             },
@@ -132,9 +105,6 @@ const PayPalCheckoutButton = ({
     isDeposit,
     validAmount,
     validShippingFee,
-    subtotal,
-    selectedVoucher,
-    discount,
   ]);
 
   return (
@@ -146,34 +116,14 @@ const PayPalCheckoutButton = ({
             checked={isDeposit}
             onChange={(e) => setIsDeposit(e.target.checked)}
           />
-          <span>Pay 50% Deposit (${(subtotal * 0.5).toFixed(2)})</span>
+          <span>Pay 50% Deposit (${(finalPrice * 0.5).toFixed(2)})</span>
         </label>
         <p className="price-display">
           Original Price: ${validAmount.toFixed(2)}
-          {discount > 0 &&
-            selectedVoucher?.voucherCode.substring(0, 7) === "BIGSALE" && (
-              <>
-                <br />
-                <span className="discount">
-                  Discount ({selectedVoucher.discountNumber * 100}%): -$
-                  {discount.toFixed(2)}
-                </span>
-                <br />
-                <span>Discounted Price: ${discountedAmount.toFixed(2)}</span>
-              </>
-            )}
           {validShippingFee > 0 && (
             <>
               <br />
               <span>Shipping Fee: ${validShippingFee.toFixed(2)}</span>
-              {selectedVoucher?.voucherCode.substring(0, 8) === "FREESHIP" && (
-                <>
-                  <br />
-                  <span className="discount">
-                    Shipping Discount: -${discount.toFixed(2)}
-                  </span>
-                </>
-              )}
             </>
           )}
           <br />
@@ -182,7 +132,7 @@ const PayPalCheckoutButton = ({
             <>
               <br />
               <span className="deposit-note">
-                (50% deposit of total ${subtotal.toFixed(2)})
+                (50% deposit of total ${finalPrice.toFixed(2)})
               </span>
             </>
           )}

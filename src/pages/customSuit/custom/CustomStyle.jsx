@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./CustomStyle.scss";
 import { toast } from "react-toastify";
+import { addToCart } from "../../../utils/cartUtil";
 
 //jk-style
 import jk_style1B1B from "../../../assets/img/iconCustom/jk-style-1B1B.jpg";
@@ -158,12 +159,14 @@ const CustomStyle = () => {
   const [fabricId, setFabricId] = useState(null);
   const [selectedOptions, setSelectedOptions] = useState({});
   const [selectedImages, setSelectedImages] = useState({});
+  const navigate = useNavigate();
 
   // Fetch both styles and options in parallel
   useEffect(() => {
     const savedFabricId = localStorage.getItem("selectedFabricID");
     setFabricId(savedFabricId);
     console.log("Fabric ID: ", savedFabricId);
+    
     const fetchStylesAndOptions = async () => {
       try {
         const [stylesResponse, optionsResponse] = await Promise.all([
@@ -173,42 +176,6 @@ const CustomStyle = () => {
 
         setStyles(stylesResponse.data);
         setStyleOptions(optionsResponse.data);
-
-        // Auto-select first option for each optionType if none selected
-        if (!localStorage.getItem("styleOptionId")) {
-          const firstStyle = stylesResponse.data[0];
-          if (firstStyle) {
-            const uniqueOptionTypes = Array.from(
-              new Set(
-                optionsResponse.data
-                  .filter((option) => option.styleId === firstStyle.styleId)
-                  .map((option) => option.optionType)
-              )
-            );
-
-            const initialSelections = {};
-            const initialImages = {};
-            const selectedIds = [];
-
-            uniqueOptionTypes.forEach((optionType) => {
-              const firstOption = optionsResponse.data.find(
-                (option) =>
-                  option.styleId === firstStyle.styleId &&
-                  option.optionType === optionType
-              );
-              if (firstOption) {
-                initialSelections[optionType] = firstOption.styleOptionId;
-                initialImages[optionType] =
-                  optionTypeImages[firstOption.optionValue];
-                selectedIds.push(firstOption.styleOptionId);
-              }
-            });
-
-            setSelectedOptions(initialSelections);
-            setSelectedImages(initialImages);
-            localStorage.setItem("styleOptionId", JSON.stringify(selectedIds));
-          }
-        }
       } catch (error) {
         setError("Failed to load styles or options. Please try again later.");
       } finally {
@@ -217,6 +184,46 @@ const CustomStyle = () => {
     };
 
     fetchStylesAndOptions();
+  }, []);
+
+  useEffect(() => {
+    const resetAll = () => {
+      setSelectedOptionValues({});
+      setSelectedStyle(null);
+      setSelectedOptions({});
+      setSelectedImages({});
+      setOpenOptionType([]);
+
+      // Clear localStorage ngoại trừ styleOptionId
+      localStorage.removeItem("selectedStyles");
+      localStorage.removeItem("selectedImages");
+      localStorage.removeItem("selectedOptionValues");
+      localStorage.removeItem("selectedOptions");
+      
+      // Không reset styles trong cart nữa
+      // const cart = JSON.parse(localStorage.getItem('shopping_cart') || '[]');
+      // if (cart.length > 0) {
+      //   cart[cart.length - 1].styles = [];
+      //   localStorage.setItem('shopping_cart', JSON.stringify(cart));
+      // }
+    };
+
+    resetAll();
+
+    // Lấy fabricId từ localStorage
+    const storedFabricId = localStorage.getItem("selectedFabricID");
+    if (storedFabricId) {
+      setFabricId(storedFabricId);
+    }
+
+    return () => {
+      // Khi unmount component, chỉ clear local state
+      setSelectedOptionValues({});
+      setSelectedStyle(null);
+      setSelectedOptions({});
+      setSelectedImages({});
+      setOpenOptionType([]);
+    };
   }, []);
 
   // Mở rộng hoặc đóng optionType khi người dùng nhấp vào
@@ -229,30 +236,31 @@ const CustomStyle = () => {
   };
 
   const handleOptionValueClick = (styleOption) => {
-    setSelectedOptions((prev) => {
+    // Cập nhật selectedOptions
+    setSelectedOptions(prev => {
       const newSelectedOptions = {
         ...prev,
-        [styleOption.optionType]: styleOption.styleOptionId,
+        [styleOption.optionType]: styleOption.styleOptionId
       };
-      
-      // Update localStorage with the new selections
-      const selections = Object.values(newSelectedOptions);
-      localStorage.setItem("styleOptionId", JSON.stringify(selections));
-      
-      // Log the updated selections
-      console.log("Selected options:", newSelectedOptions);
-      
       return newSelectedOptions;
     });
 
-    setSelectedImages((prev) => ({
+    // Cập nhật selectedImages
+    setSelectedImages(prev => ({
       ...prev,
-      [styleOption.optionType]: optionTypeImages[styleOption.optionValue],
+      [styleOption.optionType]: optionTypeImages[styleOption.optionValue]
     }));
 
-    toast.success(
-      `${styleOption.optionType} updated to ${styleOption.optionValue}`
-    );
+    // Thêm style vào cart
+    addToCart({
+      id: styleOption.styleOptionId,
+      type: 'style',
+      name: styleOption.optionValue,
+      optionType: styleOption.optionType,
+      imageUrl: optionTypeImages[styleOption.optionValue]
+    });
+
+    toast.success(`${styleOption.optionType} updated to ${styleOption.optionValue}`);
   };
 
   const getOptionValues = (styleId, optionType) => {
@@ -267,17 +275,18 @@ const CustomStyle = () => {
     );
   };
 
-  const handleNextClick = (e) => {
-    // Check if at least one style option has been selected
+  const handleNextClick = () => {
+    // Kiểm tra xem đã chọn ít nhất một style chưa
     if (Object.keys(selectedOptions).length === 0) {
-      e.preventDefault();
-      toast.error("Please select at least one style option before continuing");
+      toast.error("Please select at least one style option");
       return;
     }
 
-    // Save the selections to localStorage
-    const selectedIds = Object.values(selectedOptions);
-    localStorage.setItem("styleOptionId", JSON.stringify(selectedIds));
+    // Lưu các lựa chọn vào localStorage
+    localStorage.setItem("styleOptionId", JSON.stringify(Object.values(selectedOptions)));
+    
+    // Chuyển đến trang lining
+    navigate("/custom-suits/lining");
   };
 
   if (loading) {

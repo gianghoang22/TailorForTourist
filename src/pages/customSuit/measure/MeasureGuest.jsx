@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './MeasureGuest.scss';
 import { Navigation } from '../../../layouts/components/navigation/Navigation';
 import { Footer } from '../../../layouts/components/footer/Footer';
@@ -27,6 +27,7 @@ const MeasureGuest = () => {
   const [errors, setErrors] = useState({});
   const userID = localStorage.getItem("userID");
   const measurementId = parseInt(localStorage.getItem('measurementId'), 10);
+  const navigate = useNavigate();
   console.log('MeasurementId: ', measurementId);
 
 
@@ -35,6 +36,34 @@ const MeasureGuest = () => {
       getMeasurementByUserId(userID);
     }
   }, [userID]);
+
+  useEffect(() => {
+    // Kiểm tra xem có đang trong quá trình customization không
+    const returnToCustomization = localStorage.getItem("returnToCustomization");
+    
+    // Sau khi lưu measurementId thành công
+    const handleMeasurementComplete = () => {
+      if (returnToCustomization) {
+        // Quay lại trang customization
+        navigate("/custom-suits/lining");
+        // Xóa flag
+        localStorage.removeItem("returnToCustomization");
+      } else {
+        // Xử lý bình thường
+        navigate("/cart");
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    // Kiểm tra xem có pending custom suit không
+    const hasPendingCustomSuit = localStorage.getItem("pendingCustomSuit");
+    
+    if (hasPendingCustomSuit && measurementId) {
+      // Quay lại CustomLining để hoàn tất thêm vào cart
+      navigate("/custom-suits/lining");
+    }
+  }, [measurementId]);
 
   const getMeasurementByUserId = (userId) => {
     fetch(`https://localhost:7194/api/Measurement/user/${userId}`)

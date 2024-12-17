@@ -76,12 +76,11 @@ const Cart = () => {
 
       try {
         // Fetch cart data
-        const cartResponse = await axios.get(
-          "https://localhost:7194/api/AddCart/mycart",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const cartResponse = await axios.get("https://localhost:7194/api/AddCart/mycart", {
+          headers: { 
+            Authorization: `Bearer ${localStorage.getItem("token")}` // Kiểm tra token
+          },
+        });
 
         if (cartResponse.status === 200) {
           setApiCart(cartResponse.data);

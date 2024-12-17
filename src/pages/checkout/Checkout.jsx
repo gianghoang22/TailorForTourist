@@ -330,28 +330,19 @@ const Checkout = () => {
     }
 
     try {
-      const response = await axios.get(`https://localhost:7194/api/Voucher/${voucher.voucherId}/validate`);
-      
-      if (response.status === 200) {
-        setSelectedVoucher(voucher);
-        if (voucher.voucherCode?.substring(0, 8) === 'FREESHIP') {
-          const discountAmount = shippingFee * voucher.discountNumber;
-          setDiscountedShippingFee(shippingFee - discountAmount);
-        } else {
-          setDiscountedShippingFee(shippingFee);
-        }
-        toast.success('Voucher applied successfully');
+      setSelectedVoucher(voucher);
+      if (voucher.voucherCode?.substring(0, 8) === 'FREESHIP') {
+        const discountAmount = shippingFee * voucher.discountNumber;
+        setDiscountedShippingFee(shippingFee - discountAmount);
+      } else {
+        setDiscountedShippingFee(shippingFee);
       }
+      toast.success('Voucher applied successfully');
     } catch (error) {
-      console.error('Error validating voucher:', error);
+      console.error('Error applying voucher:', error);
       setSelectedVoucher(null);
       setDiscountedShippingFee(shippingFee);
-      
-      if (error.response?.status === 500) {
-        toast.error('This voucher is invalid or has expired');
-      } else {
-        toast.error('Failed to apply voucher. Please try again.');
-      }
+      toast.error('Failed to apply voucher. Please try again.');
     }
   };
 
@@ -520,7 +511,6 @@ const Checkout = () => {
     setIsPaid(true);
     setPaymentDetails(details);
     toast.success('Payment successful! Please confirm your order.');
-    // You might want to store the PayPal transaction ID or other relevant info
     console.log('Payment completed successfully', details);
   };
 
@@ -769,10 +759,11 @@ const Checkout = () => {
                           </select>
                         </div>
                         <PayPalCheckoutButton
-                          amount={calculateFinalTotal()}
+                          amount={apiCart.cartTotal}
                           shippingFee={selectedVoucher?.voucherCode.substring(0, 8) === 'FREESHIP' 
                             ? discountedShippingFee 
                             : shippingFee}
+                          selectedVoucher={selectedVoucher}
                           onSuccess={handlePaymentSuccess}
                           onError={handlePaymentError}
                           onCancel={handlePaymentCancel}

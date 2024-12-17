@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { addToCart, getCart, addToGuestCart } from "../../../utils/cartUtil";
+import { addToCart, getCart, addToGuestCart, getLastCompleteSuit } from "../../../utils/cartUtil";
 import "./CustomLining.scss";
 import lining_icon from "../../../assets/img/iconCustom/icon-accent-vailot.jpg";
 import axios from "axios";
@@ -99,104 +99,56 @@ const CustomLining = () => {
     addToCart({
       id: lining.liningId,
       type: "lining",
+      name: lining.liningName,
+      imageUrl: lining.imageUrl,
+      price: lining.price
     });
   };
 
   const handleNextClick = async () => {
-    // Check if all required selections are made
-    const fabricId = localStorage.getItem("selectedFabricID");
-    const styleOptionIds = localStorage.getItem("styleOptionId");
-    const liningId = localStorage.getItem("liningId");
-
-    if (!fabricId) {
-      toast.error("Please select a fabric first");
-      navigate("/custom-suits/fabric");
-      return;
-    }
-
-    if (!styleOptionIds) {
-      toast.error("Please select style options first");
-      navigate("/custom-suits/style");
-      return;
-    }
-
-    if (!liningId) {
-      toast.error("Please select a lining");
-      return;
-    }
-
     try {
-      let fabricId = parseInt(localStorage.getItem("selectedFabricID"));
-      let styleOptionIds = JSON.parse(localStorage.getItem("styleOptionId"));
-      let liningId = parseInt(localStorage.getItem("liningId"));
-
-      // If any selection is missing, fetch and select the first available option
-      if (!fabricId || !styleOptionIds || !liningId) {
-        if (!fabricId) {
-          const fabricResponse = await axios.get(
-            "https://localhost:7194/api/Fabrics"
-          );
-          fabricId = fabricResponse.data[0].fabricID;
-          localStorage.setItem("selectedFabricID", fabricId);
-        }
-
-        if (!styleOptionIds) {
-          const styleResponse = await axios.get(
-            "https://localhost:7194/api/StyleOption"
-          );
-          styleOptionIds = [styleResponse.data[0].styleOptionId];
-          localStorage.setItem("styleOptionId", JSON.stringify(styleOptionIds));
-        }
-
-        if (!liningId) {
-          const liningResponse = await axios.get(
-            "https://localhost:7194/api/Linings"
-          );
-          liningId = liningResponse.data[0].liningId;
-          localStorage.setItem("liningId", liningId);
-        }
-      }
-
-      const measurementId = parseInt(localStorage.getItem("measurementId"), 10);
-      const userID = parseInt(localStorage.getItem("userID"));
-
-      // Get fabric name from your fabric data
-      const fabricResponse = await axios.get(
-        `https://localhost:7194/api/Fabrics/${fabricId}`
-      );
-      const fabricName = fabricResponse.data.fabricName;
-
-      // Generate a simple product code
-      const productCode = `SUIT${fabricName}`;
-
-      if (
-        !fabricId ||
-        styleOptionIds.length === 0 ||
-        !liningId ||
-        !measurementId
-      ) {
-        toast.error("Please complete all selections before proceeding.");
+      // Kiểm tra đăng nhập
+      const userID = localStorage.getItem("userID");
+      if (!userID) {
+        toast.error("Please login first");
+        navigate("/login");
         return;
       }
 
-      const pickedStyleOptions = styleOptionIds.map((id) => ({
-        styleOptionID: id,
-      }));
+      // Lấy suit đã hoàn thành
+      const completeSuit = getLastCompleteSuit();
+      if (!completeSuit) {
+        toast.error("Please complete all selections (fabric, style, and lining)");
+        return;
+      }
+
+      // Kiểm tra measurementId
+      // const measurementId = localStorage.getItem("measurementId");
+      // if (!measurementId) {
+      //   // Nếu chưa có measurementId, chuyển đến trang measureGuest
+      //   toast.info("Please complete your measurements first");
+      //   // Lưu trạng thái hiện tại để quay lại sau
+      //   localStorage.setItem("returnToCustomization", "true");
+      //   navigate("/measure-guest");
+      //   return;
+      // }
 
       const payload = {
-        userId: userID,
+        userId: parseInt(userID),
         isCustom: true,
         customProduct: {
           categoryID: 5,
-          fabricID: fabricId,
-          liningID: liningId,
-          measurementID: measurementId,
-          pickedStyleOptions: pickedStyleOptions,
-          productCode: productCode, // Simple product code
-        },
+          fabricID: completeSuit.fabricId,
+          liningID: completeSuit.lining.id,
+          measurementID: parseInt(measurementId),
+          pickedStyleOptions: completeSuit.styles.map(style => ({
+            styleOptionID: style.id
+          })),
+          productCode: `SUIT-${completeSuit.fabricId}`
+        }
       };
 
-      console.log("Payload:", payload);
+      console.log("Sending payload:", payload);
 
       const response = await axios.post(API_URL, payload, {
         headers: {
@@ -206,15 +158,22 @@ const CustomLining = () => {
       });
 
       if (response.status === 200 || response.status === 201) {
-        // toast.success('Successfully added to cart!');
+        // Xóa flag returnToCustomization sau khi thành công
+        localStorage.removeItem("returnToCustomization");
+        toast.success("Added to cart successfully");
         navigate("/measure");
       }
     } catch (error) {
       console.error("Error:", error);
-      toast.error(
-        error.response?.data?.message ||
+      if (error.response?.status === 401) {
+        toast.error("Please login first");
+        navigate("/login");
+      } else {
+        toast.error(
+          error.response?.data?.message ||
           "Failed to add to cart. Please try again."
-      );
+        );
+      }
     }
   };
 
