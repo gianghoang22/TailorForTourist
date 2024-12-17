@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "./TailorDashboard.scss";
+import { CircularProgress } from "@mui/material";
 
 const statusColors = {
   "Not Start": "bg-yellow-300 text-yellow-800",
@@ -26,21 +27,18 @@ const statusColors = {
 };
 
 const LoadingSpinner = () => (
-  <div className="loading-spinner-overlay">
-    <div className="loading-spinner">
-      <div className="spinner"></div>
-      <span className="loading-text">Loading...</span>
-    </div>
+  <div className="fixed inset-0 flex justify-center items-center">
+    <CircularProgress size={40} thickness={4} />
   </div>
 );
 
 const TailorDashboard = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const [orderDetails, setOrderDetails] = useState({});
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   const STAGES = {
     MAKE_SAMPLE: "Make Sample",
     FIX: "Fix",

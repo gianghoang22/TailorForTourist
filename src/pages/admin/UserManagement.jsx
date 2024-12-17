@@ -216,7 +216,7 @@ const UserManagement = () => {
     }
   };
 
-  const handleDelete = async (userId) => {
+  const handleStatusChange = async (userId, newStatus) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -225,22 +225,32 @@ const UserManagement = () => {
       }
 
       const response = await fetch(
-        `https://localhost:7194/api/User/${userId}`,
+        `https://localhost:7194/api/User/${userId}/status`,
         {
-          method: "DELETE",
+          method: "PUT",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
+          body: JSON.stringify(newStatus),
         }
       );
+
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Error deleting user");
+        throw new Error(error.message || "Error updating user status");
       }
-      setUserData(userData.filter((u) => u.userId !== userId));
+
+      // Update the user status in the local state
+      setUserData(
+        userData.map((user) =>
+          user.userId === userId ? { ...user, status: newStatus } : user
+        )
+      );
       setError(null);
+      setShowSuccessMessage(true);
     } catch (error) {
-      console.error("Error deleting user:", error);
+      console.error("Error updating user status:", error);
       setError(error.message);
     }
   };
@@ -256,6 +266,9 @@ const UserManagement = () => {
   return (
     <div className="user-management">
       <h2>User Management</h2>
+      {showSuccessMessage && (
+        <Alert severity="success">User has been successfully updated!</Alert>
+      )}
       {error && <Alert severity="error">{error}</Alert>}
       {loading ? (
         <div className="loading-spinner">
@@ -391,16 +404,23 @@ const UserManagement = () => {
                         variant="outlined"
                         color="primary"
                         onClick={() => handleEdit(u)}
+                        style={{ marginRight: "8px" }}
                       >
                         Edit
                       </Button>
-                      <Button
+                      <TextField
+                        select
+                        value={u.status}
+                        size="small"
+                        onChange={(e) =>
+                          handleStatusChange(u.userId, e.target.value)
+                        }
                         variant="outlined"
-                        color="secondary"
-                        onClick={() => handleDelete(u.userId)}
+                        style={{ width: "120px" }}
                       >
-                        Delete
-                      </Button>
+                        <MenuItem value="Active">Active</MenuItem>
+                        <MenuItem value="Deactive">Deactive</MenuItem>
+                      </TextField>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -408,9 +428,6 @@ const UserManagement = () => {
             </Table>
           </TableContainer>
         </>
-      )}
-      {showSuccessMessage && (
-        <Alert severity="success">User has been successfully updated!</Alert>
       )}
     </div>
   );

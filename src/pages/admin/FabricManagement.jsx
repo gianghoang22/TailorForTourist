@@ -19,7 +19,7 @@ import "./FabricManagement.scss";
 const FabricManagement = () => {
   const [fabricData, setFabricData] = useState([]);
   const [newFabric, setNewFabric] = useState({
-    fabricID: 0, // Set default ID for new fabric
+    // Set default ID for new fabric
     fabricName: "",
     price: 0,
     description: "",
@@ -125,7 +125,21 @@ const FabricManagement = () => {
         return;
       }
 
-      console.log("Updating Fabric Data:", JSON.stringify(newFabric, null, 2)); // Log data before sending
+      // Create a properly formatted update object
+      const fabricToUpdate = {
+        fabricID: editIndex,
+        fabricName: newFabric.fabricName,
+        price: parseFloat(newFabric.price),
+        description: newFabric.description,
+        imageUrl: newFabric.imageUrl,
+        tag: parseInt(newFabric.tag, 10),
+        active: "Active", // Add this if your API requires it
+      };
+
+      console.log(
+        "Updating Fabric Data:",
+        JSON.stringify(fabricToUpdate, null, 2)
+      );
 
       const response = await fetch(
         `https://localhost:7194/api/Fabrics/${editIndex}`,
@@ -134,7 +148,7 @@ const FabricManagement = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(newFabric),
+          body: JSON.stringify(fabricToUpdate),
         }
       );
 
