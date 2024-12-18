@@ -101,10 +101,12 @@ const ProfitCalculation = () => {
 
     // Process orders
     orders.forEach((order) => {
-      const date = new Date(order.orderDate);
-      const month = date.getMonth();
-      monthlyRevenue[month] += order.totalPrice || 0;
-      monthlyProfit[month] += (order.totalPrice || 0) * 0.4;
+      if (order.status === "Finish") {
+        const date = new Date(order.orderDate);
+        const month = date.getMonth();
+        monthlyRevenue[month] += order.totalPrice || 0;
+        monthlyProfit[month] += (order.totalPrice || 0) * 0.7;
+      }
     });
 
     console.log("Processing bookings:", bookings);
@@ -146,11 +148,10 @@ const ProfitCalculation = () => {
   const monthlyData = processMonthlyData();
 
   // Calculate totals
-  const totalRevenue = orders.reduce(
-    (sum, order) => sum + (order.totalPrice || 0),
-    0
-  );
-  const totalProfit = totalRevenue * 0.4; // Assuming 40% profit margin
+  const totalRevenue = orders
+    .filter((order) => order.status === "Finish")
+    .reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+  const totalProfit = totalRevenue * 0.7; //
   const profitMargin =
     totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 

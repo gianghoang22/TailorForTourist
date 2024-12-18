@@ -12,6 +12,7 @@ import {
   InputAdornment,
   Alert,
   CircularProgress,
+  Fade,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import "./VoucherManagement.scss";
@@ -198,34 +199,34 @@ const VoucherManagement = () => {
   };
 
   const handleUpdate = async () => {
-    if (!validateForm()) return;
-
-    if (!validateVoucherCode(newVoucher.voucherCode)) {
-      setError(
-        "Voucher code must be in the format 'BIGSALExx' or 'FREESHIPxx', where 'xx' is two digits."
-      );
-      return;
-    }
-
-    if (
-      voucherData.some(
-        (voucher) =>
-          voucher.voucherCode === newVoucher.voucherCode &&
-          voucher.voucherId !== editIndex
-      )
-    ) {
-      setError("Voucher code already exists. Please use a unique code.");
-      return;
-    }
-
-    if (!isValidDateStart(newVoucher.dateStart)) {
-      setError(
-        "Start date cannot be in the past. Please select today or a future date."
-      );
-      return;
-    }
-
     try {
+      if (!validateForm()) return;
+
+      if (!validateVoucherCode(newVoucher.voucherCode)) {
+        setError(
+          "Voucher code must be in the format 'BIGSALExx' or 'FREESHIPxx', where 'xx' is two digits."
+        );
+        return;
+      }
+
+      if (
+        voucherData.some(
+          (voucher) =>
+            voucher.voucherCode === newVoucher.voucherCode &&
+            voucher.voucherId !== editIndex
+        )
+      ) {
+        setError("Voucher code already exists. Please use a unique code.");
+        return;
+      }
+
+      if (!isValidDateStart(newVoucher.dateStart)) {
+        setError(
+          "Start date cannot be in the past. Please select today or a future date."
+        );
+        return;
+      }
+
       const response = await fetch(
         `https://localhost:7194/api/Voucher/${editIndex}`,
         {
@@ -237,38 +238,41 @@ const VoucherManagement = () => {
         }
       );
 
-      if (!response.ok) {
-        let errorMessage = "Error updating voucher";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch (jsonError) {
-          const errorText = await response.text();
-          errorMessage = errorText || errorMessage;
-        }
-        throw new Error(errorMessage);
+      // Check specifically for 204 No Content response
+      if (response.status === 204) {
+        // Update the local state directly
+        setVoucherData(
+          voucherData.map((v) =>
+            v.voucherId === editIndex ? { ...v, ...newVoucher } : v
+          )
+        );
+
+        // Reset form
+        setNewVoucher({
+          voucherId: null,
+          status: "Pending",
+          voucherCode: "",
+          description: "",
+          discountNumber: 0,
+          dateStart: "",
+          dateEnd: "",
+        });
+        setEditIndex(null);
+        setError(null);
+        setShowSuccessMessage(true);
+        return;
       }
 
-      const updatedVoucher = await response.json();
-      const updatedVouchers = voucherData.map((v) =>
-        v.voucherId === editIndex ? updatedVoucher : v
-      );
-      setVoucherData(updatedVouchers);
-      setNewVoucher({
-        voucherId: null,
-        status: "Pending",
-        voucherCode: "",
-        description: "",
-        discountNumber: 0,
-        dateStart: "",
-        dateEnd: "",
-      });
-      setEditIndex(null);
-      setError(null);
-      setShowSuccessMessage(true);
+      // Handle error cases
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          errorText || `Error updating voucher: ${response.status}`
+        );
+      }
     } catch (error) {
       console.error("Error updating voucher:", error);
-      setError(error.message);
+      setError(error.message || "Failed to update voucher");
     }
   };
 
@@ -319,9 +323,7 @@ const VoucherManagement = () => {
       {error && <Alert severity="error">{error}</Alert>}
 
       {isLoading ? (
-        <div
-          style={{ display: "flex", justifyContent: "center", padding: "2rem" }}
-        >
+        <div className="loading-container">
           <CircularProgress />
         </div>
       ) : (
@@ -463,12 +465,15 @@ const VoucherManagement = () => {
             </Table>
           </TableContainer>
 
-          {showSuccessMessage && (
-            <div className="success-message">
-              <p>Added/Updated successfully!</p>
-              <button onClick={() => window.location.reload()}>Refresh</button>
+          <Fade in={showSuccessMessage}>
+            <div>
+              {showSuccessMessage && (
+                <Alert severity="success">
+                  Voucher successfully updated/added!
+                </Alert>
+              )}
             </div>
-          )}
+          </Fade>
         </>
       )}
     </div>

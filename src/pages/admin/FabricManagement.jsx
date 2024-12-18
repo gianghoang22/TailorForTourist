@@ -12,6 +12,8 @@ import {
   InputAdornment,
   Alert,
   CircularProgress,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import "./FabricManagement.scss";
@@ -71,11 +73,12 @@ const FabricManagement = () => {
         return;
       }
 
-      // Convert price and tag to numbers
+      // Convert price and tag to numbers and add status
       const fabricToAdd = {
         ...newFabric,
-        price: parseFloat(newFabric.price), // Convert price to a float
-        tag: parseInt(newFabric.tag, 10), // Convert tag to an integer
+        price: parseFloat(newFabric.price),
+        tag: parseInt(newFabric.tag, 10),
+        status: "Active",
       };
 
       console.log("Adding Fabric Data:", JSON.stringify(fabricToAdd));
@@ -84,21 +87,39 @@ const FabricManagement = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(fabricToAdd),
       });
 
       if (!response.ok) {
-        const errorResponse = await response.json();
-        console.error("Error adding new fabric:", errorResponse);
-        setError(errorResponse.message || "Error adding new fabric");
-        return;
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const addedFabric = await response.json();
-      setFabricData([...fabricData, addedFabric]); // Update local state without needing to refetch
+      // Check if there's actually JSON content to parse
+      const contentType = response.headers.get("content-type");
+      let addedFabric;
+      if (contentType && contentType.includes("application/json")) {
+        addedFabric = await response.json();
+      } else {
+        // Handle non-JSON response
+        const textResponse = await response.text();
+        console.log("Non-JSON response:", textResponse);
+        throw new Error("Server did not return JSON response");
+      }
+
+      setFabricData([...fabricData, addedFabric]);
       setError(null);
       setShowSuccessMessage(true);
+
+      // Reset form after successful addition
+      setNewFabric({
+        fabricName: "",
+        price: 0,
+        description: "",
+        imageUrl: "",
+        tag: 0,
+      });
     } catch (error) {
       console.error("Error adding new fabric:", error);
       setError(
@@ -125,21 +146,20 @@ const FabricManagement = () => {
         return;
       }
 
-      // Create a properly formatted update object
+      // Get the auth token from localStorage or wherever you store it
+      const token = localStorage.getItem("token"); // Adjust this based on how you store your auth token
+
       const fabricToUpdate = {
         fabricID: editIndex,
         fabricName: newFabric.fabricName,
         price: parseFloat(newFabric.price),
         description: newFabric.description,
-        imageUrl: newFabric.imageUrl,
+        imageUrl: newFabric.imageUrl || "",
         tag: parseInt(newFabric.tag, 10),
-        active: "Active", // Add this if your API requires it
+        status: "Active",
       };
 
-      console.log(
-        "Updating Fabric Data:",
-        JSON.stringify(fabricToUpdate, null, 2)
-      );
+      console.log("Sending update request:", fabricToUpdate); // Debug log
 
       const response = await fetch(
         `https://localhost:7194/api/Fabrics/${editIndex}`,
@@ -147,22 +167,25 @@ const FabricManagement = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // Add authorization header
           },
           body: JSON.stringify(fabricToUpdate),
         }
       );
 
       if (!response.ok) {
-        const errorResponse = await response.json();
-        console.error("Error updating fabric:", errorResponse);
-        setError(errorResponse.message || "Error updating fabric");
-        return;
+        const errorText = await response.text();
+        console.error("Update response error:", response.status, errorText); // Debug log
+        throw new Error(
+          errorText || `Error updating fabric: ${response.status}`
+        );
       }
 
-      // Update local state without needing to refetch
+      // Update local state
       const updatedFabrics = fabricData.map((f) =>
-        f.fabricID === editIndex ? { ...f, ...newFabric } : f
+        f.fabricID === editIndex ? { ...f, ...fabricToUpdate } : f
       );
+
       setFabricData(updatedFabrics);
       setNewFabric({
         fabricID: 0,
@@ -174,10 +197,10 @@ const FabricManagement = () => {
       });
       setEditIndex(null);
       setError(null);
-      setShowSuccessMessage(true); // Show success message after update
+      setShowSuccessMessage(true);
     } catch (error) {
       console.error("Error updating fabric:", error);
-      setError(error.message);
+      setError(error.message || "Failed to update fabric");
     }
   };
 
@@ -210,6 +233,53 @@ const FabricManagement = () => {
   const filteredFabrics = fabricData.filter((f) =>
     f.fabricName.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleStatusChange = async (fabricID, newStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      // Create the update object
+      const updateData = {
+        fabricID: fabricID,
+        fabricName: fabricData.find((f) => f.fabricID === fabricID)?.fabricName,
+        price: fabricData.find((f) => f.fabricID === fabricID)?.price,
+        description: fabricData.find((f) => f.fabricID === fabricID)
+          ?.description,
+        imageUrl: fabricData.find((f) => f.fabricID === fabricID)?.imageUrl,
+        tag: fabricData.find((f) => f.fabricID === fabricID)?.tag,
+        status: newStatus,
+      };
+
+      // Update the endpoint to match your API
+      const response = await fetch(
+        `https://localhost:7194/api/Fabrics/${fabricID}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update status");
+      }
+
+      // Update local state
+      setFabricData(
+        fabricData.map((f) =>
+          f.fabricID === fabricID ? { ...f, status: newStatus } : f
+        )
+      );
+      setError(null);
+      setShowSuccessMessage(true);
+    } catch (error) {
+      console.error("Error updating status:", error);
+      setError(error.message);
+    }
+  };
 
   return (
     <div className="fabric-management">
@@ -312,6 +382,7 @@ const FabricManagement = () => {
                   <TableCell>Description</TableCell>
                   <TableCell>Image URL</TableCell>
                   <TableCell>Tag</TableCell>
+                  <TableCell>Status</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -333,6 +404,7 @@ const FabricManagement = () => {
                       />
                     </TableCell>
                     <TableCell>{f.tag}</TableCell>
+                    <TableCell>{f.status}</TableCell>
                     <TableCell>
                       <Button
                         variant="outlined"
@@ -342,13 +414,17 @@ const FabricManagement = () => {
                       >
                         Edit
                       </Button>
-                      <Button
-                        variant="outlined"
-                        color="secondary"
-                        onClick={() => handleDelete(f.fabricID)}
+                      <Select
+                        value={f.status || "Active"}
+                        onChange={(e) =>
+                          handleStatusChange(f.fabricID, e.target.value)
+                        }
+                        size="small"
+                        style={{ minWidth: "120px" }}
                       >
-                        Delete
-                      </Button>
+                        <MenuItem value="Active">Active</MenuItem>
+                        <MenuItem value="Inactive">Deactive</MenuItem>
+                      </Select>
                     </TableCell>
                   </TableRow>
                 ))}

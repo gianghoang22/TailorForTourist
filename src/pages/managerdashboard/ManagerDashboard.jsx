@@ -82,17 +82,44 @@ const ManagerDashboard = () => {
 
       // Date filtering
       const orderDate = new Date(order.orderDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day
+
       const matchesDate =
         dateFilter === "all" ||
-        (dateFilter === "custom"
-          ? (!startDate || orderDate >= new Date(startDate)) &&
-            (!endDate || orderDate <= new Date(endDate))
-          : dateFilter === "today"
-            ? orderDate.toDateString() === new Date().toDateString()
-            : dateFilter === "week"
-              ? orderDate >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-              : dateFilter === "month" &&
-                orderDate >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+        (() => {
+          if (dateFilter === "custom") {
+            const start = startDate ? new Date(startDate) : null;
+            const end = endDate ? new Date(endDate) : null;
+
+            // Set end date to end of day for inclusive comparison
+            if (end) {
+              end.setHours(23, 59, 59, 999);
+            }
+
+            return (!start || orderDate >= start) && (!end || orderDate <= end);
+          }
+
+          if (dateFilter === "today") {
+            return orderDate.toDateString() === today.toDateString();
+          }
+
+          if (dateFilter === "week") {
+            const weekAgo = new Date();
+            weekAgo.setDate(today.getDate() - 7);
+            weekAgo.setHours(0, 0, 0, 0);
+            return orderDate >= weekAgo;
+          }
+
+          if (dateFilter === "month") {
+            const monthAgo = new Date();
+            monthAgo.setDate(today.getDate() - 30);
+            monthAgo.setHours(0, 0, 0, 0);
+            return orderDate >= monthAgo;
+          }
+
+          return true;
+        })();
 
       // Status filtering
       const matchesStatus =

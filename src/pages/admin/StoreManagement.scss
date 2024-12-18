@@ -1,53 +1,100 @@
 .store-management {
-  margin: 20px;
+  padding: 2rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f5f5;
+
   h2 {
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
+    color: #1976d2;
+    font-size: 1.8rem;
+    font-weight: 500;
   }
 
-  .form {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+  .header {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
 
-    input,
-    select {
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      width: 200px;
+    .form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.2rem;
+      flex: 1;
+
+      .form-group {
+        flex: 1;
+        min-width: 200px;
+        max-width: 250px;
+      }
     }
 
-    button {
-      padding: 10px 15px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
+    .search-field {
+      margin-left: auto;
+      min-width: 300px;
+      margin-top: 1rem;
 
-      &:hover {
-        background-color: #0056b3;
+      .MuiInputBase-root {
+        background-color: white;
       }
     }
   }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
+  .MuiTableContainer-root {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex: 1;
+    min-height: 0;
 
-    th,
-    td {
-      padding: 10px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
+    .MuiTable-root {
+      table-layout: fixed;
     }
 
-    th {
-      background-color: #f2f2f2;
+    .MuiTableHead-root {
+      background-color: #f8f9fa;
+
+      .MuiTableCell-head {
+        font-weight: 600;
+        color: #1976d2;
+      }
     }
 
-    tr:hover {
-      background-color: #f1f1f1;
+    .MuiTableRow-root {
+      &:hover {
+        background-color: #f8f9fa;
+      }
     }
+
+    .MuiTableCell-root {
+      padding: 12px 16px;
+    }
+  }
+
+  .MuiAlert-root {
+    margin-bottom: 1rem;
+  }
+
+  .MuiButton-root {
+    text-transform: none;
+    font-weight: 500;
+
+    &.MuiButton-contained {
+      padding: 8px 24px;
+    }
+
+    &.action-button {
+      min-width: 100px;
+    }
+  }
+
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
   }
 }
