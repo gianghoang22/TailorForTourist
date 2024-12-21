@@ -139,7 +139,9 @@ const VoucherManagement = () => {
 
   const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
 
-  const handleAdd = async () => {
+  const handleAdd = async (e) => {
+    e.preventDefault();
+
     if (!validateForm()) return;
 
     if (!isValidDateStart(newVoucher.dateStart)) {
@@ -155,6 +157,7 @@ const VoucherManagement = () => {
     }
 
     try {
+      setIsLoading(true);
       const response = await fetch("https://localhost:7194/api/Voucher", {
         method: "POST",
         headers: {
@@ -164,14 +167,19 @@ const VoucherManagement = () => {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error adding new voucher");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Error adding new voucher");
       }
 
-      const addedVoucher = await response.json();
-      setVoucherData([...voucherData, addedVoucher]);
-      setError(null);
-      setShowSuccessMessage(true);
+      // Fetch updated data after successful addition
+      const fetchResponse = await fetch("https://localhost:7194/api/Voucher");
+      if (!fetchResponse.ok) {
+        throw new Error("Failed to refresh voucher data");
+      }
+      const updatedData = await fetchResponse.json();
+      setVoucherData(updatedData);
+
+      // Reset form
       setNewVoucher({
         voucherId: null,
         status: "Pending",
@@ -181,9 +189,19 @@ const VoucherManagement = () => {
         dateStart: "",
         dateEnd: "",
       });
+
+      setError(null);
+      setShowSuccessMessage(true);
+
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
     } catch (error) {
       console.error("Error adding new voucher:", error);
-      setError(error.message);
+      setError(error.message || "Failed to add voucher");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -329,7 +347,7 @@ const VoucherManagement = () => {
       ) : (
         <>
           <div className="header">
-            <div className="form">
+            <form className="form" onSubmit={handleAdd}>
               <TextField
                 label="Voucher Code"
                 name="voucherCode"
@@ -381,6 +399,7 @@ const VoucherManagement = () => {
               />
               {editIndex ? (
                 <Button
+                  type="button"
                   variant="contained"
                   color="primary"
                   onClick={handleUpdate}
@@ -388,15 +407,11 @@ const VoucherManagement = () => {
                   Update Voucher
                 </Button>
               ) : (
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  onClick={handleAdd}
-                >
+                <Button type="submit" variant="contained" color="secondary">
                   Add Voucher
                 </Button>
               )}
-            </div>
+            </form>
 
             <TextField
               label="Search by Voucher Code"

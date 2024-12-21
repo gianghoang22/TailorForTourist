@@ -423,7 +423,7 @@ const FabricManagement = () => {
                         style={{ minWidth: "120px" }}
                       >
                         <MenuItem value="Active">Active</MenuItem>
-                        <MenuItem value="Inactive">Deactive</MenuItem>
+                        <MenuItem value="Deactive">Deactive</MenuItem>
                       </Select>
                     </TableCell>
                   </TableRow>
