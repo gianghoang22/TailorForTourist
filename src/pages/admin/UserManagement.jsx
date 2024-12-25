@@ -277,7 +277,9 @@ const UserManagement = () => {
       )}
       {error && <Alert severity="error">{error}</Alert>}
       {loading ? (
-        <div className="loading-spinner">
+        <div
+          style={{ display: "flex", justifyContent: "center", padding: "2rem" }}
+        >
           <CircularProgress />
         </div>
       ) : (

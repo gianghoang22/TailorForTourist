@@ -191,41 +191,52 @@ const AdminDashboard = () => {
 
   // Add function to process user data for chart
   const processUserDataForChart = (users) => {
-    // Group users by registration date
-    const usersByDate = users.reduce((acc, user) => {
-      const date = new Date(user.createdAt).toLocaleDateString();
-      acc[date] = (acc[date] || 0) + 1;
-      return acc;
-    }, {});
+    const dates = [];
+    const activeUsers = [];
+    const totalUsers = users.length;
 
-    // Sort dates
-    const sortedDates = Object.keys(usersByDate).sort(
-      (a, b) => new Date(a) - new Date(b)
-    );
+    // Consider a user active if they've been online in the last 15 minutes
+    const ACTIVE_THRESHOLD = 15 * 60 * 1000; // 15 minutes in milliseconds
 
-    // Create cumulative data
-    let cumulativeCount = 0;
-    const cumulativeData = sortedDates.map((date) => {
-      cumulativeCount += usersByDate[date];
-      return cumulativeCount;
-    });
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      dates.push(
+        date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      );
+
+      // Count actually active users
+      const activeCount = users.filter((user) => {
+        if (!user.lastActive) return false;
+        const lastActiveDate = new Date(user.lastActive);
+        return Date.now() - lastActiveDate.getTime() <= ACTIVE_THRESHOLD;
+      }).length;
+
+      activeUsers.push(activeCount);
+    }
 
     setUserChartData({
-      labels: sortedDates,
+      labels: dates,
       datasets: [
         {
           label: "Total Users",
-          data: cumulativeData,
+          data: Array(7).fill(totalUsers),
           fill: false,
-          borderColor: "rgb(75, 192, 192)",
-          tension: 0.1,
+          borderColor: "rgba(75, 192, 192, 1)",
+          backgroundColor: "rgba(75, 192, 192, 0.2)",
+          tension: 0.4,
+          borderWidth: 2,
+          pointRadius: 4,
         },
         {
-          label: "New Users per Day",
-          data: sortedDates.map((date) => usersByDate[date]),
-          fill: false,
-          borderColor: "rgb(255, 99, 132)",
-          tension: 0.1,
+          label: "Active Users",
+          data: activeUsers,
+          fill: true,
+          borderColor: "rgba(255, 99, 132, 1)",
+          backgroundColor: "rgba(255, 99, 132, 0.2)",
+          tension: 0.4,
+          borderWidth: 2,
+          pointRadius: 4,
         },
       ],
     });

@@ -112,10 +112,18 @@ const ManagerDashboard = () => {
           }
 
           if (dateFilter === "month") {
-            const monthAgo = new Date();
-            monthAgo.setDate(today.getDate() - 30);
-            monthAgo.setHours(0, 0, 0, 0);
-            return orderDate >= monthAgo;
+            // Get first day of previous month
+            const previousMonth = new Date();
+            previousMonth.setMonth(previousMonth.getMonth() - 1);
+            previousMonth.setDate(1);
+            previousMonth.setHours(0, 0, 0, 0);
+
+            // Get first day of current month
+            const currentMonth = new Date();
+            currentMonth.setDate(1);
+            currentMonth.setHours(0, 0, 0, 0);
+
+            return orderDate >= previousMonth && orderDate < currentMonth;
           }
 
           return true;

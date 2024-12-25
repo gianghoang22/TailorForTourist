@@ -21,16 +21,15 @@ import "./StoreManagement.scss";
 const StoreManagement = () => {
   const [storeData, setStoreData] = useState([]);
   const [newStore, setNewStore] = useState({
-    storeId: null,
-    userId: 0,
+    storeId: 0,
+    userId: "",
     name: "",
     address: "",
     contactNumber: "",
-    storeCode: 0,
     openTime: "",
     closeTime: "",
     staffIDs: "",
-    districtID: 0,
+    districtID: "",
     imgUrl: "",
     status: "Active",
   });
@@ -39,6 +38,10 @@ const StoreManagement = () => {
   const [error, setError] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [managers, setManagers] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [provinces, setProvinces] = useState([]);
+  const [selectedStaff, setSelectedStaff] = useState([]);
 
   useEffect(() => {
     const fetchStoreData = async () => {
@@ -60,9 +63,57 @@ const StoreManagement = () => {
     fetchStoreData();
   }, []);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const headers = {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        };
+
+        // Log the token to verify it exists
+        console.log("Token:", token);
+
+        const [managersRes, staffRes, provincesRes] = await Promise.all([
+          fetch("https://localhost:7194/api/User/role/4", { headers }),
+          fetch("https://localhost:7194/api/User/role/2", { headers }),
+          fetch("https://localhost:7194/api/Shipping/provinces", { headers }),
+        ]);
+
+        // Log response status to check if requests are successful
+        console.log("Managers Response:", managersRes.status);
+        console.log("Staff Response:", staffRes.status);
+        console.log("Provinces Response:", provincesRes.status);
+
+        const managersData = await managersRes.json();
+        const staffData = await staffRes.json();
+        const provincesData = await provincesRes.json();
+
+        // Log the actual data received
+        console.log("Managers Data:", managersData);
+        console.log("Staff Data:", staffData);
+        console.log("Provinces Data:", provincesData);
+
+        setManagers(managersData);
+        setStaff(staffData);
+        setProvinces(provincesData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setError("Error fetching required data");
+      }
+    };
+    fetchData();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setNewStore({ ...newStore, [name]: value });
+    if (name === "staffIDs") {
+      setSelectedStaff(typeof value === "string" ? value.split(",") : value);
+      setNewStore({ ...newStore, staffIDs: value.join(",") });
+    } else {
+      setNewStore({ ...newStore, [name]: value });
+    }
   };
 
   const handleAdd = async () => {
@@ -79,8 +130,6 @@ const StoreManagement = () => {
       // Convert numeric fields
       const storeToAdd = {
         ...newStore,
-        storeCode: parseInt(newStore.storeCode),
-        districtID: parseInt(newStore.districtID),
         status: "Active",
       };
 
@@ -119,7 +168,6 @@ const StoreManagement = () => {
         name: "",
         address: "",
         contactNumber: "",
-        storeCode: 0,
         openTime: "",
         closeTime: "",
         staffIDs: "",
@@ -184,7 +232,6 @@ const StoreManagement = () => {
           name: "",
           address: "",
           contactNumber: "",
-          storeCode: 0,
           openTime: "",
           closeTime: "",
           staffIDs: "",
@@ -222,7 +269,6 @@ const StoreManagement = () => {
         name: "",
         address: "",
         contactNumber: "",
-        storeCode: 0,
         openTime: "",
         closeTime: "",
         staffIDs: "",
@@ -260,7 +306,6 @@ const StoreManagement = () => {
         name: currentStore.name,
         address: currentStore.address,
         contactNumber: currentStore.contactNumber,
-        storeCode: currentStore.storeCode,
         openTime: currentStore.openTime,
         closeTime: currentStore.closeTime,
         staffIDs: currentStore.staffIDs,
@@ -315,6 +360,35 @@ const StoreManagement = () => {
     s.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Add this function to filter out assigned managers
+  const getAvailableManagers = () => {
+    const assignedManagerIds = storeData.map((store) => store.userId);
+    return managers.filter(
+      (manager) =>
+        !assignedManagerIds.includes(manager.userId) ||
+        (editIndex &&
+          storeData.find((store) => store.storeId === editIndex)?.userId ===
+            manager.userId)
+    );
+  };
+
+  // Add this function to filter out assigned staff
+  const getAvailableStaff = () => {
+    const assignedStaffIds = storeData.flatMap((store) =>
+      store.staffIDs ? store.staffIDs.split(",").map(Number) : []
+    );
+    return staff.filter(
+      (staffMember) =>
+        !assignedStaffIds.includes(staffMember.userId) ||
+        (editIndex &&
+          storeData
+            .find((store) => store.storeId === editIndex)
+            ?.staffIDs?.split(",")
+            .map(Number)
+            .includes(staffMember.userId))
+    );
+  };
+
   return (
     <div className="store-management">
       <h2>Store Management</h2>
@@ -333,6 +407,31 @@ const StoreManagement = () => {
         <>
           <div className="header">
             <div className="form">
+              <Select
+                label="Manager"
+                name="userId"
+                value={newStore.userId}
+                onChange={handleChange}
+                variant="outlined"
+                displayEmpty
+                style={{ marginRight: "1rem", minWidth: "200px" }}
+              >
+                <MenuItem value="" disabled>
+                  Select Manager
+                </MenuItem>
+                {getAvailableManagers().length > 0 ? (
+                  getAvailableManagers().map((manager) => (
+                    <MenuItem key={manager.userId} value={manager.userId}>
+                      {manager.name}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem value="" disabled>
+                    No available managers
+                  </MenuItem>
+                )}
+              </Select>
+
               <TextField
                 label="Store Name"
                 name="name"
@@ -353,15 +452,6 @@ const StoreManagement = () => {
                 label="Contact Number"
                 name="contactNumber"
                 value={newStore.contactNumber}
-                onChange={handleChange}
-                variant="outlined"
-                style={{ marginRight: "1rem" }}
-              />
-              <TextField
-                label="Store Code"
-                name="storeCode"
-                type="number"
-                value={newStore.storeCode}
                 onChange={handleChange}
                 variant="outlined"
                 style={{ marginRight: "1rem" }}
@@ -396,15 +486,33 @@ const StoreManagement = () => {
                   step: 300, // 5 min
                 }}
               />
-              <TextField
-                label="District ID"
+              <Select
+                label="Province"
                 name="districtID"
-                type="number"
                 value={newStore.districtID}
                 onChange={handleChange}
                 variant="outlined"
-                style={{ marginRight: "1rem" }}
-              />
+                displayEmpty
+                style={{ marginRight: "1rem", minWidth: "200px" }}
+              >
+                <MenuItem value="" disabled>
+                  Select Province
+                </MenuItem>
+                {provinces && provinces.length > 0 ? (
+                  provinces.map((province) => (
+                    <MenuItem
+                      key={province.provinceID}
+                      value={province.provinceID}
+                    >
+                      {province.provinceName}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem value="" disabled>
+                    No provinces available
+                  </MenuItem>
+                )}
+              </Select>
               <TextField
                 label="Image URL"
                 name="imgUrl"
@@ -413,6 +521,40 @@ const StoreManagement = () => {
                 variant="outlined"
                 style={{ marginRight: "1rem" }}
               />
+              <Select
+                multiple
+                label="Staff Members"
+                name="staffIDs"
+                value={selectedStaff}
+                onChange={handleChange}
+                variant="outlined"
+                displayEmpty
+                style={{ marginRight: "1rem", minWidth: "200px" }}
+                renderValue={(selected) => {
+                  if (selected.length === 0) {
+                    return "Select Staff Members";
+                  }
+                  return selected
+                    .map((id) => staff.find((s) => s.userId === id)?.name)
+                    .filter(Boolean)
+                    .join(", ");
+                }}
+              >
+                {getAvailableStaff().length > 0 ? (
+                  getAvailableStaff().map((staffMember) => (
+                    <MenuItem
+                      key={staffMember.userId}
+                      value={staffMember.userId}
+                    >
+                      {staffMember.name}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem value="" disabled>
+                    No available staff
+                  </MenuItem>
+                )}
+              </Select>
               {editIndex ? (
                 <Button
                   variant="contained"
@@ -469,9 +611,6 @@ const StoreManagement = () => {
                     Contact Number
                   </TableCell>
                   <TableCell style={{ whiteSpace: "nowrap" }}>
-                    Store Code
-                  </TableCell>
-                  <TableCell style={{ whiteSpace: "nowrap" }}>
                     Open Time
                   </TableCell>
                   <TableCell style={{ whiteSpace: "nowrap" }}>
@@ -508,9 +647,6 @@ const StoreManagement = () => {
                     </TableCell>
                     <TableCell style={{ whiteSpace: "nowrap" }}>
                       {s.contactNumber}
-                    </TableCell>
-                    <TableCell style={{ whiteSpace: "nowrap" }}>
-                      {s.storeCode}
                     </TableCell>
                     <TableCell style={{ whiteSpace: "nowrap" }}>
                       {s.openTime}
