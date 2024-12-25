@@ -71,7 +71,7 @@ const ProfitCalculation = () => {
       console.log("Fetched bookings data:", bookingsData);
 
       setOrders(Array.isArray(ordersData) ? ordersData : []);
-      setBookings(Array.isArray(bookingsData) ? bookingsData : []);
+      setBookings(Array.isArray(bookingsData.data) ? bookingsData.data : []);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Failed to load data");
@@ -225,6 +225,7 @@ const ProfitCalculation = () => {
     scales: {
       y: {
         beginAtZero: true,
+        suggestedMax: 10,
         ticks: {
           stepSize: 1,
           precision: 0,
@@ -244,9 +245,8 @@ const ProfitCalculation = () => {
       case "profit":
         return <Line data={profitTrendData} options={chartOptions} />;
       case "bookings":
-        console.log("Rendering booking chart with data:", bookingData);
         return (
-          <div style={{ height: "400px" }}>
+          <div className="chart-wrapper">
             <Bar
               key={JSON.stringify(bookingData)}
               data={bookingData}
