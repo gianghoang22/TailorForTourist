@@ -44,6 +44,8 @@ const UserManagement = () => {
   const [error, setError] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(15);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -263,6 +265,10 @@ const UserManagement = () => {
     u.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const indexOfLastUser = currentPage * itemsPerPage;
+  const indexOfFirstUser = indexOfLastUser - itemsPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+
   return (
     <div className="user-management">
       <h2>User Management</h2>
@@ -388,7 +394,7 @@ const UserManagement = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredUsers.map((u) => (
+                {currentUsers.map((u) => (
                   <TableRow key={u.userId}>
                     <TableCell>{u.name}</TableCell>
                     <TableCell>{u.email}</TableCell>
@@ -427,6 +433,19 @@ const UserManagement = () => {
               </TableBody>
             </Table>
           </TableContainer>
+
+          <div className="pagination">
+            {Array.from({ length: Math.ceil(filteredUsers.length / itemsPerPage) }, (_, index) => (
+              <Button
+                key={index + 1}
+                onClick={() => setCurrentPage(index + 1)}
+                variant={currentPage === index + 1 ? "contained" : "outlined"}
+                style={{ margin: "0 5px" }}
+              >
+                {index + 1}
+              </Button>
+            ))}
+          </div>
         </>
       )}
     </div>

@@ -155,6 +155,7 @@ const MeasureList = () => {
     const measurement = measurements[userId];
     if (measurement) {
       setEditingMeasurement(measurement);
+      setSelectedUserId(userId);
       setShowCreateModal(true);
       createFormik.setValues({
         userId: measurement.userId,
@@ -457,8 +458,16 @@ const MeasureList = () => {
             
             <div className="modal-body">
               <div className="customer-header">
-                <h4>{users[selectedMeasurement.userId]?.name}</h4>
-                <p>{users[selectedMeasurement.userId]?.email} • {users[selectedMeasurement.userId]?.phone}</p>
+                {console.log("Users Data:", users)}
+                {(() => {
+                  const user = users.find(user => user.userId === selectedMeasurement.userId);
+                  return (
+                    <>
+                      <h4>{user ? user.name : "Tên không có sẵn"}</h4>
+                      <p>{user ? user.email : ""} • {user ? user.phone : ""}</p>
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="measurements-detail">
@@ -550,6 +559,17 @@ const MeasureList = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>{editMeasurementId ? "Edit Measurement" : "Add Measurement"}</h3>
+            <div className="customer-header">
+              {(() => {
+                const user = users.find(user => user.userId === selectedUser.userId);
+                return (
+                  <>
+                    <h4>{user ? user.name : "Tên không có sẵn"}</h4>
+                    <p>{user ? user.email : ""} • {user ? user.phone : ""}</p>
+                  </>
+                );
+              })()}
+            </div>
             <form onSubmit={formik.handleSubmit} className="measurement-form">
               <div className="form-grid">
                 <div className="form-group">
@@ -599,23 +619,17 @@ const MeasureList = () => {
             
             <div className="modal-body">
               <div className="customer-header">
-                <div className="detail-item">
-                  <span>User ID</span>
-                  <input
-                    type="number"
-                    value={selectedUserId || ''}
-                    onChange={(e) => setSelectedUserId(Number(e.target.value))}
-                    placeholder="Enter user ID"
-                    className={
-                      createFormik.touched.userId && !selectedUserId 
-                        ? "error-input" 
-                        : ""
-                    }
-                  />
-                  {createFormik.touched.userId && !selectedUserId && (
-                    <div className="error-message">This field is required</div>
-                  )}
-                </div>
+                {(() => {
+                  console.log("Selected User ID:", selectedUserId);
+                  const user = users.find(user => user.userId === selectedUserId);
+                  console.log("Found User:", user);
+                  return (
+                    <>
+                      <h4>{user ? user.name : "Tên không có sẵn"}</h4>
+                      <p>{user ? user.email : ""} • {user ? user.phone : ""}</p>
+                    </>
+                  );
+                })()}
               </div>
 
               <form onSubmit={createFormik.handleSubmit}>

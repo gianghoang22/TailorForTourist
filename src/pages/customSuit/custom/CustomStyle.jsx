@@ -260,7 +260,6 @@ const CustomStyle = () => {
       imageUrl: optionTypeImages[styleOption.optionValue]
     });
 
-    toast.success(`${styleOption.optionType} updated to ${styleOption.optionValue}`);
   };
 
   const getOptionValues = (styleId, optionType) => {

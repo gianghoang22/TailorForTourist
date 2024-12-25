@@ -180,8 +180,8 @@ toast.error("Failed to add to cart. Please try again.");
     }
 
     try {
-      // Get current date in YYYY-MM-DD format
-      const currentDate = new Date().toLocaleDateString('en-CA'); // 'en-CA' gives YYYY-MM-DD format
+      
+      const currentDate = new Date().toLocaleDateString('en-CA'); 
       console.log('Current Date:', currentDate);
 
       const feedbackData = {
@@ -218,7 +218,7 @@ toast.error("Failed to add to cart. Please try again.");
       fetchFeedbacks();
     } catch (error) {
       console.error('Full error:', error);
-      toast.error('Unable to submit review. Please check console for details');
+      toast.error('Unable to submit review.');
     }
   };
 

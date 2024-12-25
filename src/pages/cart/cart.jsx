@@ -14,6 +14,7 @@ const Cart = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const [isGuest, setIsGuest] = useState(!localStorage.getItem("token"));
+  const [details, setDetails] = useState({});
 
   useEffect(() => {
     const fetchCartAndDetails = async () => {
@@ -108,7 +109,7 @@ const Cart = () => {
               const styleOptionResponses =
                 await Promise.all(styleOptionPromises);
 
-              details[item.cartItemId] = {
+              details[item.customProduct.productCode] = {
                 fabric: {
                   name: fabricRes.data.fabricName,
                   price: fabricRes.data.price,
@@ -125,7 +126,7 @@ const Cart = () => {
               };
             }
           }
-          setCustomDetails(details);
+          setDetails(details);
         }
       } catch (error) {
         setError("Đã xảy ra lỗi khi lấy giỏ hàng");
@@ -341,8 +342,8 @@ const Cart = () => {
                           width="64"
                           height="817"
                           src={
-                            item.isCustom
-                              ? customDetails[item.cartItemId]?.fabric.imageUrl
+                            item.isCustom && details[item.customProduct.productCode]
+                              ? details[item.customProduct.productCode].fabric.imageUrl
                               : item.product?.imgURL
                           }
                           className="attachment-woocommerce_thumbnail size-woocommerce_thumbnail wp-post-image"
@@ -355,20 +356,16 @@ const Cart = () => {
                             <p className="product-code">
                               {item.customProduct.productCode}
                             </p>
-                            {customDetails[item.cartItemId] && (
+                            {details[item.customProduct.productCode] && (
                               <>
                                 <p>
-                                  Fabric:{" "}
-                                  {customDetails[item.cartItemId].fabric.name}
+                                  Fabric: {details[item.customProduct.productCode].fabric.name}
                                 </p>
                                 <p>
-                                  Lining:{" "}
-                                  {customDetails[item.cartItemId].lining.name}
+                                  Lining: {details[item.customProduct.productCode].lining.name}
                                 </p>
                                 <div className="style-options">
-                                  {customDetails[
-                                    item.cartItemId
-                                  ].styleOptions.map((option, index) => (
+                                  {details[item.customProduct.productCode].styleOptions.map((option, index) => (
                                     <p key={index}>
                                       {option.type}: {option.value}
                                     </p>

@@ -52,87 +52,77 @@ const CreateAccount = () => {
   };
 
   return (
-    <div className="create-account">
-      <h2>Create New Account</h2>
+    <div className="create-account-container">
+      <h2 className="title">Create New Account</h2>
       
       {message && (
-        <div className="success-message" style={{
-          padding: '10px',
-          marginBottom: '20px',
-          backgroundColor: '#d4edda',
-          color: '#155724',
-          borderRadius: '4px',
-          border: '1px solid #c3e6cb'
-        }}>
+        <div className="notification success">
           {message}
         </div>
       )}
       
       {error && (
-        <div className="error-message" style={{
-          padding: '10px',
-          marginBottom: '20px',
-          backgroundColor: '#f8d7da',
-          color: '#721c24',
-          borderRadius: '4px',
-          border: '1px solid #f5c6cb',
-          fontWeight: 'bold'
-        }}>
+        <div className="notification error">
           ⚠️ {error}
         </div>
       )}
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="account-form">
         <div className="form-group">
-          <label>Full Name</label>
+          <label className="label">Full Name</label>
           <input
             type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
             required
+            className="input-field"
           />
         </div>
 
         <div className="form-group">
-          <label>Email</label>
+          <label className="label">Email</label>
           <input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
             required
+            className="input-field"
           />
         </div>
 
         <div className="form-group">
-          <label>Date of Birth</label>
+          <label className="label">Date of Birth</label>
           <input
             type="date"
             name="dob"
             value={formData.dob}
             onChange={handleChange}
             required
+            className="input-field"
           />
         </div>
 
         <div className="form-group">
-          <label>Password</label>
+          <label className="label">Password</label>
           <input
             type="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
             required
+            className="input-field"
           />
         </div>
 
         <div className="form-group">
-          <label>Gender</label>
+          <label className="label">Gender</label>
           <select
             name="gender"
             value={formData.gender}
             onChange={handleChange}
+            className="input-field"
           >
             <option value="male">Male</option>
             <option value="female">Female</option>

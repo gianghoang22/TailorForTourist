@@ -78,18 +78,17 @@ const ProductPage = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 12; // 3 products per row * 4 rows
 
   useEffect(() => {
     fetchAllProducts();
   }, []);
 
-  // Fetch all products
   const fetchAllProducts = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        "https://localhost:7194/api/Product/products/custom-false"
-      );
+      const response = await axios.get("https://localhost:7194/api/Product/products/custom-false");
       setProducts(response.data);
       setLoading(false);
     } catch (err) {
@@ -98,12 +97,27 @@ const ProductPage = () => {
     }
   };
 
+  const handleNextPage = () => {
+    if (currentPage < Math.ceil(products.length / productsPerPage)) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const totalPages = Math.ceil(products.length / productsPerPage);
+  const currentProducts = products.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage);
+
   // Fetch products by category ID
   const fetchProductsByCategory = async (categoryId) => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `https://localhost:7194/api/Product/category/${categoryId}`
+        `https://localhost:7194/api/Product/category-iscustomfalse/${categoryId}`
       );
       setProducts(response.data);
       setLoading(false);
@@ -243,7 +257,7 @@ const ProductPage = () => {
             {loading && <p>Loading products...</p>}
             {error && <p>Error loading products: {error}</p>}
             {!loading && !error && products.length > 0 && (
-              <Product products={products} />
+              <Product products={currentProducts} currentPage={currentPage} productsPerPage={productsPerPage} />
             )}
             {!loading && !error && products.length === 0 && (
               <p>No products found for the selected criteria.</p>
@@ -251,6 +265,17 @@ const ProductPage = () => {
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Pagination Controls */}
+      <div className="pagination-controls">
+        <button onClick={handlePreviousPage} disabled={currentPage === 1}>
+          Previous
+        </button>
+        <span>Page {currentPage} of {totalPages}</span>
+        <button onClick={handleNextPage} disabled={currentPage >= totalPages}>
+          Next
+        </button>
+      </div>
 
       <Footer />
     </motion.div>

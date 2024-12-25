@@ -75,15 +75,15 @@ const CustomLining = () => {
         setLinings(data);
 
         // Auto-select first lining if none selected
-        const savedLiningId = localStorage.getItem("liningId");
-        if (savedLiningId) {
-          const savedLining = data.find(l => l.liningId === parseInt(savedLiningId));
-          if (savedLining) {
-            setSelectedLining(savedLining);
-          }
-        } else if (data.length > 0) {
-          handleLiningClick(data[0]);
-        }
+        // const savedLiningId = localStorage.getItem("liningId");
+        // if (savedLiningId) {
+        //   const savedLining = data.find(l => l.liningId === parseInt(savedLiningId));
+        //   if (savedLining) {
+        //     setSelectedLining(savedLining);
+        //   }
+        // } else if (data.length > 0) {
+        //   handleLiningClick(data[0]);
+        // }
       } catch (error) {
         setError(error.message);
       } finally {
@@ -127,7 +127,7 @@ const CustomLining = () => {
       // if (!measurementId) {
       //   // Nếu chưa có measurementId, chuyển đến trang measureGuest
       //   toast.info("Please complete your measurements first");
-      //   // Lưu trạng thái hiện tại để quay lại sau
+      //   // Lưu trạng thái hi��n tại để quay lại sau
       //   localStorage.setItem("returnToCustomization", "true");
       //   navigate("/measure-guest");
       //   return;
@@ -144,7 +144,6 @@ const CustomLining = () => {
           pickedStyleOptions: completeSuit.styles.map(style => ({
             styleOptionID: style.id
           })),
-          productCode: `SUIT-${completeSuit.fabricId}`
         }
       };
 

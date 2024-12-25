@@ -173,13 +173,14 @@ const OrderList = () => {
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [dateFilter, setDateFilter] = useState("all");
   const [priceFilter, setPriceFilter] = useState({ min: 0, max: Infinity });
-  const [priceRange, setPriceRange] = useState([0, 1000]); // Default range, adjust as needed
+  const [priceRange, setPriceRange] = useState([0, 10000]); // Default range, adjust as needed
   const [customDateRange, setCustomDateRange] = useState({
     startDate: null,
     endDate: null,
   });
   const [page, setPage] = useState(0);
   const [rowsPerPage] = useState(10);
+  const [selectedMeasurement, setSelectedMeasurement] = useState(null);
 
   const handleDateFilterChange = (event) => {
     setDateFilter(event.target.value);
@@ -307,35 +308,22 @@ const OrderList = () => {
       if (selectedUser?.userId) {
         try {
           const response = await api.get(`/Measurement?userId=${selectedUser.userId}`);
-          console.log('Selected User ID:', selectedUser.userId);
-          console.log('Measurements for user:', response.data);
           setMeasurements(response.data);
-
-          // Fetch user details for each measurement
-          const measurementsWithUsers = await Promise.all(
-            response.data.map(async (measurement) => {
-              const userDetails = await fetchUserDetails(measurement.userId);
-              return {
-                ...measurement,
-                userDetails
-              };
-            })
-          );
-          setMeasurementsWithUserDetails(measurementsWithUsers);
+          // Nếu có measurement, chọn measurement đầu tiên
+          if (response.data.length > 0) {
+            setSelectedMeasurement(response.data[0]); // Chọn measurement đầu tiên
+          }
         } catch (error) {
           console.error('Error fetching measurements:', error);
-          setSnackbarMessage('Error loading measurements');
-          setSnackbarSeverity('error');
-          setSnackbarOpen(true);
         }
       } else {
-        setMeasurements([]);
-        setMeasurementsWithUserDetails([]);
+        setMeasurements([]); // Reset measurements nếu không có user được chọn
+        setSelectedMeasurement(null); // Reset measurement đã chọn
       }
     };
 
     fetchMeasurements();
-  }, [selectedUser]);
+  }, [selectedUser]); // Fetch measurements khi selectedUser thay đổi
 
   const searchUsers = useCallback(
     debounce(async (query) => {
@@ -405,14 +393,30 @@ const OrderList = () => {
 
   const handleViewDetails = async (orderId) => {
     try {
-      const response = await api.get(`/Orders/${orderId}/details`);
-      setOrderDetails(response.data);
-      setDetailsOpen(true);
+        const response = await api.get(`/Orders/${orderId}/details`);
+        setOrderDetails(response.data);
+        
+        // Fetch product details for each order detail
+        const productDetailsPromises = response.data.orderDetails.map(async (detail) => {
+            const productResponse = await api.get(`/Product/details/${detail.productId}`);
+            return {
+                ...detail,
+                product: productResponse.data
+            };
+        });
+
+        const orderDetailsWithProducts = await Promise.all(productDetailsPromises);
+        setOrderDetails(prev => ({
+            ...prev,
+            orderDetails: orderDetailsWithProducts
+        }));
+
+        setDetailsOpen(true);
     } catch (error) {
-      console.error("Error fetching order details:", error);
-      setSnackbarMessage("Failed to fetch order details");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
+        console.error("Error fetching order details:", error);
+        setSnackbarMessage("Failed to fetch order details");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
     }
   };
 
@@ -804,7 +808,7 @@ const OrderList = () => {
                   onChange={handlePriceRangeChange}
                   valueLabelDisplay="auto"
                   min={0}
-                  max={1000}
+                  max={10000}
                   sx={{
                     "& .MuiSlider-thumb": {
                       height: 24,
@@ -837,10 +841,10 @@ const OrderList = () => {
                 size="small"
               />
             )}
-            {(priceRange[0] > 0 || priceRange[1] < 1000) && (
+            {(priceRange[0] > 0 || priceRange[1] < 10000) && (
               <Chip
                 label={`Price: $${priceRange[0]} - $${priceRange[1]}`}
-                onDelete={() => setPriceRange([0, 1000])}
+                onDelete={() => setPriceRange([0, 10000])}
                 color="primary"
                 variant="outlined"
                 size="small"
@@ -968,7 +972,7 @@ const OrderList = () => {
               </Typography>
               <Typography>
                 <strong>Order Date:</strong>{" "}
-                {new Date(orderDetails.orderDate).toLocaleString()}
+                {orderDetails.orderDate}
               </Typography>
               <Typography>
                 <strong>Total Price:</strong> ${orderDetails.totalPrice.toFixed(2)}
@@ -985,6 +989,18 @@ const OrderList = () => {
                     <Typography>
                       Product ID: {detail.productId}, Quantity: {detail.quantity}, Price: ${detail.price}
                     </Typography>
+                    {detail.product ? (
+                        <>
+                            <Typography>
+                                Fabric: {detail.product.fabricName}, Lining: {detail.product.liningName}
+                            </Typography>
+                            <Typography>
+                                Style Options: {detail.product.styleOptions.map(option => option.optionValue).join(', ')}
+                            </Typography>
+                        </>
+                    ) : (
+                        <Typography color="error">Product details not available</Typography>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -1538,18 +1554,6 @@ const OrderList = () => {
                         required
                       />
                     )}
-                    renderOption={(props, option) => (
-                      <li {...props}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <Typography variant="body1">
-                            {option.fabricName} - ${option.price}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            {option.description}
-                          </Typography>
-                        </div>
-                      </li>
-                    )}
                   />
 
                   {/* Lining Selection */}
@@ -1568,13 +1572,6 @@ const OrderList = () => {
                         fullWidth
                         required
                       />
-                    )}
-                    renderOption={(props, option) => (
-                      <li {...props}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <Typography variant="body1">{option.liningName}</Typography>
-                        </div>
-                      </li>
                     )}
                   />
 
@@ -1601,56 +1598,14 @@ const OrderList = () => {
                     )}
                   />
 
-                  {/* Measurement ID */}
-                  <Autocomplete
-                    options={measurementsWithUserDetails}
-                    getOptionLabel={(option) => {
-                      if (!option) return '';
-                      const user = option.userDetails;
-                      return `Measurement ID: ${option.measurementId} - ${user?.name || ''} (${user?.email || ''})`;
-                    }}
-                    value={measurementsWithUserDetails.find(m => m.measurementId === parseInt(measurementId)) || null}
-                    onChange={(_, newValue) => {
-                      console.log('Selected Measurement:', newValue);
-                      setMeasurementId(newValue ? newValue.measurementId.toString() : '');
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Measurement"
-                        margin="normal"
-                        fullWidth
-                        required
-                        error={!measurementId && measurementsWithUserDetails.length === 0}
-                        helperText={
-                          !selectedUser 
-                            ? "Please select a customer first" 
-                            : measurementsWithUserDetails.length === 0 
-                              ? "No measurements found for this customer" 
-                              : ""
-                        }
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <li {...props}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <Typography variant="body1">
-                            Measurement ID: {option.measurementId}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            {option.userDetails?.name} ({option.userDetails?.email})
-                            {option.createdAt && ` - Created: ${new Date(option.createdAt).toLocaleDateString()}`}
-                          </Typography>
-                        </div>
-                      </li>
-                    )}
-                    disabled={!selectedUser}
-                    noOptionsText={
-                      selectedUser 
-                        ? "No measurements found for this customer" 
-                        : "Please select a customer first"
-                    }
-                  />
+                  {/* Hiển thị thông tin người dùng */}
+                  {selectedUser && (
+                    <div className="user-info">
+                      <h4>Measurement of customer:</h4>
+                      <p><strong>Name:</strong> {selectedUser.name}</p>
+                      <p><strong>Email:</strong> {selectedUser.email}</p>
+                    </div>
+                  )}
 
                   {/* Quantity */}
                   <TextField

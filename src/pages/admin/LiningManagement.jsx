@@ -38,6 +38,8 @@ const LiningManagement = () => {
   const [error, setError] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(15);
 
   const getAuthToken = () => {
     return localStorage.getItem("token");
@@ -186,6 +188,12 @@ const LiningManagement = () => {
     l.liningName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const indexOfLastLining = currentPage * itemsPerPage;
+  const indexOfFirstLining = indexOfLastLining - itemsPerPage;
+  const currentLinings = filteredLinings.slice(indexOfFirstLining, indexOfLastLining);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   return (
     <div className="lining-management">
       <Typography variant="h4" component="h2">
@@ -295,7 +303,7 @@ const LiningManagement = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredLinings.map((l) => (
+                {currentLinings.map((l) => (
                   <TableRow key={l.liningId} hover>
                     <TableCell>{l.liningName}</TableCell>
                     <TableCell>
@@ -341,6 +349,19 @@ const LiningManagement = () => {
               </TableBody>
             </Table>
           </TableContainer>
+
+          <div className="pagination">
+            {Array.from({ length: Math.ceil(filteredLinings.length / itemsPerPage) }, (_, index) => (
+              <Button
+                key={index + 1}
+                onClick={() => paginate(index + 1)}
+                variant={currentPage === index + 1 ? "contained" : "outlined"}
+                style={{ margin: "0 5px" }}
+              >
+                {index + 1}
+              </Button>
+            ))}
+          </div>
         </>
       )}
     </div>
