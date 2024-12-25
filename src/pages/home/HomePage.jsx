@@ -9,6 +9,7 @@ import { HomePageBody1 } from "./HomePageBody1";
 import { HomePageBody2 } from "./HomePageBody2";
 import { HomePageBody3 } from "./HomePageBody3";
 import { HomePageBody4 } from "./HomePageBody4";
+import ZodiacAnalyzer from "../../components/ZodiacAnalyzer";
 import SkinToneAnalyzer from "../../components/SkinToneAnalyzer";
 
 const HomePage = () => {
@@ -91,6 +92,7 @@ const HomePage = () => {
           </div>
         </main>
       </Box>
+      <ZodiacAnalyzer />
       <SkinToneAnalyzer />
     </>
   );
