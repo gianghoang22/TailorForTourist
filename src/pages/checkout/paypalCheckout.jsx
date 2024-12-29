@@ -9,10 +9,11 @@ const PayPalCheckoutButton = ({
   selectedVoucher = null,
 }) => {
   const [isDeposit, setIsDeposit] = useState(false);
+
   const validAmount = parseFloat(amount) || 0;
   const validShippingFee = parseFloat(shippingFee) || 0;
 
-  const finalPrice = isDeposit 
+  const finalPrice = isDeposit
     ? validAmount * 0.5 + validShippingFee
     : validAmount + validShippingFee;
 
@@ -24,8 +25,26 @@ const PayPalCheckoutButton = ({
         window.paypal
           .Buttons({
             createOrder: (data, actions) => {
+              console.log("Final Price:", finalPrice);
+
               if (validAmount <= 0) {
                 throw new Error("Invalid price amount");
+              }
+
+              const itemTotal = isDeposit
+                ? validAmount * 0.5
+                : validAmount; // 50% for deposit, full otherwise
+              const shippingValue = validShippingFee;
+
+              const calculatedTotal = itemTotal + shippingValue;
+
+              // Ensure total matches the breakdown
+              if (calculatedTotal.toFixed(2) !== finalPrice.toFixed(2)) {
+                throw new Error(
+                  `AMOUNT_MISMATCH: Total ${calculatedTotal.toFixed(
+                    2
+                  )} does not match Final Price ${finalPrice.toFixed(2)}`
+                );
               }
 
               return actions.order.create({
@@ -37,15 +56,21 @@ const PayPalCheckoutButton = ({
                       breakdown: {
                         item_total: {
                           currency_code: "USD",
-                          value: validAmount.toFixed(2),
+                          value: itemTotal.toFixed(2),
                         },
                         shipping: {
                           currency_code: "USD",
-                          value: validShippingFee.toFixed(2),
+                          value: shippingValue.toFixed(2),
                         },
                       },
                     },
-                    description: `${isDeposit ? "50% Deposit" : "Full"} Payment${selectedVoucher ? ` (Voucher: ${selectedVoucher.voucherCode})` : ""}`,
+                    description: `${
+                      isDeposit ? "50% Deposit" : "Full"
+                    } Payment${
+                      selectedVoucher
+                        ? ` (Voucher: ${selectedVoucher.voucherCode})`
+                        : ""
+                    }`,
                   },
                 ],
               });
@@ -55,7 +80,7 @@ const PayPalCheckoutButton = ({
               onSuccess({
                 ...details,
                 isDeposit,
-                depositAmount: isDeposit ? finalPrice : 0,
+                depositAmount: isDeposit ? validAmount * 0.5 : 0,
                 appliedVoucher: selectedVoucher,
                 confirmOrder: true,
               });

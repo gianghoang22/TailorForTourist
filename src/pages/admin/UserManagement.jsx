@@ -382,13 +382,13 @@ const UserManagement = () => {
           </div>
 
           <TableContainer component={Paper}>
-            <Table>
+            <Table style={{ width: "100%" }}>
               <TableHead>
                 <TableRow>
                   <TableCell>Name</TableCell>
                   <TableCell>Email</TableCell>
                   <TableCell>Phone</TableCell>
-                  <TableCell>Address</TableCell>
+                  <TableCell style={{ whiteSpace: "normal", maxWidth: "150px" }}>Address</TableCell>
                   <TableCell>Gender</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Role</TableCell>
@@ -401,7 +401,7 @@ const UserManagement = () => {
                     <TableCell>{u.name}</TableCell>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>{u.phone}</TableCell>
-                    <TableCell>{u.address}</TableCell>
+                    <TableCell style={{ whiteSpace: "normal", maxWidth: "150px" }}>{u.address}</TableCell>
                     <TableCell>{u.gender}</TableCell>
                     <TableCell>{u.status}</TableCell>
                     <TableCell>

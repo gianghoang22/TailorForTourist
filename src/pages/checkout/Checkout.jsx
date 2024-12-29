@@ -360,6 +360,15 @@ const Checkout = () => {
         const response = await axios.post(`https://localhost:7194/Cart/createpayment?${queryParams}`, {}, {
             headers: { Authorization: `Bearer ${token}` },
         });
+
+        // Check if response.data and paymentId are defined
+        if (response.data && response.data.paymentId) {
+            sessionStorage.setItem('paymentId', response.data.paymentId);
+            console.log('Payment ID saved to sessionStorage:', response.data.paymentId);
+        } else {
+            console.error('Payment ID not found in response:', response.data);
+            toast.error('Payment creation failed. Payment ID is missing.');
+        }
         
         // Xử lý phản hồi nếu cần
         console.log("Payment created successfully:", response.data);
@@ -370,9 +379,13 @@ const Checkout = () => {
   };
 
   const handlePaymentSuccess = async (details, data) => {
+    var paymentId = sessionStorage.getItem('paymentId');
     try {
         setIsLoading(true);
         
+        // Use the depositAmount from the details
+        const depositAmount = details.depositAmount; // Get the deposit amount
+
         // Validation checks
         const errors = [];
 
@@ -461,7 +474,7 @@ const Checkout = () => {
             guestName: guestName.trim(),
             guestEmail: guestEmail.trim(),
             guestAddress: guestAddress.trim(),
-            deposit: '0',
+            deposit: depositAmount.toString(), // Pass the deposit amount as a string
             shippingfee: finalShippingFee.toString(),
             deliverymethod: deliveryMethod,
             storeId: storeId.toString()

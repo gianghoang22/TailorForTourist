@@ -315,9 +315,6 @@ const StaffDashboard = () => {
             Dashboard Overview
           </Typography>
           <div className="header-actions">
-            <Button startIcon={<Search />}>Search</Button>
-            <Button startIcon={<Notifications />}>Notifications</Button>
-            <Button startIcon={<Mail />}>Messages</Button>
             <Button onClick={() => setDarkMode(!darkMode)}>
               {darkMode ? "Light Mode" : "Dark Mode"}
             </Button>
