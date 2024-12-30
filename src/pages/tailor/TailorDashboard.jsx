@@ -54,6 +54,14 @@ const TailorDashboard = () => {
       : null;
   };
 
+  const isDateOverdue = (dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for fair comparison
+    return date < today;
+  };
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -273,14 +281,55 @@ const TailorDashboard = () => {
       const updatedOrders = await Promise.all(
         (data.data || []).map(async (order) => {
           const status = await fetchProcessingStatus(order.processingId);
+
+          // Check for overdue dates based on current stage
+          let isDue = false;
+          if (status !== "Finish") {
+            switch (order.stageName) {
+              case STAGES.MAKE_SAMPLE:
+                isDue = isDateOverdue(order.dateSample);
+                break;
+              case STAGES.FIX:
+                isDue = isDateOverdue(order.dateFix);
+                break;
+              case STAGES.DELIVERY:
+                isDue = isDateOverdue(order.dateDelivery);
+                break;
+            }
+
+            // If order is overdue, update the status to "Due" in the backend
+            if (isDue && status !== "Due") {
+              try {
+                const dueUpdateResponse = await fetch(
+                  `https://localhost:7194/api/ProcessingTailor/process/status/${order.processingId}`,
+                  {
+                    method: "PATCH",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify("Due"),
+                  }
+                );
+
+                if (!dueUpdateResponse.ok) {
+                  console.error("Failed to update status to Due");
+                }
+              } catch (error) {
+                console.error("Error updating due status:", error);
+              }
+            }
+          }
+
           return {
             ...order,
             stageName: order.stageName || "Make Sample",
             stageStatus: order.stageStatus || "Doing",
-            status: status || order.status,
+            status: isDue ? "Due" : status || order.status,
           };
         })
       );
+
       setOrders(updatedOrders);
 
       // Fetch details for each order
@@ -319,13 +368,14 @@ const TailorDashboard = () => {
   const handleUpdate = async (order) => {
     try {
       const token = localStorage.getItem("token");
+      const skipFixStage = !order.dateFix; // Check if dateFix is missing
 
-      // If the order is in "Not Start" and in the "Make Sample" stage, update order status first
+      // Initial "Not Start" to "Doing" transition remains the same
       if (
         order.status === "Not Start" &&
         order.stageName === STAGES.MAKE_SAMPLE
       ) {
-        // Update order status to "Doing"
+        // Update order and stage status to "Doing"
         const processingResponse = await fetch(
           `https://localhost:7194/api/ProcessingTailor/process/status/${order.processingId}`,
           {
@@ -363,12 +413,12 @@ const TailorDashboard = () => {
           );
         }
       }
-      // If the stage is "Make Sample" and order status is "Doing", move to "Fix"
+      // Modified logic for Make Sample to next stage transition
       else if (
         order.stageName === STAGES.MAKE_SAMPLE &&
         order.status === "Doing"
       ) {
-        // Update the stage status of "Make Sample" to "Finish"
+        // Update Make Sample stage to "Finish"
         const makeSampleFinishResponse = await fetch(
           `https://localhost:7194/api/ProcessingTailor/sample/status/${order.processingId}`,
           {
@@ -377,7 +427,7 @@ const TailorDashboard = () => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify("Finish"), // Stage status "Finish"
+            body: JSON.stringify("Finish"),
           }
         );
 
@@ -387,7 +437,8 @@ const TailorDashboard = () => {
           );
         }
 
-        // Change stage name to "Fix"
+        // Change stage name to "Delivery" if skipFixStage is true, otherwise go to "Fix"
+        const nextStage = skipFixStage ? STAGES.DELIVERY : STAGES.FIX;
         const stageUpdateResponse = await fetch(
           `https://localhost:7194/api/ProcessingTailor/stagename/${order.processingId}`,
           {
@@ -396,32 +447,33 @@ const TailorDashboard = () => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(STAGES.FIX), // Update stage name to "Fix"
+            body: JSON.stringify(nextStage),
           }
         );
 
         if (!stageUpdateResponse.ok) {
           throw new Error(
-            `Failed to update stage name to Fix: ${stageUpdateResponse.status}`
+            `Failed to update stage name to ${nextStage}: ${stageUpdateResponse.status}`
           );
         }
 
-        // Set stage status for "Fix" to "Doing"
-        const fixStatusResponse = await fetch(
-          `https://localhost:7194/api/ProcessingTailor/fix/status/${order.processingId}`,
+        // Set stage status for next stage to "Doing"
+        const statusEndpoint = skipFixStage ? "delivery" : "fix";
+        const nextStageResponse = await fetch(
+          `https://localhost:7194/api/ProcessingTailor/${statusEndpoint}/status/${order.processingId}`,
           {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify("Doing"), // Stage status "Doing"
+            body: JSON.stringify("Doing"),
           }
         );
 
-        if (!fixStatusResponse.ok) {
+        if (!nextStageResponse.ok) {
           throw new Error(
-            `Failed to update Fix stage status: ${fixStatusResponse.status}`
+            `Failed to update ${nextStage} stage status: ${nextStageResponse.status}`
           );
         }
       }

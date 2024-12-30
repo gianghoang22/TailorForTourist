@@ -25,6 +25,8 @@ import {
   InputLabel,
   Box,
   Typography,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -40,9 +42,9 @@ const ManagerDashboard = () => {
   const [processingDialogOpen, setProcessingDialogOpen] = useState(false);
   const [processingData, setProcessingData] = useState({
     processingId: 0,
-    stageName: "",
+    stageName: "Make Sample",
     tailorPartnerId: "",
-    status: "",
+    status: "Not Start",
     orderId: 0,
     note: "",
     dateSample: new Date().toISOString().split("T")[0],
@@ -71,6 +73,7 @@ const ManagerDashboard = () => {
     completedOrders: 0,
     revenue: 0,
   });
+  const [includeFixStage, setIncludeFixStage] = useState(false);
 
   const filteredOrders = useMemo(() => {
     if (!Array.isArray(orders)) return [];
@@ -397,6 +400,16 @@ const ManagerDashboard = () => {
   const handleProcessingSubmit = async () => {
     const token = localStorage.getItem("token");
     setLoading(true);
+
+    // Prepare the data to be sent
+    const dataToSubmit = {
+      ...processingData,
+      stageName: "Make Sample", // Ensure these values are set
+      status: "Not Start",
+      // Only include dateFix if Fix stage is included
+      ...(includeFixStage ? {} : { dateFix: null }),
+    };
+
     try {
       const response = await fetch(
         "https://localhost:7194/api/ProcessingTailor",
@@ -406,9 +419,14 @@ const ManagerDashboard = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(processingData),
+          body: JSON.stringify(dataToSubmit),
         }
       );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to process tailor");
+      }
 
       const responseData = await response.json();
 
@@ -417,8 +435,6 @@ const ManagerDashboard = () => {
         setProcessingDialogOpen(false);
         setError(null);
         alert("Successfully transferred!");
-      } else {
-        throw new Error(responseData.message || "Failed to process tailor");
       }
     } catch (error) {
       console.error("Error processing tailor:", error);
@@ -593,7 +609,9 @@ const ManagerDashboard = () => {
       pendingOrders: orders.filter((o) => o.status === "Pending").length,
       processingOrders: orders.filter((o) => o.status === "Processing").length,
       completedOrders: orders.filter((o) => o.status === "Finish").length,
-      revenue: orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0),
+      revenue: orders
+        .filter((o) => o.status === "Finish")
+        .reduce((sum, order) => sum + (order.totalPrice || 0), 0),
     };
     setDashboardStats(stats);
   }, [orders]);
@@ -878,31 +896,19 @@ const ManagerDashboard = () => {
                     <TextField
                       label="Stage Name"
                       name="stageName"
-                      select
-                      value={processingData.stageName}
-                      onChange={handleProcessingChange}
+                      value="Make Sample"
+                      disabled
                       fullWidth
                       margin="dense"
-                    >
-                      <MenuItem value="Make Sample">Make Sample</MenuItem>
-                      <MenuItem value="Fix">Fix</MenuItem>
-                      <MenuItem value="Delivery">Delivery</MenuItem>
-                    </TextField>
+                    />
                     <TextField
                       label="Status"
                       name="status"
-                      select
-                      value={processingData.status}
-                      onChange={handleProcessingChange}
+                      value="Not Start"
+                      disabled
                       fullWidth
                       margin="dense"
-                    >
-                      <MenuItem value="Doing">Doing</MenuItem>
-                      <MenuItem value="Not Start">Not Start</MenuItem>
-                      <MenuItem value="Finish">Finish</MenuItem>
-                      <MenuItem value="Due">Due</MenuItem>
-                      <MenuItem value="Cancel">Cancel</MenuItem>
-                    </TextField>
+                    />
                     <TextField
                       label="Tailor Partner Location"
                       name="tailorPartnerId"
@@ -932,36 +938,107 @@ const ManagerDashboard = () => {
                       fullWidth
                       margin="dense"
                     />
+
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={includeFixStage}
+                          onChange={(e) => {
+                            setIncludeFixStage(e.target.checked);
+                            if (processingData.dateSample) {
+                              const sampleDate = new Date(
+                                processingData.dateSample
+                              );
+                              const fixDate = new Date(sampleDate);
+                              fixDate.setDate(sampleDate.getDate() + 1);
+                              const deliveryDate = new Date(sampleDate);
+                              deliveryDate.setDate(
+                                sampleDate.getDate() +
+                                  (e.target.checked ? 2 : 1)
+                              );
+
+                              setProcessingData((prev) => ({
+                                ...prev,
+                                ...(e.target.checked && {
+                                  dateFix: fixDate.toISOString().split("T")[0],
+                                  dateDelivery: deliveryDate
+                                    .toISOString()
+                                    .split("T")[0],
+                                }),
+                                ...(!e.target.checked && {
+                                  dateDelivery: deliveryDate
+                                    .toISOString()
+                                    .split("T")[0],
+                                }),
+                              }));
+                            }
+                          }}
+                        />
+                      }
+                      label="Include Fix Stage (Optional)"
+                    />
+
                     <TextField
                       label="Date Sample"
                       name="dateSample"
                       type="date"
                       value={processingData.dateSample}
-                      onChange={handleProcessingChange}
+                      onChange={(e) => {
+                        const newSampleDate = e.target.value;
+                        const sampleDate = new Date(newSampleDate);
+
+                        // Calculate new dates based on sample date
+                        const fixDate = new Date(sampleDate);
+                        fixDate.setDate(sampleDate.getDate() + 1);
+                        const deliveryDate = new Date(sampleDate);
+                        deliveryDate.setDate(
+                          sampleDate.getDate() + (includeFixStage ? 2 : 1)
+                        );
+
+                        setProcessingData((prev) => ({
+                          ...prev,
+                          dateSample: newSampleDate,
+                          ...(includeFixStage && {
+                            dateFix: fixDate.toISOString().split("T")[0],
+                            dateDelivery: deliveryDate
+                              .toISOString()
+                              .split("T")[0],
+                          }),
+                          ...(!includeFixStage && {
+                            dateDelivery: deliveryDate
+                              .toISOString()
+                              .split("T")[0],
+                          }),
+                        }));
+                      }}
                       fullWidth
                       margin="dense"
                       InputLabelProps={{
                         shrink: true,
                       }}
                     />
-                    <TextField
-                      label="Date Fix"
-                      name="dateFix"
-                      type="date"
-                      value={processingData.dateFix}
-                      onChange={handleProcessingChange}
-                      fullWidth
-                      margin="dense"
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                    />
+
+                    {includeFixStage && (
+                      <TextField
+                        label="Date Fix"
+                        name="dateFix"
+                        type="date"
+                        value={processingData.dateFix}
+                        disabled
+                        fullWidth
+                        margin="dense"
+                        InputLabelProps={{
+                          shrink: true,
+                        }}
+                      />
+                    )}
+
                     <TextField
                       label="Date Delivery"
                       name="dateDelivery"
                       type="date"
                       value={processingData.dateDelivery}
-                      onChange={handleProcessingChange}
+                      disabled
                       fullWidth
                       margin="dense"
                       InputLabelProps={{

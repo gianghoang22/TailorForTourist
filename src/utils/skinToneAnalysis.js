@@ -1,11 +1,11 @@
 import * as tf from '@tensorflow/tfjs';
 
-export const analyzeSkinColor = async (videoFrame, face) => {
+export const analyzeSkinColor = async (videoFrame, facePosition, formula) => {
   // Extract face region coordinates
-  const startX = Math.max(0, Math.floor(face.topLeft[0]));
-  const startY = Math.max(0, Math.floor(face.topLeft[1]));
-  const width = Math.floor(face.bottomRight[0] - face.topLeft[0]);
-  const height = Math.floor(face.bottomRight[1] - face.topLeft[1]);
+  const startX = Math.max(0, Math.floor(facePosition.topLeft[0]));
+  const startY = Math.max(0, Math.floor(facePosition.topLeft[1]));
+  const width = Math.floor(facePosition.bottomRight[0] - facePosition.topLeft[0]);
+  const height = Math.floor(facePosition.bottomRight[1] - facePosition.topLeft[1]);
 
   // Define sample points (relative to face bounds)
   const samplePoints = [
@@ -32,6 +32,15 @@ export const analyzeSkinColor = async (videoFrame, face) => {
   // Get RGB values
   const rgbValues = await faceRegion.data();
 
+  // Calculate brightness before returning
+  const brightness = (rgbValues[0] + rgbValues[1] + rgbValues[2]) / 3;
+  console.log('RGB Values:', {
+    r: rgbValues[0],
+    g: rgbValues[1],
+    b: rgbValues[2]
+  });
+  console.log('Calculated Brightness:', brightness);
+
   // Cleanup
   faceRegion.dispose();
   videoFrame.dispose();
@@ -43,30 +52,34 @@ export const analyzeSkinColor = async (videoFrame, face) => {
   };
 };
 
-export const determineSkinToneCategory = (skinTone) => {
-  const brightness = 0.299 * skinTone.r + 0.587 * skinTone.g + 0.114 * skinTone.b;
-  const warmth = skinTone.r / ((skinTone.g + skinTone.b) / 2);
+export const determineSkinToneCategory = (brightness, origin = 'asian') => {
+  console.log('Analyzing skin tone for origin:', origin);
+  console.log('Input brightness:', brightness);
   
-  console.log('=== Skin Tone Analysis ===');
-  console.log('RGB Values:', {
-    red: Math.round(skinTone.r),
-    green: Math.round(skinTone.g),
-    blue: Math.round(skinTone.b)
-  });
-  console.log('Brightness:', Math.round(brightness));
-  console.log('Warmth ratio:', warmth.toFixed(2));
-  
+  const formulas = {
+    asian: {
+      light: { min: 140, max: 255 },
+      medium: { min: 100, max: 139 },
+      dark: { min: 0, max: 99 }
+    },
+    caucasian: {
+      light: { min: 160, max: 255 },  // Caucasian skin tends to have higher brightness values
+      medium: { min: 120, max: 159 },
+      dark: { min: 0, max: 119 }
+    }
+  };
+
+  const ranges = formulas[origin];
   let category;
-  if (brightness >= 140) {
-    category = "light";
-  } else if (brightness >= 100) {
-    category = "medium";
+
+  if (brightness >= ranges.light.min) {
+    category = 'light';
+  } else if (brightness >= ranges.medium.min) {
+    category = 'medium';
   } else {
-    category = "dark";
+    category = 'dark';
   }
-  
-  console.log('Determined category:', category);
-  console.log('=====================');
-  
+
+  console.log('Determined skin tone category:', category);
   return category;
 };

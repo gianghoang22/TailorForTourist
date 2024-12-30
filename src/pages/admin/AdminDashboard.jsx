@@ -2,30 +2,26 @@ import React from "react";
 import { Link, Outlet, useLocation } from "react-router-dom"; // Import Outlet for nested routes
 import logo from "./../../assets/img/icon/matcha.png";
 import "./AdminDashboard.scss";
-import { Box, Paper, Typography } from "@mui/material";
-import { useState, useEffect } from "react";
-import { Line } from "react-chartjs-2";
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
-
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+  Box,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  TablePagination,
+  TextField,
+  InputAdornment,
+  IconButton,
+} from "@mui/material";
+import { useState, useEffect } from "react";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 const AdminDashboard = () => {
   const location = useLocation();
@@ -37,20 +33,19 @@ const AdminDashboard = () => {
     activeVouchers: 0,
   });
 
-  // Add new state for chart data
-  const [userChartData, setUserChartData] = useState({
-    labels: [],
-    datasets: [],
-  });
+  // Add new state for transactions
+  const [transactions, setTransactions] = useState([]);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   useEffect(() => {
     fetchDashboardStats();
+    fetchTransactions(); // Add this new fetch call
   }, []);
 
   const fetchDashboardStats = async () => {
     const token = localStorage.getItem("token");
 
-    // First, check if we have a token
     if (!token) {
       console.error("No authentication token found");
       return;
@@ -68,17 +63,11 @@ const AdminDashboard = () => {
         credentials: "include",
       });
 
-      console.log("Users Response:", usersResponse);
-
       if (!usersResponse.ok) {
         throw new Error(`Users API error: ${usersResponse.status}`);
       }
 
       const usersData = await usersResponse.json();
-      console.log("Users Data:", usersData);
-
-      // Process user data for chart
-      processUserDataForChart(usersData);
 
       // Fetch fabrics count
       const fabricsResponse = await fetch(
@@ -99,7 +88,6 @@ const AdminDashboard = () => {
       }
 
       const fabricsData = await fabricsResponse.json();
-      console.log("Fabrics Data:", fabricsData);
 
       // Fetch stores count
       const storesResponse = await fetch("https://localhost:7194/api/Store", {
@@ -117,7 +105,6 @@ const AdminDashboard = () => {
       }
 
       const storesData = await storesResponse.json();
-      console.log("Stores Data:", storesData);
 
       // Fetch active vouchers count
       const vouchersResponse = await fetch(
@@ -138,7 +125,6 @@ const AdminDashboard = () => {
       }
 
       const vouchersData = await vouchersResponse.json();
-      console.log("Vouchers Data:", vouchersData);
 
       // Update dashboard stats
       setDashboardStats({
@@ -151,8 +137,6 @@ const AdminDashboard = () => {
       });
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
-      console.log("Token used:", token);
-
       setDashboardStats({
         totalUsers: 0,
         totalFabrics: 0,
@@ -241,6 +225,176 @@ const AdminDashboard = () => {
       ],
     });
   };
+
+  // Add new function to fetch transactions
+  const fetchTransactions = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("No authentication token found");
+      return;
+    }
+
+    try {
+      const response = await fetch("https://localhost:7194/api/Payments", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Payments API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setTransactions(data);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+    }
+  };
+
+  // Add these handler functions
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Update the renderTransactionsSection function
+  const renderTransactionsSection = () => (
+    <Box sx={{ flex: "1 1 70%" }}>
+      <Paper
+        sx={{
+          p: 3,
+          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+          borderRadius: "12px",
+          background: "white",
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            mb: 3,
+            color: "#1a237e",
+          }}
+        >
+          <i className="fas fa-money-bill-wave"></i> Recent Transactions
+        </Typography>
+
+        <TableContainer>
+          <Table sx={{ minWidth: 650 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: "bold", color: "#1a237e" }}>
+                  Payment ID
+                </TableCell>
+                <TableCell sx={{ fontWeight: "bold", color: "#1a237e" }}>
+                  Date
+                </TableCell>
+                <TableCell sx={{ fontWeight: "bold", color: "#1a237e" }}>
+                  Method
+                </TableCell>
+                <TableCell sx={{ fontWeight: "bold", color: "#1a237e" }}>
+                  Details
+                </TableCell>
+                <TableCell sx={{ fontWeight: "bold", color: "#1a237e" }}>
+                  Amount
+                </TableCell>
+                <TableCell sx={{ fontWeight: "bold", color: "#1a237e" }}>
+                  Status
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {transactions
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((transaction) => (
+                  <TableRow
+                    key={transaction.paymentId}
+                    sx={{ "&:hover": { backgroundColor: "#f5f5f5" } }}
+                  >
+                    <TableCell>#{transaction.paymentId}</TableCell>
+                    <TableCell>
+                      {new Date(transaction.paymentDate).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={transaction.method}
+                        size="small"
+                        sx={{
+                          backgroundColor: "#e3f2fd",
+                          color: "#1565c0",
+                          fontWeight: "medium",
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>{transaction.paymentDetails}</TableCell>
+                    <TableCell>
+                      <Typography sx={{ color: "#2e7d32", fontWeight: "bold" }}>
+                        ${transaction.amount.toFixed(2)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={transaction.status}
+                        size="small"
+                        sx={{
+                          backgroundColor:
+                            transaction.status === "Success"
+                              ? "#e8f5e9"
+                              : transaction.status === "Pending"
+                                ? "#fff3e0"
+                                : "#ffebee",
+                          color:
+                            transaction.status === "Success"
+                              ? "#2e7d32"
+                              : transaction.status === "Pending"
+                                ? "#e65100"
+                                : "#c62828",
+                          fontWeight: "medium",
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        <TablePagination
+          component="div"
+          count={transactions.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[5, 10, 25]}
+          sx={{
+            ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+              {
+                margin: 0,
+              },
+          }}
+        />
+      </Paper>
+    </Box>
+  );
 
   return (
     <div className="admin-dashboard">
@@ -419,127 +573,7 @@ const AdminDashboard = () => {
 
               {/* Main Content Area */}
               <Box sx={{ display: "flex", gap: 3, p: 3 }}>
-                {/* User Growth Chart - Now Wider */}
-                <Box sx={{ flex: "1 1 70%" }}>
-                  <Paper
-                    sx={{
-                      p: 3,
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                      borderRadius: "12px",
-                      background: "white",
-                      "& .MuiBox-root": {
-                        "& canvas": {
-                          backgroundColor: "white",
-                        },
-                      },
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      gutterBottom
-                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                    >
-                      <i className="fas fa-chart-line"></i> User Growth
-                      Analytics
-                    </Typography>
-                    <Box sx={{ height: 450, position: "relative" }}>
-                      {userChartData.labels.length > 0 ? (
-                        <Line
-                          data={userChartData}
-                          options={{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                              y: {
-                                beginAtZero: true,
-                                ticks: { precision: 0 },
-                                grid: {
-                                  color: "rgba(0, 0, 0, 0.1)",
-                                },
-                                border: {
-                                  color: "#e0e0e0",
-                                },
-                              },
-                              x: {
-                                grid: {
-                                  color: "rgba(0, 0, 0, 0.1)",
-                                },
-                                ticks: {
-                                  color: "#333333",
-                                  font: {
-                                    weight: "bold",
-                                  },
-                                },
-                                border: {
-                                  color: "#e0e0e0",
-                                },
-                              },
-                            },
-                            plugins: {
-                              legend: {
-                                position: "top",
-                                labels: {
-                                  padding: 20,
-                                  font: {
-                                    size: 12,
-                                    weight: "bold",
-                                  },
-                                  usePointStyle: true,
-                                  boxWidth: 6,
-                                },
-                              },
-                              title: {
-                                display: true,
-                                text: "User Registration Trends",
-                                font: {
-                                  size: 16,
-                                  weight: "bold",
-                                },
-                                padding: {
-                                  top: 10,
-                                  bottom: 30,
-                                },
-                                color: "#333333",
-                              },
-                            },
-                            elements: {
-                              line: {
-                                borderWidth: 2,
-                                tension: 0.4,
-                              },
-                              point: {
-                                radius: 4,
-                                hitRadius: 10,
-                                hoverRadius: 6,
-                              },
-                            },
-                            layout: {
-                              padding: {
-                                left: 10,
-                                right: 20,
-                                top: 20,
-                                bottom: 10,
-                              },
-                            },
-                            backgroundColor: "white",
-                          }}
-                        />
-                      ) : (
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            height: "100%",
-                          }}
-                        >
-                          <Typography>Loading chart data...</Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </Paper>
-                </Box>
-
+                {renderTransactionsSection()}
                 {/* System Information Panel */}
                 <Box sx={{ flex: "1 1 30%" }}>
                   <Paper

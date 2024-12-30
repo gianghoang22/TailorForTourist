@@ -34,23 +34,24 @@ const FabricManagement = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchFabricData = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch("https://localhost:7194/api/Fabrics");
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const data = await response.json();
-        setFabricData(data); // No filtering required
-      } catch (error) {
-        console.error("Error fetching fabric data:", error);
-        setError("Error fetching fabric data. Please try again later.");
-      } finally {
-        setIsLoading(false);
+  const fetchFabricData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("https://localhost:7194/api/Fabrics");
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
       }
-    };
+      const data = await response.json();
+      setFabricData(data);
+    } catch (error) {
+      console.error("Error fetching fabric data:", error);
+      setError("Error fetching fabric data. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchFabricData();
   }, []);
 
@@ -120,6 +121,13 @@ const FabricManagement = () => {
         imageUrl: "",
         tag: 0,
       });
+
+      setError(null);
+      setShowSuccessMessage(true);
+
+      // Fetch updated data AND refresh the page
+      await fetchFabricData();
+      window.location.reload();
     } catch (error) {
       console.error("Error adding new fabric:", error);
       setError(

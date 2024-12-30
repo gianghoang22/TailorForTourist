@@ -11,7 +11,6 @@ import {
 } from "@mui/material";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import * as tf from "@tensorflow/tfjs";
-import * as faceLandmarksDetection from "@tensorflow-models/face-landmarks-detection";
 import "@tensorflow/tfjs-backend-webgl";
 import {
   analyzeSkinColor,
@@ -32,6 +31,7 @@ const SkinToneAnalyzer = () => {
   const animationRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isModelLoaded, setIsModelLoaded] = useState(false);
+  const [selectedOrigin, setSelectedOrigin] = useState(null);
 
   // Color recommendations based on skin tone
   const colorRecommendations = {
@@ -54,6 +54,22 @@ const SkinToneAnalyzer = () => {
     light: "Light skin tone - Your skin has a fair complexion",
     medium: "Medium skin tone - Your skin has a balanced, moderate tone",
     dark: "Dark skin tone - Your skin has a deep, rich complexion",
+  };
+
+  // Add origin-specific formulas
+  const originFormulas = {
+    asian: {
+      // Your existing formula for Asian skin
+      light: { min: 0, max: 180 },
+      medium: { min: 181, max: 210 },
+      dark: { min: 211, max: 255 },
+    },
+    caucasian: {
+      // New formula for White/Caucasian skin
+      light: { min: 0, max: 200 },
+      medium: { min: 201, max: 225 },
+      dark: { min: 226, max: 255 },
+    },
   };
 
   // Simplified model loading
@@ -352,12 +368,48 @@ const SkinToneAnalyzer = () => {
 
   return (
     <>
-      {/* Camera Button */}
+      {/* Origin Selection Dialog */}
+      <Dialog open={!selectedOrigin && isOpen} maxWidth="xs" fullWidth>
+        <Box p={3}>
+          <Typography variant="h5" gutterBottom align="center">
+            Select Your Origin
+          </Typography>
+          <Box display="flex" gap={2} justifyContent="center" mt={2}>
+            <Button
+              variant="contained"
+              onClick={() => {
+                setSelectedOrigin("asian");
+                startCamera();
+              }}
+              sx={{
+                minWidth: 120,
+                backgroundColor: "#4CAF50",
+                "&:hover": { backgroundColor: "#388E3C" },
+              }}
+            >
+              Asian
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                setSelectedOrigin("caucasian");
+                startCamera();
+              }}
+              sx={{
+                minWidth: 120,
+                backgroundColor: "#2196F3",
+                "&:hover": { backgroundColor: "#1976D2" },
+              }}
+            >
+              Caucasian
+            </Button>
+          </Box>
+        </Box>
+      </Dialog>
+
+      {/* Camera Button - Only show if origin is selected */}
       <IconButton
-        onClick={() => {
-          setIsOpen(true);
-          startCamera();
-        }}
+        onClick={() => setIsOpen(true)}
         sx={{
           position: "fixed",
           bottom: 90,
@@ -372,12 +424,13 @@ const SkinToneAnalyzer = () => {
         <CameraAltIcon />
       </IconButton>
 
-      {/* Camera Dialog */}
+      {/* Camera Dialog - Only show if origin is selected */}
       <Dialog
-        open={isOpen}
+        open={isOpen && selectedOrigin}
         onClose={() => {
           setIsOpen(false);
           stopCamera();
+          setSelectedOrigin(null); // Reset origin when closing
         }}
         maxWidth="md"
         fullWidth
