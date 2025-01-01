@@ -48,6 +48,7 @@ import FabricManagement from "../pages/admin/FabricManagement";
 import StoreManagement from "../pages/admin/StoreManagement";
 import LiningManagement from "../pages/admin/LiningManagement";
 import VoucherManagement from "../pages/admin/VoucherManagement";
+import ShipperManagement from "../pages/admin/ShipperManagement.jsx";
 
 import Payment from "../pages/payment/Payment.jsx";
 import ContactUs from "../pages/contact/ContactUs";
@@ -57,6 +58,7 @@ import ProtectedRoute from "../pages/ProtectedRoute/ProtectedRoute";
 import TailorDashboard from "../pages/tailor/TailorDashboard";
 import Feedback from "../pages/profile/Feedback";
 import VoucherAvailable from "../pages/managerdashboard/VoucherAvailable";
+import { element } from "prop-types";
 export const routes = [
   {
     path: "/",
@@ -87,6 +89,10 @@ export const routes = [
       {
         path: "voucher-management",
         element: <VoucherManagement />,
+      },
+      {
+        path: "shipper-management",
+        element: <ShipperManagement />,
       },
     ],
   },

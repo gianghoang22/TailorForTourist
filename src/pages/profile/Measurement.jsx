@@ -63,7 +63,14 @@ const Measurement = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    if (!/^\d*$/.test(value)) {
+      return;
+    }
+    const numericValue = Number(value);
+    if (numericValue < 0) {
+      return;
+    }
+    setFormData({ ...formData, [name]: numericValue });
   };
 
   const validateFields = () => {
@@ -82,16 +89,20 @@ const Measurement = () => {
       "crotch",
       "thigh",
       "pantsLength",
+      "weight",
+      "height",
+      "age"
     ];
 
     numberFields.forEach((field) => {
-      if (!formData[field]) {
+      if (formData[field] === undefined || formData[field] === null) {
         newErrors[field] = "This field is required";
       } else if (
         isNaN(formData[field]) ||
-        formData[field] < 0 ||
-        formData[field] > 200
+        formData[field] < 0
       ) {
+        newErrors[field] = "Please enter a valid number (0 or greater)";
+      } else if (formData[field] > 200) {
         newErrors[field] = "Please enter a valid number (0-200)";
       }
     });

@@ -179,12 +179,11 @@ const Cart = () => {
 
         if (updatedCartResponse.status === 200) {
           setApiCart(updatedCartResponse.data);
-          toast.success("Đã xóa sản phẩm khỏi giỏ hàng");
+          toast.success("The product is removed!");
         }
       }
     } catch (error) {
       console.error("Error removing from cart:", error);
-      toast.error("Đã xảy ra lỗi khi xóa sản phẩm");
     }
   };
 
@@ -447,7 +446,12 @@ const Cart = () => {
               </div>
             </div>
           ) : (
-            <p>Your cart is empty.</p>
+            <>
+              <p>Your cart is empty.</p>
+              <button className="return-home-button">
+                <Link to="/">Return Home</Link>
+              </button>
+            </>
           )}
         </div>
       </div>

@@ -29,12 +29,14 @@ const UserProfile = () => {
   const isAppointmentRoute = location.pathname === "/profile/appointment";
   const isFeedbackRoute = location.pathname === "/profile/feedback";
 
-  const handleAvatarChange = (event) => {
+  const handleAvatarChange = async (event) => {
     const file = event.target.files[0];
+    console.log("Selected file:", file);
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         setAvatar(e.target.result);
+        console.log("Avatar preview URL:", e.target.result);
       };
       reader.readAsDataURL(file);
     }
@@ -186,13 +188,13 @@ const UserProfile = () => {
             <p className="user-profile__date">{formattedDate}</p>
           </div>
           <div className="user-profile__actions">
-            <div className="user-profile__search">
+            {/* <div className="user-profile__search">
               <input
                 type="search"
                 placeholder="Search"
                 className="user-profile__search-input"
               />
-            </div>
+            </div> */}
             <button className="user-profile__notification-btn">
               <i className="icon-bell"></i>
             </button>

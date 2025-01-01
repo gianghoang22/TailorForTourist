@@ -87,8 +87,9 @@
 }
 
 .selected-style-option-image {
-  width: 100px; /* Adjust size as needed */
-  height: auto;
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
   border: 1px solid #ccc;
   border-radius: 5px;
 }

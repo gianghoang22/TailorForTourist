@@ -110,7 +110,9 @@ const MeasureGuest = () => {
     numberFields.forEach((field) => {
       if (!formData[field]) {
         newErrors[field] = "This field is required";
-      } else if (isNaN(formData[field]) || formData[field] < 0 || formData[field] > 200) {
+      } else if (isNaN(formData[field]) || formData[field] < 0) {
+        newErrors[field] = "Please enter a valid number (0 or greater)";
+      } else if (formData[field] > 200) {
         newErrors[field] = "Please enter a valid number (0-200)";
       }
     });
@@ -160,9 +162,16 @@ const MeasureGuest = () => {
     setIsEditing(!isEditing);
   }
 
+  const handleKeyPress = (e) => {
+    // Chỉ cho phép nhập số
+    if (!/[0-9]/.test(e.key)) {
+        e.preventDefault(); // Ngăn chặn nhập ký tự không phải số
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-  
+
     const numberFields = [
       "age",
       "weight",
@@ -181,7 +190,17 @@ const MeasureGuest = () => {
       "thigh",
       "pantsLength",
     ];
-  
+
+    // Kiểm tra nếu trường là số và giá trị không phải là số
+    if (numberFields.includes(name) && !/^\d*$/.test(value)) {
+      return; // Không cập nhật nếu giá trị không phải là số
+    }
+
+    // Kiểm tra nếu giá trị là số âm
+    if (numberFields.includes(name) && value < 0) {
+      return; // Không cập nhật nếu giá trị âm
+    }
+
     setFormData({
       ...formData,
       [name]: numberFields.includes(name) ? parseInt(value, 10) || "" : value,
