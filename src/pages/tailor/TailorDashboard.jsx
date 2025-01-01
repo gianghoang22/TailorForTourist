@@ -11,6 +11,9 @@ import {
   Scissors,
   Package,
   Ruler,
+  Search,
+  Filter,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "./TailorDashboard.scss";
@@ -39,6 +42,11 @@ const TailorDashboard = () => {
   const [orderDetails, setOrderDetails] = useState({});
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [error, setError] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchOrderId, setSearchOrderId] = useState("");
+  const [stageFilter, setStageFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ordersPerPage] = useState(10);
   const STAGES = {
     MAKE_SAMPLE: "Make Sample",
     FIX: "Fix",
@@ -593,6 +601,32 @@ const TailorDashboard = () => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
+  const getFilteredOrders = () => {
+    return orders.filter((order) => {
+      const statusMatch =
+        statusFilter === "all" || order.status === statusFilter;
+      const searchMatch = order.orderId.toString().includes(searchOrderId);
+      const stageMatch =
+        stageFilter === "all" || order.stageName === stageFilter;
+
+      return statusMatch && searchMatch && stageMatch;
+    });
+  };
+
+  const filteredOrders = getFilteredOrders();
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = filteredOrders.slice(
+    indexOfFirstOrder,
+    indexOfLastOrder
+  );
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const nextPage = () =>
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+
   return (
     <div className="dashboard">
       <aside className="sidebar">
@@ -642,7 +676,121 @@ const TailorDashboard = () => {
           <LoadingSpinner />
         ) : (
           <div className="dashboard-content">
-            <h3>Processing Orders</h3>
+            <div className="filters-section">
+              <div className="filters-header">
+                <h3>Processing Orders</h3>
+                <div className="filters-summary">
+                  <span>{filteredOrders.length} orders found</span>
+                  {(statusFilter !== "all" ||
+                    stageFilter !== "all" ||
+                    searchOrderId) && (
+                    <button
+                      className="clear-filters"
+                      onClick={() => {
+                        setStatusFilter("all");
+                        setStageFilter("all");
+                        setSearchOrderId("");
+                        setCurrentPage(1);
+                      }}
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="filters-container">
+                <div className="search-box">
+                  <Search className="search-icon" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Search by Order ID..."
+                    value={searchOrderId}
+                    onChange={(e) => {
+                      setSearchOrderId(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  {searchOrderId && (
+                    <button
+                      className="clear-search"
+                      onClick={() => {
+                        setSearchOrderId("");
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="filter-group">
+                  <div className="filter-label">
+                    <Filter size={18} />
+                    <span>Filters:</span>
+                  </div>
+
+                  <div className="select-wrapper">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => {
+                        setStatusFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <option value="all">All Status</option>
+                      <option value="Not Start">Not Start</option>
+                      <option value="Doing">Doing</option>
+                      <option value="Finish">Finish</option>
+                      <option value="Due">Due</option>
+                      <option value="Cancel">Cancel</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Processing">Processing</option>
+                    </select>
+                    <ChevronDown size={16} className="select-icon" />
+                  </div>
+
+                  <div className="select-wrapper">
+                    <select
+                      value={stageFilter}
+                      onChange={(e) => {
+                        setStageFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <option value="all">All Stages</option>
+                      <option value="Make Sample">Make Sample</option>
+                      <option value="Fix">Fix</option>
+                      <option value="Delivery">Delivery</option>
+                    </select>
+                    <ChevronDown size={16} className="select-icon" />
+                  </div>
+                </div>
+              </div>
+
+              {(statusFilter !== "all" || stageFilter !== "all") && (
+                <div className="active-filters">
+                  <span className="active-filters-label">Active Filters:</span>
+                  {statusFilter !== "all" && (
+                    <div className="filter-tag">
+                      Status: {statusFilter}
+                      <button onClick={() => setStatusFilter("all")}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                  {stageFilter !== "all" && (
+                    <div className="filter-tag">
+                      Stage: {stageFilter}
+                      <button onClick={() => setStageFilter("all")}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <table className="orders-table">
               <thead>
                 <tr>
@@ -657,7 +805,7 @@ const TailorDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => {
+                {currentOrders.map((order) => {
                   const details = orderDetails[order.orderId] || {};
                   return (
                     <React.Fragment key={order.processingId}>
@@ -808,6 +956,36 @@ const TailorDashboard = () => {
                 })}
               </tbody>
             </table>
+
+            <div className="pagination">
+              <button
+                onClick={prevPage}
+                disabled={currentPage === 1}
+                className="pagination-button"
+              >
+                Previous
+              </button>
+
+              <div className="pagination-numbers">
+                {[...Array(totalPages)].map((_, index) => (
+                  <button
+                    key={index + 1}
+                    onClick={() => paginate(index + 1)}
+                    className={`pagination-number ${currentPage === index + 1 ? "active" : ""}`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={nextPage}
+                disabled={currentPage === totalPages}
+                className="pagination-button"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </main>
