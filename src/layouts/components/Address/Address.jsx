@@ -12,6 +12,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
   const [userAddress, setUserAddress] = useState("");
   const [error, setError] = useState(null);
   const [manualAddress, setManualAddress] = useState(initialAddress || "");
+  const [isAddressValid, setIsAddressValid] = useState(false);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -77,6 +78,15 @@ const Address = ({ initialAddress, onAddressChange }) => {
     }
   };
 
+  const validateAddress = () => {
+    const isValid = manualAddress.trim() !== "" && 
+                    selectedProvince && 
+                    selectedDistrict && 
+                    selectedWard;
+    setIsAddressValid(isValid);
+    return isValid;
+  };
+
   const handleProvinceChange = (e) => {
     const provinceId = e.target.value;
     const selectedProv = provinces.find(
@@ -97,6 +107,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
     } else {
       setDistricts([]);
     }
+    validateAddress();
   };
 
   const handleDistrictChange = (e) => {
@@ -121,6 +132,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
       setSelectedDistrict(district);
       fetchWards(district.districtID);
     }
+    validateAddress();
   };
 
   const handleWardChange = (e) => {
@@ -151,12 +163,14 @@ const Address = ({ initialAddress, onAddressChange }) => {
 
       onAddressChange(addressData);
     }
+    validateAddress();
   };
 
   const handleManualAddressChange = (e) => {
     const newAddress = e.target.value;
     setManualAddress(newAddress);
     onAddressChange({ fullAddress: newAddress });
+    validateAddress();
   };
 
   if (error) {
@@ -177,6 +191,7 @@ const Address = ({ initialAddress, onAddressChange }) => {
           className="address-input"
           required
         />
+        {!isAddressValid && <span className="error-message" style={{ color: 'red' }}>Please fill in all address fields.</span>}
       </div>
 
       <div className="select-group">

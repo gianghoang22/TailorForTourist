@@ -64,28 +64,37 @@
   }
 }
 
-.selected-options-preview {
+.selected-style-options-preview {
+  margin-top: 20px;
+}
+
+.selected-style-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
-  margin-top: 15px;
+}
 
-  .selected-option {
-    text-align: center;
-    width: 120px;  // Set fixed width for each option container
-    
-    h3 {
-      margin-bottom: 8px;
-      font-size: 14px;
-      color: #333;
-    }
+.selected-style-option-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px;
+}
 
-    .selected-option-image {
-      width: 180px;  // Smaller fixed width
-      height: 180px; // Fixed height to maintain aspect ratio
-      object-fit: cover; // Ensures image covers the area nicely
-      border-radius: 6px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-  }
+.style-option-name {
+  margin-top: 5px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.selected-style-option-image {
+  width: 100px; /* Adjust size as needed */
+  height: auto;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.remove-option {
+  cursor: pointer; /* Change cursor to pointer */
+  color: red; /* Change color to indicate removal */
+  margin-left: 5px; /* Space between text and icon */
 }

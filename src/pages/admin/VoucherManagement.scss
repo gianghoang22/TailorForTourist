@@ -1,7 +1,10 @@
 .voucher-management {
   margin: 20px;
   h2 {
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
+    color: #1976d2;
+    font-size: 1.8rem;
+    font-weight: 500;
   }
 
   .form {
@@ -44,6 +47,8 @@
 
     th {
       background-color: #f2f2f2;
+      color: #1976d2;
+      font-weight: bold;
     }
 
     tr:hover {

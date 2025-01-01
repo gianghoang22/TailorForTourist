@@ -211,3 +211,35 @@
 .card img {
   animation: imageFadeIn 0.5s ease-in;
 }
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+
+  button {
+    background-color: #a4712a; // Màu nền cho nút
+    color: white; // Màu chữ
+    border: none;
+    border-radius: 5px;
+    padding: 10px 15px;
+    margin: 0 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &:disabled {
+      background-color: #ccc; // Màu nền cho nút vô hiệu hóa
+      cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+      background-color: #eab163; // Màu nền khi hover
+    }
+  }
+
+  span {
+    margin: 0 10px;
+    font-size: 1rem;
+  }
+}

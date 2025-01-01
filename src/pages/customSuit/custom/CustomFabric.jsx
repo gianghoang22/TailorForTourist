@@ -109,7 +109,6 @@ const CustomFabric = () => {
 
     // Chuyển đến trang style
     navigate("/custom-suits/style");
-    toast.success("Fabric selected successfully. Please choose your styles.");
   };
 
   if (loading) return <div>Loading...</div>;

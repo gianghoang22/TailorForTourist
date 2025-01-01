@@ -20,6 +20,8 @@ import "./FabricManagement.scss";
 
 const FabricManagement = () => {
   const [fabricData, setFabricData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(15);
   const [newFabric, setNewFabric] = useState({
     // Set default ID for new fabric
     fabricName: "",
@@ -289,6 +291,26 @@ const FabricManagement = () => {
     }
   };
 
+  // Add this function to map tag numbers to names
+  const getTagName = (tag) => {
+    switch (tag) {
+      case 0:
+        return "Premium";
+      case 1:
+        return "New";
+      case 2:
+        return "Sale";
+      default:
+        return "Unknown"; // Handle unexpected values
+    }
+  };
+
+  const indexOfLastFabric = currentPage * itemsPerPage;
+  const indexOfFirstFabric = indexOfLastFabric - itemsPerPage;
+  const currentFabrics = fabricData.slice(indexOfFirstFabric, indexOfLastFabric);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   return (
     <div className="fabric-management">
       <h2>Fabric Management</h2>
@@ -302,15 +324,15 @@ const FabricManagement = () => {
         </div>
       ) : (
         <>
-          <div className="header">
-            <div className="form">
+          <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div className="form" style={{ display: 'flex', alignItems: 'center' }}>
               <TextField
                 label="Fabric Name"
                 name="fabricName"
                 value={newFabric.fabricName}
                 onChange={handleChange}
                 variant="outlined"
-                style={{ marginRight: "1rem" }}
+                style={{ marginRight: "1rem", width: "200px" }}
               />
               <TextField
                 label="Price"
@@ -319,7 +341,7 @@ const FabricManagement = () => {
                 value={newFabric.price}
                 onChange={handleChange}
                 variant="outlined"
-                style={{ marginRight: "1rem" }}
+                style={{ marginRight: "1rem", width: "200px" }}
               />
               <TextField
                 label="Description"
@@ -327,7 +349,7 @@ const FabricManagement = () => {
                 value={newFabric.description}
                 onChange={handleChange}
                 variant="outlined"
-                style={{ marginRight: "1rem" }}
+                style={{ marginRight: "1rem", width: "200px" }}
               />
               <TextField
                 label="Image URL"
@@ -335,22 +357,29 @@ const FabricManagement = () => {
                 value={newFabric.imageUrl}
                 onChange={handleChange}
                 variant="outlined"
-                style={{ marginRight: "1rem" }}
+                style={{ marginRight: "1rem", width: "200px" }}
               />
-              <TextField
-                label="Tag"
-                name="tag"
-                type="number"
-                value={newFabric.tag}
-                onChange={handleChange}
-                variant="outlined"
-                style={{ marginRight: "1rem" }}
-              />
+              <div className="form" style={{ marginRight: "1rem" }}>
+                <TextField
+                  label="Tag"
+                  name="tag"
+                  select
+                  value={newFabric.tag}
+                  onChange={(e) => handleChange({ target: { name: "tag", value: e.target.value } })}
+                  variant="outlined"
+                  style={{ width: "200px" }}
+                >
+                  <MenuItem value={0}>Premium</MenuItem>
+                  <MenuItem value={1}>New</MenuItem>
+                  <MenuItem value={2}>Sale</MenuItem>
+                </TextField>
+              </div>
               {editIndex ? (
                 <Button
                   variant="contained"
                   color="secondary"
                   onClick={handleUpdate}
+                  style={{ marginLeft: "1rem" }}
                 >
                   Update Fabric
                 </Button>
@@ -359,26 +388,29 @@ const FabricManagement = () => {
                   variant="contained"
                   color="secondary"
                   onClick={handleAdd}
+                  style={{ marginLeft: "1rem" }}
                 >
                   Add Fabric
                 </Button>
               )}
             </div>
 
-            <TextField
-              label="Search by Fabric Name"
-              variant="outlined"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              style={{ margin: "1rem 0", marginLeft: "auto" }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <TextField
+                label="Search by Fabric Name"
+                variant="outlined"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                style={{ margin: "1rem 0", width: "300px" }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </div>
           </div>
 
           <TableContainer component={Paper}>
@@ -395,7 +427,7 @@ const FabricManagement = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredFabrics.map((f) => (
+                {currentFabrics.map((f) => (
                   <TableRow key={f.fabricID}>
                     <TableCell>{f.fabricName}</TableCell>
                     <TableCell>{f.price}</TableCell>
@@ -411,7 +443,7 @@ const FabricManagement = () => {
                         }}
                       />
                     </TableCell>
-                    <TableCell>{f.tag}</TableCell>
+                    <TableCell>{getTagName(f.tag)}</TableCell>
                     <TableCell>{f.status}</TableCell>
                     <TableCell>
                       <Button
@@ -439,6 +471,19 @@ const FabricManagement = () => {
               </TableBody>
             </Table>
           </TableContainer>
+
+          <div className="pagination">
+            {Array.from({ length: Math.ceil(fabricData.length / itemsPerPage) }, (_, index) => (
+              <Button
+                key={index + 1}
+                onClick={() => paginate(index + 1)}
+                variant={currentPage === index + 1 ? "contained" : "outlined"}
+                style={{ margin: "0 5px" }}
+              >
+                {index + 1}
+              </Button>
+            ))}
+          </div>
 
           {showSuccessMessage && (
             <Alert severity="success" style={{ marginTop: "1rem" }}>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Polyline, Marker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { Icon } from "leaflet";
@@ -11,9 +11,56 @@ import {
   Download,
 } from "lucide-react";
 import "./ShipmentTracker.scss";
+import axios from "axios";
 
 const ShipmentTracker = () => {
   const [selectedShipment, setSelectedShipment] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [trackingOrders, setTrackingOrders] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  const generateRandomTrackNumber = () => {
+    return `TRACK-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+  };
+
+  const [newShipment, setNewShipment] = useState({
+    shipperPartnerId: 4,
+    trackNumber: generateRandomTrackNumber(),
+    recipientName: "",
+    recipientAddress: "",
+    status: "Packaging",
+    createAt: "",
+    shippedAt: "",
+    deliveredAt: "",
+  });
+
+  useEffect(() => {
+    const fetchTrackingOrders = async () => {
+      try {
+        const response = await axios.get("https://localhost:7194/api/Shipment");
+        setTrackingOrders(response.data);
+      } catch (error) {
+        console.error("Error fetching tracking orders:", error);
+      }
+    };
+
+    fetchTrackingOrders();
+  }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get("https://localhost:7194/api/User");
+        const customers = response.data.filter(user => user.roleId === 3);
+        setUsers(customers);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const stats = [
     { label: "Total Shipments", value: "6,521", change: "+1.3%" },
@@ -45,36 +92,6 @@ const ShipmentTracker = () => {
     },
   ];
 
-  const trackingOrders = [
-    {
-      id: "#001234ABCD",
-      category: "Electronic",
-      arrivalTime: "7/1/2023",
-      weight: "25kg",
-      route: "87 Wern Ddu Lane → 15 Yscir View",
-      fee: "$1,050",
-      status: "Delivered",
-    },
-    {
-      id: "#002345GLKH",
-      category: "Furniture",
-      arrivalTime: "7/1/2023",
-      weight: "50kg",
-      route: "40 Broomfield Place → 44 Helland Bridge",
-      fee: "$2,200",
-      status: "Pending",
-    },
-    {
-      id: "#002345GLKH",
-      category: "Clothing",
-      arrivalTime: "7/1/2023",
-      weight: "50kg",
-      route: "11 Walden Road → 39 Grendale Road",
-      fee: "$800",
-      status: "Shipping",
-    },
-  ];
-
   const handleShipmentClick = (shipment) => {
     setSelectedShipment(shipment);
   };
@@ -85,6 +102,49 @@ const ShipmentTracker = () => {
     iconSize: [25, 41],
     iconAnchor: [12, 41],
   });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewShipment((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateShipment = async (e) => {
+    e.preventDefault();
+
+    if (!newShipment.recipientName || !newShipment.status) {
+      alert("Recipient name and status cannot be empty.");
+      return;
+    }
+
+    try {
+      const response = await axios.post("https://localhost:7194/api/Shipment", newShipment);
+      console.log("Shipment created:", response.data);
+      setNewShipment({
+        shipperPartnerId: 4,
+        trackNumber: generateRandomTrackNumber(),
+        recipientName: "",
+        recipientAddress: "",
+        status: "Packaging",
+        createAt: "",
+        shippedAt: "",
+        deliveredAt: "",
+      });
+      setSelectedUser(null);
+    } catch (error) {
+      console.error("Error creating shipment:", error);
+    }
+  };
+
+  const handleRecipientChange = (e) => {
+    const userId = e.target.value;
+    const user = users.find((u) => u.id === userId);
+    setSelectedUser(user);
+    setNewShipment((prev) => ({
+      ...prev,
+      recipientName: user ? user.name : "",
+      recipientAddress: user ? user.address : "",
+    }));
+  };
 
   return (
     <div className="shipment-tracker">
@@ -99,9 +159,41 @@ const ShipmentTracker = () => {
             <option>Month</option>
             <option>Year</option>
           </select>
-          <button className="new-shipment">+ New Shipments</button>
+          <button className="new-shipment" onClick={() => setShowForm(true)}>+ New Shipments</button>
         </div>
       </div>
+
+      {showForm && (
+        <form onSubmit={handleCreateShipment} className="new-shipment-form">
+          <input
+            type="text"
+            name="recipientName"
+            placeholder="Tên Người Nhận"
+            value={newShipment.recipientName}
+            onChange={handleInputChange}
+            required
+          />
+          <input
+            type="text"
+            name="recipientAddress"
+            placeholder="Địa Chỉ Giao Hàng"
+            value={newShipment.recipientAddress}
+            onChange={handleInputChange}
+            required
+          />
+          <select name="status" onChange={handleInputChange} value={newShipment.status} required>
+            <option value="Packaging">Packaging</option>
+            <option value="Shipping">Shipping</option>
+            <option value="Ready">Ready</option>
+            <option value="Finished">Finished</option>
+          </select>
+          <input type="text" name="trackNumber" value={newShipment.trackNumber} readOnly />
+          <input type="date" name="createAt" onChange={handleInputChange} required />
+          <input type="date" name="shippedAt" onChange={handleInputChange} required />
+          <input type="date" name="deliveredAt" onChange={handleInputChange} required />
+          <button type="submit">Create</button>
+        </form>
+      )}
 
       <div className="stats">
         {stats.map((stat, index) => (
@@ -215,32 +307,32 @@ const ShipmentTracker = () => {
                 <th>
                   <input type="checkbox" />
                 </th>
-                <th>ORDER ID</th>
-                <th>CATEGORY</th>
-                <th>ARRIVAL TIME</th>
-                <th>WEIGHT</th>
-                <th>ROUTE</th>
-                <th>FEE</th>
+                <th>SHIPMENT ID</th>
+                <th>RECIPIENT NAME</th>
+                <th>RECIPIENT ADDRESS</th>
                 <th>STATUS</th>
+                <th>CREATED AT</th>
+                <th>SHIPPED AT</th>
+                <th>DELIVERED AT</th>
               </tr>
             </thead>
             <tbody>
               {trackingOrders.map((order) => (
-                <tr key={order.id}>
+                <tr key={order.shipmentId}>
                   <td>
                     <input type="checkbox" />
                   </td>
-                  <td>{order.id}</td>
-                  <td>{order.category}</td>
-                  <td>{order.arrivalTime}</td>
-                  <td>{order.weight}</td>
-                  <td>{order.route}</td>
-                  <td>{order.fee}</td>
+                  <td>{order.shipmentId}</td>
+                  <td>{order.recipientName}</td>
+                  <td>{order.recipientAddress}</td>
                   <td>
-                    <span className={`status ${order.status.toLowerCase()}`}>
-                      {order.status}
+                    <span className={`status ${order.status ? order.status.toLowerCase() : 'unknown'}`}>
+                      {order.status || 'Unknown'}
                     </span>
                   </td>
+                  <td>{order.createAt}</td>
+                  <td>{order.shippedAt}</td>
+                  <td>{order.deliveredAt}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 const PayPalCheckoutButton = ({
   amount,
@@ -8,12 +9,12 @@ const PayPalCheckoutButton = ({
   selectedVoucher = null,
 }) => {
   const [isDeposit, setIsDeposit] = useState(false);
+
   const validAmount = parseFloat(amount) || 0;
   const validShippingFee = parseFloat(shippingFee) || 0;
 
-  // Tính tổng cộng cuối cùng
-  const finalPrice = isDeposit 
-    ? (validAmount + validShippingFee) * 0.5 
+  const finalPrice = isDeposit
+    ? validAmount * 0.5 + validShippingFee
     : validAmount + validShippingFee;
 
   useEffect(() => {
@@ -24,16 +25,27 @@ const PayPalCheckoutButton = ({
         window.paypal
           .Buttons({
             createOrder: (data, actions) => {
+              console.log("Final Price:", finalPrice);
+
               if (validAmount <= 0) {
                 throw new Error("Invalid price amount");
               }
 
-              const payableItemTotal = isDeposit
-                ? finalPrice * 0.5
-                : finalPrice;
-              const payableShipping = isDeposit
-                ? finalPrice * 0.5 - validShippingFee
-                : validShippingFee;
+              const itemTotal = isDeposit
+                ? validAmount * 0.5
+                : validAmount; // 50% for deposit, full otherwise
+              const shippingValue = validShippingFee;
+
+              const calculatedTotal = itemTotal + shippingValue;
+
+              // Ensure total matches the breakdown
+              if (calculatedTotal.toFixed(2) !== finalPrice.toFixed(2)) {
+                throw new Error(
+                  `AMOUNT_MISMATCH: Total ${calculatedTotal.toFixed(
+                    2
+                  )} does not match Final Price ${finalPrice.toFixed(2)}`
+                );
+              }
 
               return actions.order.create({
                 purchase_units: [
@@ -44,27 +56,33 @@ const PayPalCheckoutButton = ({
                       breakdown: {
                         item_total: {
                           currency_code: "USD",
-                          value: payableItemTotal.toFixed(2),
+                          value: itemTotal.toFixed(2),
                         },
                         shipping: {
                           currency_code: "USD",
-                          value: payableShipping.toFixed(2),
+                          value: shippingValue.toFixed(2),
                         },
                       },
                     },
-                    description: `${isDeposit ? "50% Deposit" : "Full"} Payment${selectedVoucher ? ` (Voucher: ${selectedVoucher.voucherCode})` : ""}`,
+                    description: `${
+                      isDeposit ? "50% Deposit" : "Full"
+                    } Payment${
+                      selectedVoucher
+                        ? ` (Voucher: ${selectedVoucher.voucherCode})`
+                        : ""
+                    }`,
                   },
                 ],
               });
             },
-            onApprove: (data, actions) => {
-              return actions.order.capture().then((details) => {
-                onSuccess({
-                  ...details,
-                  isDeposit,
-                  depositAmount: isDeposit ? finalPrice * 0.5 : 0,
-                  appliedVoucher: selectedVoucher,
-                });
+            onApprove: async (data, actions) => {
+              const details = await actions.order.capture();
+              onSuccess({
+                ...details,
+                isDeposit,
+                depositAmount: isDeposit ? validAmount * 0.5 : 0,
+                appliedVoucher: selectedVoucher,
+                confirmOrder: true,
               });
             },
             onError: (err) => {
@@ -98,14 +116,7 @@ const PayPalCheckoutButton = ({
         document.body.removeChild(scriptElement);
       }
     };
-  }, [
-    finalPrice,
-    onSuccess,
-    onError,
-    isDeposit,
-    validAmount,
-    validShippingFee,
-  ]);
+  }, [finalPrice, onSuccess, onError, isDeposit, validAmount, validShippingFee]);
 
   return (
     <div className="paypal-container">
@@ -116,7 +127,7 @@ const PayPalCheckoutButton = ({
             checked={isDeposit}
             onChange={(e) => setIsDeposit(e.target.checked)}
           />
-          <span>Pay 50% Deposit (${(finalPrice * 0.5).toFixed(2)})</span>
+          <span>Pay 50% Deposit</span>
         </label>
         <p className="price-display">
           Original Price: ${validAmount.toFixed(2)}
@@ -128,14 +139,6 @@ const PayPalCheckoutButton = ({
           )}
           <br />
           <strong>Total to pay: ${finalPrice.toFixed(2)}</strong>
-          {isDeposit && (
-            <>
-              <br />
-              <span className="deposit-note">
-                (50% deposit of total ${finalPrice.toFixed(2)})
-              </span>
-            </>
-          )}
           {selectedVoucher && (
             <>
               <br />
