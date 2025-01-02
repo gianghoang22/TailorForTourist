@@ -113,24 +113,25 @@ const Address = ({ initialAddress, onAddressChange }) => {
   const handleDistrictChange = (e) => {
     const districtId = e.target.value;
     if (!districtId) {
-      setSelectedDistrict(null);
-      setSelectedWard(null);
-      setWards([]);
-      return;
+        setSelectedDistrict(null);
+        setSelectedWard(null);
+        setWards([]);
+        return;
     }
 
     const district = districts.find(
-      (d) => d.districtID === parseInt(districtId)
+        (d) => d.districtID === parseInt(districtId)
     );
     console.log("District Selection:", {
-      districtId: districtId,
-      districtName: district?.districtName,
-      fullDistrictData: district,
+        districtId: districtId,
+        districtName: district?.districtName,
+        fullDistrictData: district,
     });
 
     if (district) {
-      setSelectedDistrict(district);
-      fetchWards(district.districtID);
+        setSelectedDistrict(district);
+        setSelectedWard(null);
+        fetchWards(district.districtID);
     }
     validateAddress();
   };
@@ -138,30 +139,30 @@ const Address = ({ initialAddress, onAddressChange }) => {
   const handleWardChange = (e) => {
     const wardCode = e.target.value;
     if (!wardCode) {
-      setSelectedWard(null);
-      return;
+        setSelectedWard(null);
+        return;
     }
 
     const ward = wards.find((w) => w.wardCode === wardCode);
     console.log("Ward Selection:", {
-      wardCode: wardCode,
-      wardName: ward?.wardName,
-      fullWardData: ward,
+        wardCode: wardCode,
+        wardName: ward?.wardName,
+        fullWardData: ward,
     });
 
     if (ward && selectedDistrict) {
-      setSelectedWard(ward);
-      const fullAddress = `${ward.wardName}, ${selectedDistrict.districtName}`;
+        setSelectedWard(ward);
+        const fullAddress = `${ward.wardName}, ${selectedDistrict.districtName}`;
 
-      const addressData = {
-        fullAddress,
-        wardCode: ward.wardCode,
-        districtId: selectedDistrict.districtID,
-      };
+        const addressData = {
+            fullAddress,
+            wardCode: ward.wardCode,
+            districtId: selectedDistrict.districtID,
+        };
 
-      console.log("Final Address Data:", addressData);
+        console.log("Final Address Data:", addressData);
 
-      onAddressChange(addressData);
+        onAddressChange(addressData);
     }
     validateAddress();
   };

@@ -5,6 +5,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import "./MeasureList.scss"; // Import the new styles
 import { toast } from "react-toastify";
+import { TablePagination } from "@mui/material";
 
 const MeasureList = () => {
   const [users, setUsers] = useState([]);
@@ -17,6 +18,8 @@ const MeasureList = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [editingMeasurement, setEditingMeasurement] = useState(null);
   const [searchTerm, setSearchTerm] = useState(""); // Add search state
+  const [currentPage, setCurrentPage] = useState(1); // State for current page
+  const usersPerPage = 7; // Number of users per page
 
   const API_URL = "https://localhost:7194/api/Measurement";
   const USER_API_URL = "https://localhost:7194/api/User";
@@ -320,9 +323,14 @@ const MeasureList = () => {
   });
 
   // Add filtered users logic
-  const filteredUsers = users.filter(user => 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users
+    .filter(user => user.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => b.userId - a.userId); 
+
+  // Calculate the current users to display
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser); // Get users for the current page
 
   // Handle search input change
   const handleSearchChange = (e) => {
@@ -396,7 +404,7 @@ const MeasureList = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user) => {  // Changed from users to filteredUsers
+            {currentUsers.map((user) => {  // Changed from filteredUsers to currentUsers
               const measurement = measurements[user.userId];
               return (
                 <tr key={user.userId}>
@@ -446,6 +454,28 @@ const MeasureList = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      <TablePagination
+        rowsPerPageOptions={[7]} // Set to 7 for your pagination
+        component="div"
+        count={filteredUsers.length} // Total number of filtered users
+        rowsPerPage={usersPerPage} // Number of users per page
+        page={currentPage - 1} // Adjust for zero-based index
+        onPageChange={(event, newPage) => setCurrentPage(newPage + 1)} // Update current page
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+            margin: '0',
+          },
+          '.MuiTablePagination-actions': {
+            marginLeft: 'auto',
+            marginRight: 'auto'
+          }
+        }}
+      />
 
       {/* Measurement Detail Modal */}
       {showDetailModal && selectedMeasurement && (

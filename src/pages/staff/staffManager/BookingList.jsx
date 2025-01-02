@@ -62,6 +62,8 @@ const BookingList = () => {
     startDate: null,
     endDate: null,
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const bookingsPerPage = 7;
 
   const handleDateFilterChange = (event) => {
     setDateFilter(event.target.value);
@@ -178,6 +180,11 @@ const BookingList = () => {
     }, {});
     return Object.values(bookingCountByDate);
   };
+
+  const sortedBookings = [...bookings].sort((a, b) => b.bookingId - a.bookingId);
+  const indexOfLastBooking = currentPage * bookingsPerPage;
+  const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
+  const currentBookings = sortedBookings.slice(indexOfFirstBooking, indexOfLastBooking);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -368,7 +375,7 @@ const BookingList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filterBookings(bookings).map((booking) => (
+            {filterBookings(currentBookings).map((booking) => (
               <TableRow key={booking.bookingId}>
                 <TableCell>{booking.bookingId}</TableCell>
                 <TableCell>{booking.guestName}</TableCell>
@@ -408,6 +415,19 @@ const BookingList = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      {/* Pagination Controls */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        {Array.from({ length: Math.ceil(sortedBookings.length / bookingsPerPage) }, (_, index) => (
+          <Button
+            key={index}
+            onClick={() => setCurrentPage(index + 1)}
+            variant={currentPage === index + 1 ? 'contained' : 'outlined'}
+            sx={{ mx: 0.5 }}
+          >
+            {index + 1}
+          </Button>
+        ))}
+      </Box>
     </div>
   );
 };

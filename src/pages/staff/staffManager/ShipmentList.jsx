@@ -20,13 +20,14 @@ import {
 } from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
+import TablePagination from "@mui/material/TablePagination";
 
-const BASE_URL = "https://localhost:7194/api/Shipment";
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  fontWeight: "bold",
+const CustomStyledTableCell = styled(TableCell)(({ theme }) => ({
+  color: 'white !important',
+  fontWeight: 'bold',
+  padding: '1rem',
+  textAlign: 'left',
   backgroundColor: theme.palette.primary.main,
-  color: theme.palette.common.white,
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -37,74 +38,128 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
+const BASE_URL = "https://localhost:7194/api";
+
+const fetchStoreByStaffId = async (staffId) => {
+  const response = await fetch(`${BASE_URL}/Store/GetStoreByStaff/${staffId}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch store");
+  }
+  return response.json();
+};
+
+const fetchOrdersByStoreId = async (storeId) => {
+  const response = await fetch(`${BASE_URL}/Orders/store/${storeId}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch orders");
+  }
+  return response.json();
+};
+
 const ShipmentList = () => {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
+  const rowsPerPage = 7;
+
+  // Mảng trạng thái theo thứ tự
+  const statusOrder = [
+    "Confirming",
+    "Tailoring",
+    "Shipping",
+    "Ready",
+    "Finished",
+  ];
 
   useEffect(() => {
-    const fetchShipments = async () => {
+    const fetchOrders = async () => {
       try {
-        const response = await fetch(BASE_URL);
-        const data = await response.json();
-        setShipments(data);
+        const userId = localStorage.getItem("userID");
+        if (!userId) {
+          throw new Error("User ID not found");
+        }
+        const storeData = await fetchStoreByStaffId(userId);
+        const shipmentsData = await fetchOrdersByStoreId(storeData.storeId);
+        setShipments(shipmentsData);
+        setLoading(false);
       } catch (err) {
         setError(err.message);
-      } finally {
         setLoading(false);
       }
     };
-    fetchShipments();
+
+    fetchOrders();
   }, []);
 
-  const updateShipmentStatus = async (shipment) => {
-    const statusOrder = [
-      "Packaging",
-      "Preparing",
-      "Shipping",
-      "Ready",
-      "Finished",
-    ];
-    
-    const currentStatusIndex = statusOrder.indexOf(shipment.status);
-    const nextStatus = statusOrder[currentStatusIndex + 1] || shipment.status;
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
-    console.log("Current Status:", shipment.status);
-    console.log("Next Status:", nextStatus);
+  const sortedShipments = [...shipments].sort((a, b) => b.orderId - a.orderId);
 
-    const updatedShipment = {
-      status: nextStatus,
-    };
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
-    console.log("Sending JSON:", JSON.stringify(updatedShipment));
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const paginatedShipments = sortedShipments.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const statusStyles = {
+    Tailoring: { background: "blue", color: "white" },
+    Confirming: { background: "pink", color: "black" },
+    Shipping: { background: "yellow", color: "black" },
+    Ready: { background: "green", color: "white" },
+    Finished: { background: "green", color: "white" },
+  };
+
+  const getStatusStyles = (status) => statusStyles[status] || { background: "white", color: "white" };
+
+  // Hàm xác định trạng thái tiếp theo
+  const getNextStatus = (currentStatus) => {
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    return currentIndex < statusOrder.length - 1 ? statusOrder[currentIndex + 1] : currentStatus; // Trả về trạng thái tiếp theo
+  };
+
+  // Hàm cập nhật trạng thái đơn hàng
+  const updateShipmentStatus = async (id, currentStatus) => {
+    const newStatus = getNextStatus(currentStatus); // Lấy trạng thái tiếp theo
+    console.log("Updating shipment status:", id, newStatus); // Ghi log thông tin
 
     try {
-      const response = await fetch(`${BASE_URL}/${shipment.Id}/status`, {
+      const response = await fetch(`${BASE_URL}/Orders/update-ship-status/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updatedShipment),
+        body: JSON.stringify(newStatus),
       });
 
+      console.log("Response status:", response.status);
+      const responseData = await response.text();
+      console.log("Response data:", responseData);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error updating shipment status:", errorData);
-        return;
+        throw new Error(`Failed to update shipment status: ${responseData}`);
       }
 
+      // Cập nhật trạng thái trong state
       setShipments((prevShipments) =>
-        prevShipments.map((s) =>
-          s.shipmentId === shipment.shipmentId ? { ...shipment, status: nextStatus, shippedAt: nextStatus === "Finished" ? new Date().toISOString().split("T")[0] : shipment.shippedAt } : s
+        prevShipments.map((shipment) =>
+          shipment.orderId === id ? { ...shipment, shipStatus: newStatus } : shipment
         )
       );
-    } catch (err) {
-      console.error("Error updating shipment status:", err);
+    } catch (error) {
+      console.error("Error updating shipment status:", error);
+      setError(error.message);
     }
   };
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
 
   return (
     <div>
@@ -116,39 +171,81 @@ const ShipmentList = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <StyledTableCell>Track Number</StyledTableCell>
-              <StyledTableCell>Recipient Name</StyledTableCell>
-              <StyledTableCell>Recipient Address</StyledTableCell>
-              <StyledTableCell>Status</StyledTableCell>
-              <StyledTableCell>Create At</StyledTableCell>
-              <StyledTableCell>Shipped At</StyledTableCell>
-              <StyledTableCell>Actions</StyledTableCell>
+              <CustomStyledTableCell>Order ID</CustomStyledTableCell>
+              <CustomStyledTableCell>Guest Name</CustomStyledTableCell>
+              <CustomStyledTableCell>Guest Email</CustomStyledTableCell>
+              <CustomStyledTableCell>Guest Address</CustomStyledTableCell>
+              <CustomStyledTableCell>Order Date</CustomStyledTableCell>
+              <CustomStyledTableCell>Shipped Date</CustomStyledTableCell>
+              <CustomStyledTableCell>Ship Status</CustomStyledTableCell>
+              <CustomStyledTableCell>Delivery Method</CustomStyledTableCell>
+              <CustomStyledTableCell>Total Price</CustomStyledTableCell>
+              <CustomStyledTableCell>Actions</CustomStyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {shipments.map((shipment) => (
-              <TableRow key={shipment.shipmentId} hover>
-                <TableCell>{shipment.trackNumber}</TableCell>
-                <TableCell>{shipment.recipientName}</TableCell>
-                <TableCell>{shipment.recipientAddress}</TableCell>
-                <TableCell>{shipment.status}</TableCell>
-                <TableCell>{shipment.createAt}</TableCell>
-                <TableCell>{shipment.shippedAt}</TableCell>
-                <TableCell>
-                  <Tooltip title="Update Status">
-                    <IconButton
-                      onClick={() => updateShipmentStatus(shipment)}
-                      sx={{ color: "primary.main" }}
+            {paginatedShipments.map((shipment) => {
+              const { background, color } = getStatusStyles(shipment.shipStatus);
+              return (
+                <TableRow key={shipment.orderId} hover>
+                  <TableCell>{shipment.orderId}</TableCell>
+                  <TableCell>{shipment.guestName}</TableCell>
+                  <TableCell>{shipment.guestEmail}</TableCell>
+                  <TableCell>{shipment.guestAddress}</TableCell>
+                  <TableCell>{formatDate(shipment.orderDate)}</TableCell>
+                  <TableCell>{formatDate(shipment.shippedDate)}</TableCell>
+                  <TableCell>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        backgroundColor: background,
+                        color: color,
+                        padding: "0.2rem 0.5rem",
+                        borderRadius: "4px",
+                      }}
                     >
-                      <Edit />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
+                      {shipment.shipStatus}
+                    </span>
+                  </TableCell>
+                  <TableCell>{shipment.deliveryMethod}</TableCell>
+                  <TableCell>{shipment.totalPrice}</TableCell>
+                  <TableCell>
+                    <Tooltip title="Update Status">
+                      <IconButton
+                        onClick={() => updateShipmentStatus(shipment.orderId, shipment.shipStatus)}
+                        sx={{ color: "primary.main" }}
+                      >
+                        <Edit />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
+
+      <TablePagination
+        rowsPerPageOptions={[7]}
+        component="div"
+        count={sortedShipments.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+            margin: '0',
+          },
+          '.MuiTablePagination-actions': {
+            marginLeft: 'auto',
+            marginRight: 'auto'
+          }
+        }}
+      />
     </div>
   );
 };

@@ -28,6 +28,7 @@ import {
   Stack,
   Chip,
   TablePagination,
+  Card,
 } from "@mui/material";
 import { Edit, Visibility, Add, Delete, FilterList } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
@@ -181,6 +182,8 @@ const OrderList = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage] = useState(10);
   const [selectedMeasurement, setSelectedMeasurement] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 7;
 
   const handleDateFilterChange = (event) => {
     setDateFilter(event.target.value);
@@ -674,10 +677,10 @@ const OrderList = () => {
     fetchStores();
   }, []);
 
-  const paginatedOrders = filterOrders(orders).slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  const sortedOrders = [...orders].sort((a, b) => b.orderId - a.orderId);
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = sortedOrders.slice(indexOfFirstOrder, indexOfLastOrder);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -894,7 +897,7 @@ const OrderList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {paginatedOrders.map((order) => (
+            {filterOrders(currentOrders).map((order) => (
               <TableRow key={order.orderId} hover>
                 <TableCell>{order.orderId}</TableCell>
                 <TableCell>{order.guestName}</TableCell>
@@ -928,7 +931,7 @@ const OrderList = () => {
             ))}
           </TableBody>
         </Table>
-        <TablePagination
+        {/* <TablePagination
           rowsPerPageOptions={[10]}
           component="div"
           count={filterOrders(orders).length}
@@ -947,64 +950,73 @@ const OrderList = () => {
               marginRight: 'auto'
             }
           }}
-        />
+        /> */}
       </TableContainer>
 
-      
+      {/* Pagination Controls */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        {Array.from({ length: Math.ceil(sortedOrders.length / ordersPerPage) }, (_, index) => (
+          <Button
+            key={index}
+            onClick={() => setCurrentPage(index + 1)}
+            variant={currentPage === index + 1 ? 'contained' : 'outlined'}
+            sx={{ mx: 0.5 }}
+          >
+            {index + 1}
+          </Button>
+        ))}
+      </Box>
 
       {/* Dialog for Order Details */}
-      <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)}>
+      <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>Order Details</DialogTitle>
         <DialogContent>
           {orderDetails ? (
-            <div>
-              <Typography>
-                <strong>Order ID:</strong> {orderDetails.orderId}
-              </Typography>
-              <Typography>
-                <strong>Customer:</strong> {orderDetails.guestName}
-              </Typography>
-              <Typography>
-                <strong>Status:</strong> {orderDetails.status || 'Pending'}
-              </Typography>
-              <Typography>
-                <strong>Payment ID:</strong> {orderDetails.paymentId || ""}
-              </Typography>
-              <Typography>
-                <strong>Order Date:</strong>{" "}
-                {orderDetails.orderDate}
-              </Typography>
-              <Typography>
-                <strong>Total Price:</strong> ${orderDetails.totalPrice.toFixed(2)}
-              </Typography>
-              <Typography>
-                <strong>Note:</strong> {orderDetails.note || ""}
-              </Typography>
-              <Typography>
-                <strong>Order Details:</strong>
-              </Typography>
-              <ul>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Typography variant="h6">Order ID: {orderDetails.orderId}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1"><strong>Customer:</strong> {orderDetails.guestName}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1"><strong>Status:</strong> {orderDetails.status || 'Pending'}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1"><strong>Payment ID:</strong> {orderDetails.paymentId || ""}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1"><strong>Order Date:</strong> {new Date(orderDetails.orderDate).toLocaleDateString()}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1"><strong>Total Price:</strong> ${orderDetails.totalPrice.toFixed(2)}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1"><strong>Note:</strong> {orderDetails.note || ""}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="h6" sx={{ mt: 2 }}>Order Details:</Typography>
                 {orderDetails.orderDetails.map((detail, index) => (
-                  <li key={index}>
-                    <Typography>
-                      Product ID: {detail.productId}, Quantity: {detail.quantity}, Price: ${detail.price}
-                    </Typography>
+                  <Card key={index} variant="outlined" sx={{ mb: 2, p: 2 }}>
+                    <Typography variant="subtitle1"><strong>Product ID:</strong> {detail.productId}</Typography>
+                    <Typography variant="body2"><strong>Quantity:</strong> {detail.quantity}</Typography>
+                    <Typography variant="body2"><strong>Price:</strong> ${detail.price}</Typography>
                     {detail.product ? (
-                        <>
-                            <Typography>
-                                Fabric: {detail.product.fabricName}, Lining: {detail.product.liningName}
-                            </Typography>
-                            <Typography>
-                                Style Options: {detail.product.styleOptions.map(option => option.optionValue).join(', ')}
-                            </Typography>
-                        </>
+                      <>
+                        <Typography variant="body2">
+                          <strong>Fabric:</strong> {detail.product.fabricName}, <strong>Lining:</strong> {detail.product.liningName}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Style Options:</strong> {detail.product.styleOptions.map(option => option.optionValue).join(', ')}
+                        </Typography>
+                      </>
                     ) : (
-                        <Typography color="error">Product details not available</Typography>
+                      <Typography color="error">Product details not available</Typography>
                     )}
-                  </li>
+                  </Card>
                 ))}
-              </ul>
-            </div>
+              </Grid>
+            </Grid>
           ) : (
             <CircularProgress />
           )}

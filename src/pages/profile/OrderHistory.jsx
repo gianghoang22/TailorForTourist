@@ -19,9 +19,10 @@ const OrderHistory = () => {
   const [comment, setComment] = useState("");
   const [hover, setHover] = useState(null);
   const [page, setPage] = useState(1);
-  const [ordersPerPage] = useState(10); // Show 10 orders per page
-  const [showFeedbackButton, setShowFeedbackButton] = useState({}); // Thêm state để theo dõi nút feedback
-  const [feedbackGiven, setFeedbackGiven] = useState({}); // Thêm state để theo dõi phản hồi đã được gửi
+  const [ordersPerPage] = useState(10);
+  const [showFeedbackButton, setShowFeedbackButton] = useState({});
+  const [feedbackGiven, setFeedbackGiven] = useState({}); 
+  const [confirmReceivedModalIsOpen, setConfirmReceivedModalIsOpen] = useState(false);
 
   // Calculate pagination
   const indexOfLastOrder = page * ordersPerPage;
@@ -59,7 +60,9 @@ const OrderHistory = () => {
         })
         .then((data) => {
           console.log("Fetched orders:", data);
-          setOrders(data);
+          // Sort orders by orderId in descending order
+          const sortedOrders = data.sort((a, b) => b.orderId - a.orderId);
+          setOrders(sortedOrders);
         })
         .catch((error) => {
           console.error("Error fetching orders:", error);
@@ -184,11 +187,28 @@ const OrderHistory = () => {
       setFeedbackModalIsOpen(false);
       setComment("");
       setRating(5);
-      alert("Feedback submitted successfully!");
+      alert("Feedback sended successfully!");
+      setFeedbackGiven((prev) => ({ ...prev, [orderId]: true }));
+      setShowFeedbackButton((prev) => ({ ...prev, [orderId]: false }));
     } catch (error) {
       console.error("Error submitting feedback:", error);
       setError(error.message);
     }
+  };
+
+  const handleReceivedClick = (orderId) => {
+    setSelectedOrder(orderId);
+    setConfirmReceivedModalIsOpen(true); // Mở modal xác nhận
+  };
+
+  const handleConfirmReceived = () => {
+    setShowFeedbackButton((prev) => ({ ...prev, [selectedOrder]: true })); // Hiển thị nút Feedback
+    setFeedbackGiven((prev) => {
+      const updatedFeedbackGiven = { ...prev, [selectedOrder]: true };
+      localStorage.setItem("feedbackGiven", JSON.stringify(updatedFeedbackGiven));
+      return updatedFeedbackGiven;
+    });
+    setConfirmReceivedModalIsOpen(false); // Đóng modal xác nhận
   };
 
   const customStyles = {
@@ -226,7 +246,7 @@ const OrderHistory = () => {
                     <th>Order</th>
                     <th>Order Date</th>
                     <th>Estimated delivery date</th>
-                    <th>Status</th>
+                    <th>Shipping Status</th>
                     <th>Total Price</th>
                     <th>Deposit</th>
                     <th>Balance</th>
@@ -257,12 +277,12 @@ const OrderHistory = () => {
                           <td>
                             <span
                               className={`status ${
-                                order.status
-                                  ? order.status.toLowerCase()
+                                order.shipStatus
+                                  ? order.shipStatus.toLowerCase()
                                   : ""
                               }`}
                             >
-                              {order.status || ""}
+                              {order.shipStatus || ""}
                             </span>
                           </td>
                           <td>${order.totalPrice?.toFixed(2) || ""}</td>
@@ -278,23 +298,15 @@ const OrderHistory = () => {
                             >
                               View Details
                             </button>
-                            {order.status === "Finish" && !feedbackGiven[order.orderId] && (
+                            {order.shipStatus === "Finished" && !feedbackGiven[order.orderId] && (
                               <button
                                 className="received-button"
-                                onClick={() => {
-                                  setSelectedOrder(order.orderId);
-                                  setShowFeedbackButton((prev) => ({ ...prev, [order.orderId]: true }));
-                                  setFeedbackGiven((prev) => {
-                                    const updatedFeedbackGiven = { ...prev, [order.orderId]: true };
-                                    localStorage.setItem("feedbackGiven", JSON.stringify(updatedFeedbackGiven));
-                                    return updatedFeedbackGiven;
-                                  });
-                                }}
+                                onClick={() => handleReceivedClick(order.orderId)}
                               >
                                 Received
                               </button>
                             )}
-                            {showFeedbackButton[order.orderId] && !feedbackGiven[order.orderId] && (
+                            {showFeedbackButton[order.orderId] && (
                               <button
                                 className="feedback-button"
                                 onClick={() => {
@@ -463,6 +475,20 @@ const OrderHistory = () => {
             <button onClick={() => setFeedbackModalIsOpen(false)}>
               Cancel
             </button>
+          </div>
+        </Modal>
+
+        <Modal
+          isOpen={confirmReceivedModalIsOpen}
+          onRequestClose={() => setConfirmReceivedModalIsOpen(false)}
+          style={customStyles}
+          contentLabel="Confirm Received Modal"
+        >
+          <h2>Confirm received order.</h2>
+          <p>Confirm receipt of goods successfully?</p>
+          <div className="modal-buttons">
+            <button onClick={handleConfirmReceived}>Confirm</button>
+            <button onClick={() => setConfirmReceivedModalIsOpen(false)}>Cancel</button>
           </div>
         </Modal>
 
