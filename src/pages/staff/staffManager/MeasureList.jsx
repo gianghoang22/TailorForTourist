@@ -5,7 +5,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import "./MeasureList.scss"; // Import the new styles
 import { toast } from "react-toastify";
-import { TablePagination } from "@mui/material";
+import { TablePagination, Box, Button } from "@mui/material";
 
 const MeasureList = () => {
   const [users, setUsers] = useState([]);
@@ -456,26 +456,18 @@ const MeasureList = () => {
       </div>
 
       {/* Pagination Controls */}
-      <TablePagination
-        rowsPerPageOptions={[7]} // Set to 7 for your pagination
-        component="div"
-        count={filteredUsers.length} // Total number of filtered users
-        rowsPerPage={usersPerPage} // Number of users per page
-        page={currentPage - 1} // Adjust for zero-based index
-        onPageChange={(event, newPage) => setCurrentPage(newPage + 1)} // Update current page
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-            margin: '0',
-          },
-          '.MuiTablePagination-actions': {
-            marginLeft: 'auto',
-            marginRight: 'auto'
-          }
-        }}
-      />
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        {Array.from({ length: Math.ceil(filteredUsers.length / usersPerPage) }, (_, index) => (
+          <Button
+            key={index}
+            onClick={() => setCurrentPage(index + 1)}
+            variant={currentPage === index + 1 ? 'contained' : 'outlined'}
+            sx={{ mx: 0.5 }}
+          >
+            {index + 1}
+          </Button>
+        ))}
+      </Box>
 
       {/* Measurement Detail Modal */}
       {showDetailModal && selectedMeasurement && (

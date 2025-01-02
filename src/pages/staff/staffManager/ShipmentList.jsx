@@ -17,6 +17,7 @@ import {
   IconButton,
   Tooltip,
   Typography,
+  Box,
 } from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
@@ -226,26 +227,18 @@ const ShipmentList = () => {
         </Table>
       </TableContainer>
 
-      <TablePagination
-        rowsPerPageOptions={[7]}
-        component="div"
-        count={sortedShipments.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-            margin: '0',
-          },
-          '.MuiTablePagination-actions': {
-            marginLeft: 'auto',
-            marginRight: 'auto'
-          }
-        }}
-      />
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        {Array.from({ length: Math.ceil(shipments.length / rowsPerPage) }, (_, index) => (
+          <Button
+            key={index}
+            onClick={() => setPage(index)}
+            variant={page === index ? 'contained' : 'outlined'}
+            sx={{ mx: 0.5 }}
+          >
+            {index + 1}
+          </Button>
+        ))}
+      </Box>
     </div>
   );
 };
