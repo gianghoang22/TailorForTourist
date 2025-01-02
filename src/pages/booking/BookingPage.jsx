@@ -276,7 +276,7 @@ const BookingPage = () => {
       setDateError("");
     }
 
-    const bookingDate = date.toISOString().split("T")[0];
+    const bookingDate = selectedDate.toLocaleDateString("en-CA");
     let time = selectedTime;
 
     // Convert time to proper format
@@ -734,6 +734,7 @@ const BookingPage = () => {
                     value={date}
                     minDate={tomorrow}
                     className="modern-calendar"
+                    formatDay={(locale, date) => date.getDate()}
                   />
                 </div>
 

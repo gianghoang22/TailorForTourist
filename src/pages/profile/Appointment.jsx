@@ -2,11 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ProfileNav from "./ProfileNav";
 import "./Appointment.scss";
+import { FaSpinner } from "react-icons/fa";
 
 const Appointment = () => {
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [appointmentsPerPage] = useState(5);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,7 +50,10 @@ const Appointment = () => {
           if (!Array.isArray(data)) {
             throw new Error("Invalid response format");
           }
-          setAppointments(data);
+          const sortedAppointments = data.sort(
+            (a, b) => new Date(b.bookingDate) - new Date(a.bookingDate)
+          );
+          setAppointments(sortedAppointments);
         }
       } catch (err) {
         setError(err.message);
@@ -58,6 +64,16 @@ const Appointment = () => {
 
     fetchAppointments();
   }, [navigate]);
+
+  const indexOfLastAppointment = currentPage * appointmentsPerPage;
+  const indexOfFirstAppointment = indexOfLastAppointment - appointmentsPerPage;
+  const currentAppointments = appointments.slice(
+    indexOfFirstAppointment,
+    indexOfLastAppointment
+  );
+  const totalPages = Math.ceil(appointments.length / appointmentsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "long", day: "numeric" };
@@ -70,7 +86,10 @@ const Appointment = () => {
       <div className="content-container">
         <h2>Your Appointments</h2>
         {isLoading ? (
-          <div className="appointment-loading">Loading appointments...</div>
+          <div className="appointment-loading">
+            <FaSpinner className="spinner" />
+            <p>Loading appointments...</p>
+          </div>
         ) : error ? (
           <div className="appointment-error">
             <p>Error: {error}</p>
@@ -79,50 +98,86 @@ const Appointment = () => {
             )}
           </div>
         ) : appointments.length === 0 ? (
-          <p className="no-appointments">
-            You don't have any appointments yet!
-          </p>
+          <div className="no-appointments">
+            <p>You don't have any appointments yet!</p>
+            <button
+              onClick={() => navigate("/booking")}
+              className="book-now-btn"
+            >
+              Book Now
+            </button>
+          </div>
         ) : (
-          <ul className="appointment-list">
-            {appointments.map((appointment) => (
-              <li key={appointment.bookingId} className="appointment-item">
-                <div className="appointment-header">
-                  <span className="appointment-date">
-                    {formatDate(appointment.bookingDate)}
-                  </span>
-                  <span
-                    className={`appointment-status ${appointment.status.toLowerCase()}`}
+          <>
+            <ul className="appointment-list">
+              {currentAppointments.map((appointment) => (
+                <li key={appointment.bookingId} className="appointment-item">
+                  <div className="appointment-header">
+                    <span className="appointment-date">
+                      {formatDate(appointment.bookingDate)}
+                    </span>
+                    <span
+                      className={`appointment-status ${appointment.status.toLowerCase()}`}
+                    >
+                      {appointment.status}
+                    </span>
+                  </div>
+                  <div className="appointment-details">
+                    <p>
+                      <strong>Time:</strong> {appointment.time}
+                    </p>
+                    <p>
+                      <strong>Guest:</strong> {appointment.guestName}
+                    </p>
+                    <p>
+                      <strong>Email:</strong> {appointment.guestEmail}
+                    </p>
+                    <p>
+                      <strong>Phone:</strong> {appointment.guestPhone}
+                    </p>
+                    {appointment.note && (
+                      <p>
+                        <strong>Note:</strong> {appointment.note}
+                      </p>
+                    )}
+                    {appointment.service && (
+                      <p>
+                        <strong>Service:</strong> {appointment.service}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button
+                  onClick={() => paginate(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="pagination-btn"
+                >
+                  Previous
+                </button>
+                {[...Array(totalPages)].map((_, index) => (
+                  <button
+                    key={index + 1}
+                    onClick={() => paginate(index + 1)}
+                    className={`pagination-btn ${currentPage === index + 1 ? "active" : ""}`}
                   >
-                    {appointment.status}
-                  </span>
-                </div>
-                <div className="appointment-details">
-                  <p>
-                    <strong>Time:</strong> {appointment.time}
-                  </p>
-                  <p>
-                    <strong>Guest:</strong> {appointment.guestName}
-                  </p>
-                  <p>
-                    <strong>Email:</strong> {appointment.guestEmail}
-                  </p>
-                  <p>
-                    <strong>Phone:</strong> {appointment.guestPhone}
-                  </p>
-                  {appointment.note && (
-                    <p>
-                      <strong>Note:</strong> {appointment.note}
-                    </p>
-                  )}
-                  {appointment.service && (
-                    <p>
-                      <strong>Service:</strong> {appointment.service}
-                    </p>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+                    {index + 1}
+                  </button>
+                ))}
+                <button
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="pagination-btn"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

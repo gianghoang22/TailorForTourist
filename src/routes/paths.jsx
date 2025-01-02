@@ -57,6 +57,7 @@ import ProtectedRoute from "../pages/ProtectedRoute/ProtectedRoute";
 import TailorDashboard from "../pages/tailor/TailorDashboard";
 import Feedback from "../pages/profile/Feedback";
 import VoucherAvailable from "../pages/managerdashboard/VoucherAvailable";
+import TailorRevenue from "../pages/tailor/TailorRevenue.jsx";
 export const routes = [
   {
     path: "/",
@@ -135,6 +136,12 @@ export const routes = [
         allowedRoles={["tailor partner"]}
       />
     ),
+    children: [
+      {
+        path: "revenue",
+        element: <TailorRevenue />,
+      },
+    ],
   },
   {
     path: "/booking",

@@ -14,8 +14,9 @@ import {
   Search,
   Filter,
   X,
+  DollarSign,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import "./TailorDashboard.scss";
 import { CircularProgress } from "@mui/material";
 
@@ -37,6 +38,7 @@ const LoadingSpinner = () => (
 
 const TailorDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const [orderDetails, setOrderDetails] = useState({});
@@ -602,15 +604,20 @@ const TailorDashboard = () => {
   };
 
   const getFilteredOrders = () => {
-    return orders.filter((order) => {
-      const statusMatch =
-        statusFilter === "all" || order.status === statusFilter;
-      const searchMatch = order.orderId.toString().includes(searchOrderId);
-      const stageMatch =
-        stageFilter === "all" || order.stageName === stageFilter;
+    return orders
+      .sort((a, b) => {
+        // Sort by Order ID (highest/newest first)
+        return b.orderId - a.orderId;
+      })
+      .filter((order) => {
+        const statusMatch =
+          statusFilter === "all" || order.status === statusFilter;
+        const searchMatch = order.orderId.toString().includes(searchOrderId);
+        const stageMatch =
+          stageFilter === "all" || order.stageName === stageFilter;
 
-      return statusMatch && searchMatch && stageMatch;
-    });
+        return statusMatch && searchMatch && stageMatch;
+      });
   };
 
   const filteredOrders = getFilteredOrders();
@@ -634,11 +641,20 @@ const TailorDashboard = () => {
           <img src="/dappr-logo.png" alt="Dappr Logo" />
         </div>
         <nav>
-          <button>
+          <button
+            onClick={() => navigate("/tailor")}
+            className={location.pathname === "/tailor" ? "active" : ""}
+          >
             <Home />
           </button>
           <button>
             <LayoutDashboard />
+          </button>
+          <button
+            onClick={() => navigate("/tailor/revenue")}
+            className={location.pathname === "/tailor/revenue" ? "active" : ""}
+          >
+            <DollarSign />
           </button>
           <button>
             <Users />
@@ -670,323 +686,335 @@ const TailorDashboard = () => {
           </div>
         </header>
 
-        {error && <div className="error">{error}</div>}
-
-        {isLoading ? (
-          <LoadingSpinner />
-        ) : (
-          <div className="dashboard-content">
-            <div className="filters-section">
-              <div className="filters-header">
-                <h3>Processing Orders</h3>
-                <div className="filters-summary">
-                  <span>{filteredOrders.length} orders found</span>
-                  {(statusFilter !== "all" ||
-                    stageFilter !== "all" ||
-                    searchOrderId) && (
-                    <button
-                      className="clear-filters"
-                      onClick={() => {
-                        setStatusFilter("all");
-                        setStageFilter("all");
-                        setSearchOrderId("");
-                        setCurrentPage(1);
-                      }}
-                    >
-                      Clear Filters
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="filters-container">
-                <div className="search-box">
-                  <Search className="search-icon" size={20} />
-                  <input
-                    type="text"
-                    placeholder="Search by Order ID..."
-                    value={searchOrderId}
-                    onChange={(e) => {
-                      setSearchOrderId(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                  />
-                  {searchOrderId && (
-                    <button
-                      className="clear-search"
-                      onClick={() => {
-                        setSearchOrderId("");
-                        setCurrentPage(1);
-                      }}
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-                </div>
-
-                <div className="filter-group">
-                  <div className="filter-label">
-                    <Filter size={18} />
-                    <span>Filters:</span>
+        {location.pathname === "/tailor" ? (
+          <>
+            {error && <div className="error">{error}</div>}
+            {isLoading ? (
+              <LoadingSpinner />
+            ) : (
+              <div className="dashboard-content">
+                <div className="filters-section">
+                  <div className="filters-header">
+                    <h3>Processing Orders</h3>
+                    <div className="filters-summary">
+                      <span>{filteredOrders.length} orders found</span>
+                      {(statusFilter !== "all" ||
+                        stageFilter !== "all" ||
+                        searchOrderId) && (
+                        <button
+                          className="clear-filters"
+                          onClick={() => {
+                            setStatusFilter("all");
+                            setStageFilter("all");
+                            setSearchOrderId("");
+                            setCurrentPage(1);
+                          }}
+                        >
+                          Clear Filters
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="select-wrapper">
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => {
-                        setStatusFilter(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                    >
-                      <option value="all">All Status</option>
-                      <option value="Not Start">Not Start</option>
-                      <option value="Doing">Doing</option>
-                      <option value="Finish">Finish</option>
-                      <option value="Due">Due</option>
-                      <option value="Cancel">Cancel</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Processing">Processing</option>
-                    </select>
-                    <ChevronDown size={16} className="select-icon" />
+                  <div className="filters-container">
+                    <div className="search-box">
+                      <Search className="search-icon" size={20} />
+                      <input
+                        type="text"
+                        placeholder="Search by Order ID..."
+                        value={searchOrderId}
+                        onChange={(e) => {
+                          setSearchOrderId(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                      />
+                      {searchOrderId && (
+                        <button
+                          className="clear-search"
+                          onClick={() => {
+                            setSearchOrderId("");
+                            setCurrentPage(1);
+                          }}
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="filter-group">
+                      <div className="filter-label">
+                        <Filter size={18} />
+                        <span>Filters:</span>
+                      </div>
+
+                      <div className="select-wrapper">
+                        <select
+                          value={statusFilter}
+                          onChange={(e) => {
+                            setStatusFilter(e.target.value);
+                            setCurrentPage(1);
+                          }}
+                        >
+                          <option value="all">All Status</option>
+                          <option value="Not Start">Not Start</option>
+                          <option value="Doing">Doing</option>
+                          <option value="Finish">Finish</option>
+                          <option value="Due">Due</option>
+                          <option value="Cancel">Cancel</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Processing">Processing</option>
+                        </select>
+                        <ChevronDown size={16} className="select-icon" />
+                      </div>
+
+                      <div className="select-wrapper">
+                        <select
+                          value={stageFilter}
+                          onChange={(e) => {
+                            setStageFilter(e.target.value);
+                            setCurrentPage(1);
+                          }}
+                        >
+                          <option value="all">All Stages</option>
+                          <option value="Make Sample">Make Sample</option>
+                          <option value="Fix">Fix</option>
+                          <option value="Delivery">Delivery</option>
+                        </select>
+                        <ChevronDown size={16} className="select-icon" />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="select-wrapper">
-                    <select
-                      value={stageFilter}
-                      onChange={(e) => {
-                        setStageFilter(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                    >
-                      <option value="all">All Stages</option>
-                      <option value="Make Sample">Make Sample</option>
-                      <option value="Fix">Fix</option>
-                      <option value="Delivery">Delivery</option>
-                    </select>
-                    <ChevronDown size={16} className="select-icon" />
-                  </div>
-                </div>
-              </div>
-
-              {(statusFilter !== "all" || stageFilter !== "all") && (
-                <div className="active-filters">
-                  <span className="active-filters-label">Active Filters:</span>
-                  {statusFilter !== "all" && (
-                    <div className="filter-tag">
-                      Status: {statusFilter}
-                      <button onClick={() => setStatusFilter("all")}>
-                        <X size={14} />
-                      </button>
+                  {(statusFilter !== "all" || stageFilter !== "all") && (
+                    <div className="active-filters">
+                      <span className="active-filters-label">
+                        Active Filters:
+                      </span>
+                      {statusFilter !== "all" && (
+                        <div className="filter-tag">
+                          Status: {statusFilter}
+                          <button onClick={() => setStatusFilter("all")}>
+                            <X size={14} />
+                          </button>
+                        </div>
+                      )}
+                      {stageFilter !== "all" && (
+                        <div className="filter-tag">
+                          Stage: {stageFilter}
+                          <button onClick={() => setStageFilter("all")}>
+                            <X size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
-                  {stageFilter !== "all" && (
-                    <div className="filter-tag">
-                      Stage: {stageFilter}
-                      <button onClick={() => setStageFilter("all")}>
-                        <X size={14} />
-                      </button>
-                    </div>
-                  )}
                 </div>
-              )}
-            </div>
 
-            <table className="orders-table">
-              <thead>
-                <tr>
-                  <th>Order ID</th>
-                  <th>Stage Name</th>
-                  <th>Order Status</th>
-                  <th>Note</th>
-                  <th>Date Sample</th>
-                  <th>Date Fix</th>
-                  <th>Date Delivery</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentOrders.map((order) => {
-                  const details = orderDetails[order.orderId] || {};
-                  return (
-                    <React.Fragment key={order.processingId}>
-                      <tr>
-                        <td>{order.orderId}</td>
-                        <td>{order.stageName}</td>
-                        <td>
-                          <span
-                            className={`status-label ${order.status.toLowerCase().replace(" ", "-")}`}
-                          >
-                            {order.status}
-                          </span>
-                        </td>
-                        <td>{order.note}</td>
-                        <td>{order.dateSample}</td>
-                        <td>{order.dateFix}</td>
-                        <td>{order.dateDelivery}</td>
-                        <td>
-                          <button
-                            onClick={() => handleUpdate(order)}
-                            disabled={order.status === "Finish"}
-                          >
-                            Update Status
-                          </button>
-                          <button
-                            onClick={() => toggleOrderDetails(order.orderId)}
-                          >
-                            {expandedOrder === order.orderId ? (
-                              <ChevronUp />
-                            ) : (
-                              <ChevronDown />
-                            )}
-                          </button>
-                        </td>
-                      </tr>
-                      {expandedOrder === order.orderId && (
-                        <tr>
-                          <td colSpan="8">
-                            <div className="order-details bg-white shadow-lg rounded-lg p-6 mt-4">
-                              <div className="grid grid-cols-2 gap-8">
-                                <div className="order-info">
-                                  <h4 className="text-xl font-semibold mb-4 flex items-center">
-                                    <Package className="mr-2" /> Order Details
-                                  </h4>
-                                  <div className="bg-gray-100 p-4 rounded-md">
-                                    <p className="mb-2">
-                                      <span className="font-semibold">
-                                        Order ID:
-                                      </span>{" "}
-                                      {order.orderId}
-                                    </p>
-                                    <p className="mb-2">
-                                      <span className="font-semibold">
-                                        Guest Name:
-                                      </span>{" "}
-                                      {details.orderInfo?.guestName || "N/A"}
-                                    </p>
-                                    <p className="mb-2">
-                                      <span className="font-semibold">
-                                        Order Date:
-                                      </span>{" "}
-                                      {details.orderInfo?.orderDate || "N/A"}
-                                    </p>
-                                  </div>
-                                  <h5 className="text-lg font-semibold mt-4 mb-2 flex items-center">
-                                    <Scissors className="mr-2" /> Product
-                                    Details
-                                  </h5>
-                                  <div className="bg-gray-100 p-4 rounded-md">
-                                    <p className="mb-2">
-                                      <span className="font-semibold">
-                                        Fabric:
-                                      </span>{" "}
-                                      {details.fabricName || "N/A"}
-                                    </p>
-                                    <p className="mb-2">
-                                      <span className="font-semibold">
-                                        Lining:
-                                      </span>{" "}
-                                      {details.liningName || "N/A"}
-                                    </p>
-                                  </div>
-                                  <h6 className="text-md font-semibold mt-4 mb-2">
-                                    Style Options
-                                  </h6>
-                                  <div className="bg-gray-100 p-4 rounded-md">
-                                    {details.styleOptions &&
-                                      details.styleOptions.map(
-                                        (option, index) => (
-                                          <div key={index} className="mb-2">
-                                            <p>
+                <table className="orders-table">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Stage Name</th>
+                      <th>Order Status</th>
+                      <th>Note</th>
+                      <th>Date Sample</th>
+                      <th>Date Fix</th>
+                      <th>Date Delivery</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentOrders.map((order) => {
+                      const details = orderDetails[order.orderId] || {};
+                      return (
+                        <React.Fragment key={order.processingId}>
+                          <tr>
+                            <td>{order.orderId}</td>
+                            <td>{order.stageName}</td>
+                            <td>
+                              <span
+                                className={`status-label ${order.status.toLowerCase().replace(" ", "-")}`}
+                              >
+                                {order.status}
+                              </span>
+                            </td>
+                            <td>{order.note}</td>
+                            <td>{order.dateSample}</td>
+                            <td>{order.dateFix}</td>
+                            <td>{order.dateDelivery}</td>
+                            <td>
+                              <button
+                                onClick={() => handleUpdate(order)}
+                                disabled={order.status === "Finish"}
+                              >
+                                Update Status
+                              </button>
+                              <button
+                                onClick={() =>
+                                  toggleOrderDetails(order.orderId)
+                                }
+                              >
+                                {expandedOrder === order.orderId ? (
+                                  <ChevronUp />
+                                ) : (
+                                  <ChevronDown />
+                                )}
+                              </button>
+                            </td>
+                          </tr>
+                          {expandedOrder === order.orderId && (
+                            <tr>
+                              <td colSpan="8">
+                                <div className="order-details bg-white shadow-lg rounded-lg p-6 mt-4">
+                                  <div className="grid grid-cols-2 gap-8">
+                                    <div className="order-info">
+                                      <h4 className="text-xl font-semibold mb-4 flex items-center">
+                                        <Package className="mr-2" /> Order
+                                        Details
+                                      </h4>
+                                      <div className="bg-gray-100 p-4 rounded-md">
+                                        <p className="mb-2">
+                                          <span className="font-semibold">
+                                            Order ID:
+                                          </span>{" "}
+                                          {order.orderId}
+                                        </p>
+                                        <p className="mb-2">
+                                          <span className="font-semibold">
+                                            Guest Name:
+                                          </span>{" "}
+                                          {details.orderInfo?.guestName ||
+                                            "N/A"}
+                                        </p>
+                                        <p className="mb-2">
+                                          <span className="font-semibold">
+                                            Order Date:
+                                          </span>{" "}
+                                          {details.orderInfo?.orderDate ||
+                                            "N/A"}
+                                        </p>
+                                      </div>
+                                      <h5 className="text-lg font-semibold mt-4 mb-2 flex items-center">
+                                        <Scissors className="mr-2" /> Product
+                                        Details
+                                      </h5>
+                                      <div className="bg-gray-100 p-4 rounded-md">
+                                        <p className="mb-2">
+                                          <span className="font-semibold">
+                                            Fabric:
+                                          </span>{" "}
+                                          {details.fabricName || "N/A"}
+                                        </p>
+                                        <p className="mb-2">
+                                          <span className="font-semibold">
+                                            Lining:
+                                          </span>{" "}
+                                          {details.liningName || "N/A"}
+                                        </p>
+                                      </div>
+                                      <h6 className="text-md font-semibold mt-4 mb-2">
+                                        Style Options
+                                      </h6>
+                                      <div className="bg-gray-100 p-4 rounded-md">
+                                        {details.styleOptions &&
+                                          details.styleOptions.map(
+                                            (option, index) => (
+                                              <div key={index} className="mb-2">
+                                                <p>
+                                                  <span className="font-semibold">
+                                                    Style:
+                                                  </span>{" "}
+                                                  {option.styleName || "N/A"}
+                                                </p>
+                                                <p>
+                                                  <span className="font-semibold">
+                                                    Type:
+                                                  </span>{" "}
+                                                  {option.optionType || "N/A"}
+                                                </p>
+                                                <p>
+                                                  <span className="font-semibold">
+                                                    Value:
+                                                  </span>{" "}
+                                                  {option.optionValue || "N/A"}
+                                                </p>
+                                              </div>
+                                            )
+                                          )}
+                                      </div>
+                                    </div>
+                                    <div className="measurements">
+                                      <h4 className="text-xl font-semibold mb-4 flex items-center">
+                                        <Ruler className="mr-2" /> Measurements
+                                      </h4>
+                                      {details.measurementError ? (
+                                        <p className="text-red-500 bg-red-100 p-4 rounded-md">
+                                          {details.measurementError}
+                                        </p>
+                                      ) : details.measurement ? (
+                                        <div className="grid grid-cols-2 gap-4 bg-gray-100 p-4 rounded-md">
+                                          {Object.entries(
+                                            details.measurement
+                                          ).map(([key, value]) => (
+                                            <p key={key} className="capitalize">
                                               <span className="font-semibold">
-                                                Style:
+                                                {key}:
                                               </span>{" "}
-                                              {option.styleName || "N/A"}
+                                              {value || "N/A"}
                                             </p>
-                                            <p>
-                                              <span className="font-semibold">
-                                                Type:
-                                              </span>{" "}
-                                              {option.optionType || "N/A"}
-                                            </p>
-                                            <p>
-                                              <span className="font-semibold">
-                                                Value:
-                                              </span>{" "}
-                                              {option.optionValue || "N/A"}
-                                            </p>
-                                          </div>
-                                        )
-                                      )}
-                                  </div>
-                                </div>
-                                <div className="measurements">
-                                  <h4 className="text-xl font-semibold mb-4 flex items-center">
-                                    <Ruler className="mr-2" /> Measurements
-                                  </h4>
-                                  {details.measurementError ? (
-                                    <p className="text-red-500 bg-red-100 p-4 rounded-md">
-                                      {details.measurementError}
-                                    </p>
-                                  ) : details.measurement ? (
-                                    <div className="grid grid-cols-2 gap-4 bg-gray-100 p-4 rounded-md">
-                                      {Object.entries(details.measurement).map(
-                                        ([key, value]) => (
-                                          <p key={key} className="capitalize">
-                                            <span className="font-semibold">
-                                              {key}:
-                                            </span>{" "}
-                                            {value || "N/A"}
-                                          </p>
-                                        )
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="bg-yellow-100 p-4 rounded-md text-yellow-700">
+                                          No measurement data available.
+                                        </p>
                                       )}
                                     </div>
-                                  ) : (
-                                    <p className="bg-yellow-100 p-4 rounded-md text-yellow-700">
-                                      No measurement data available.
-                                    </p>
-                                  )}
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
 
-            <div className="pagination">
-              <button
-                onClick={prevPage}
-                disabled={currentPage === 1}
-                className="pagination-button"
-              >
-                Previous
-              </button>
-
-              <div className="pagination-numbers">
-                {[...Array(totalPages)].map((_, index) => (
+                <div className="pagination">
                   <button
-                    key={index + 1}
-                    onClick={() => paginate(index + 1)}
-                    className={`pagination-number ${currentPage === index + 1 ? "active" : ""}`}
+                    onClick={prevPage}
+                    disabled={currentPage === 1}
+                    className="pagination-button"
                   >
-                    {index + 1}
+                    Previous
                   </button>
-                ))}
-              </div>
 
-              <button
-                onClick={nextPage}
-                disabled={currentPage === totalPages}
-                className="pagination-button"
-              >
-                Next
-              </button>
-            </div>
-          </div>
+                  <div className="pagination-numbers">
+                    {[...Array(totalPages)].map((_, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => paginate(index + 1)}
+                        className={`pagination-number ${currentPage === index + 1 ? "active" : ""}`}
+                      >
+                        {index + 1}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={nextPage}
+                    disabled={currentPage === totalPages}
+                    className="pagination-button"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <Outlet />
         )}
       </main>
     </div>
