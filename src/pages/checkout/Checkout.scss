@@ -535,3 +535,13 @@ select {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+.loading-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; // Full viewport height
+  font-size: 1.5em; // Larger font size
+  color: #3498db; // Color for the text
+  text-align: center; // Center the text
+}

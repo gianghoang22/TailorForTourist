@@ -3,7 +3,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import "./CustomStyle.scss";
 import { toast } from "react-toastify";
-import { addToCart } from "../../../utils/cartUtil";
+import { addToCart, removeStyleFromCart } from "../../../utils/cartUtil";
 
 //jk-style
 import jk_style1B1B from "../../../assets/img/iconCustom/jk-style-1B1B.jpg";
@@ -288,6 +288,23 @@ const CustomStyle = () => {
     navigate("/custom-suits/lining");
   };
 
+  const handleRemoveStyle = (optionType) => {
+    // Xóa style khỏi selectedOptions và selectedImages
+    setSelectedOptions(prev => {
+      const newSelectedOptions = { ...prev };
+      delete newSelectedOptions[optionType];
+      return newSelectedOptions;
+    });
+    setSelectedImages(prev => {
+      const newSelectedImages = { ...prev };
+      delete newSelectedImages[optionType];
+      return newSelectedImages;
+    });
+
+    // Cập nhật giỏ hàng để xóa style đã chọn
+    removeStyleFromCart(optionType);
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -376,15 +393,34 @@ const CustomStyle = () => {
             </h1>
 
             {/* Display selected options and their images */}
-            <div className="selected-options-preview">
+            <div className="selected-options-preview" style={{ display: 'flex', flexDirection: 'row' }}>
               {Object.entries(selectedImages).map(([optionType, imageUrl]) => (
-                <div key={optionType} className="selected-option">
+                <div key={optionType} className="selected-option" style={{ marginRight: '10px' }}>
                   <h3>{optionType}</h3>
                   <img
                     src={imageUrl}
                     alt={`Selected ${optionType}`}
                     className="selected-option-image"
                   />
+                  <button 
+                    onClick={() => {
+                      // Xóa style khỏi selectedOptions và selectedImages
+                      setSelectedOptions(prev => {
+                        const newSelectedOptions = { ...prev };
+                        delete newSelectedOptions[optionType];
+                        return newSelectedOptions;
+                      });
+                      setSelectedImages(prev => {
+                        const newSelectedImages = { ...prev };
+                        delete newSelectedImages[optionType];
+                        return newSelectedImages;
+                      });
+                    }}
+                    className="remove-style-button"
+                    style={{ marginLeft: '5px', cursor: 'pointer', color: 'red', background: 'none', border: 'none', fontSize: '16px' }}
+                  >
+                    X
+                  </button>
                 </div>
               ))}
             </div>
@@ -393,7 +429,7 @@ const CustomStyle = () => {
 
         <div className="next-btn">
           <Link to="/custom-suits/lining" onClick={handleNextClick}>
-            <button className="navigation-button">Go to Lining</button>
+            <button className="navigation-button">Lining</button>
           </Link>
         </div>
       </div>

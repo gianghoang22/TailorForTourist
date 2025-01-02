@@ -151,3 +151,15 @@ export const removeFromGuestCart = (productCode) => {
 export const clearGuestCart = () => {
   localStorage.removeItem(GUEST_CART_KEY);
 };
+
+export const removeStyleFromCart = (optionType) => {
+  const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+  const updatedCart = cart.map(suit => {
+    if (suit.styles) {
+      suit.styles = suit.styles.filter(style => style.optionType !== optionType);
+    }
+    return suit;
+  });
+  localStorage.setItem(CART_KEY, JSON.stringify(updatedCart));
+  toast.info(`${optionType} removed from cart`);
+};

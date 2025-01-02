@@ -48,6 +48,7 @@ import FabricManagement from "../pages/admin/FabricManagement";
 import StoreManagement from "../pages/admin/StoreManagement";
 import LiningManagement from "../pages/admin/LiningManagement";
 import VoucherManagement from "../pages/admin/VoucherManagement";
+import ShipperManagement from "../pages/admin/ShipperManagement.jsx";
 
 import Payment from "../pages/payment/Payment.jsx";
 import ContactUs from "../pages/contact/ContactUs";
@@ -88,6 +89,10 @@ export const routes = [
       {
         path: "voucher-management",
         element: <VoucherManagement />,
+      },
+      {
+        path: "shipper-management",
+        element: <ShipperManagement />,
       },
     ],
   },

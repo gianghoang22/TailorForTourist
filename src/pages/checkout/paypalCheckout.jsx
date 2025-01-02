@@ -7,15 +7,14 @@ const PayPalCheckoutButton = ({
   onSuccess,
   onError,
   selectedVoucher = null,
+  deliveryMethod
 }) => {
   const [isDeposit, setIsDeposit] = useState(false);
 
   const validAmount = parseFloat(amount) || 0;
   const validShippingFee = parseFloat(shippingFee) || 0;
 
-  const finalPrice = isDeposit
-    ? validAmount * 0.5 + validShippingFee
-    : validAmount + validShippingFee;
+  const finalPrice = validAmount + validShippingFee;
 
   useEffect(() => {
     const renderPayPalButton = () => {
@@ -81,6 +80,7 @@ const PayPalCheckoutButton = ({
                 ...details,
                 isDeposit,
                 depositAmount: isDeposit ? validAmount * 0.5 : 0,
+                totalAmount: finalPrice,
                 appliedVoucher: selectedVoucher,
                 confirmOrder: true,
               });
@@ -121,14 +121,16 @@ const PayPalCheckoutButton = ({
   return (
     <div className="paypal-container">
       <div className="deposit-option">
-        <label className="deposit-label">
-          <input
-            type="checkbox"
-            checked={isDeposit}
-            onChange={(e) => setIsDeposit(e.target.checked)}
-          />
-          <span>Pay 50% Deposit</span>
-        </label>
+        {deliveryMethod !== 'Delivery' && (
+          <label className="deposit-label">
+            <input
+              type="checkbox"
+              checked={isDeposit}
+              onChange={(e) => setIsDeposit(e.target.checked)}
+            />
+            <span>Pay 50% Deposit</span>
+          </label>
+        )}
         <p className="price-display">
           Original Price: ${validAmount.toFixed(2)}
           {validShippingFee > 0 && (

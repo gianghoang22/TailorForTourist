@@ -46,6 +46,7 @@ const ProductDetailPage = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const feedbacksPerPage = 4;
+  const [styleOptions, setStyleOptions] = useState([]);
 
   // Calculate pagination values
   const indexOfLastFeedback = currentPage * feedbacksPerPage;
@@ -93,6 +94,10 @@ const ProductDetailPage = () => {
       try {
         const response = await axios.get(`https://localhost:7194/api/Product/details/${id}`);
         setProduct(response.data);
+        // Lấy styleOptions từ sản phẩm
+        if (response.data && response.data.styleOptions) {
+          setStyleOptions(response.data.styleOptions);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -244,6 +249,12 @@ toast.error("Failed to add to cart. Please try again.");
                 <dd>{product.fabricName}</dd>
                 <dt>Lining:</dt>
                 <dd>{product.liningName}</dd>
+                <dt>Style:</dt>
+                <dd>{styleOptions.map(option => (
+                <li key={option.styleOptionId}>
+                  {option.optionType}: {option.optionValue}
+                </li>
+              ))}</dd>
               </dl>
               <p className="price">From {product.price} USD</p>
             </div>
@@ -387,7 +398,6 @@ toast.error("Failed to add to cart. Please try again.");
             </>
           )}
         </div>
-        
       </main>
       <Footer />
     </>

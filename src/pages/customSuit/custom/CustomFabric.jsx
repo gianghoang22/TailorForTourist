@@ -204,7 +204,7 @@ const CustomFabric = () => {
             className='navigation-button'
             onClick={handleNextClick}
           >
-            Next
+            Style
           </button>
         </div>
       </div>

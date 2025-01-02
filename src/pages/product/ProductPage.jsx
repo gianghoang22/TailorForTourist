@@ -115,6 +115,7 @@ const ProductPage = () => {
   // Fetch products by category ID
   const fetchProductsByCategory = async (categoryId) => {
     setLoading(true);
+    setError(null);
     try {
       const response = await axios.get(
         `https://localhost:7194/api/Product/category-iscustomfalse/${categoryId}`
@@ -255,7 +256,7 @@ const ProductPage = () => {
             transition={{ delay: 0.5, duration: 0.8 }}
           >
             {loading && <p>Loading products...</p>}
-            {error && <p>Error loading products: {error}</p>}
+            <strong>{error && <p>No products found!</p>}</strong>
             {!loading && !error && products.length > 0 && (
               <Product products={currentProducts} currentPage={currentPage} productsPerPage={productsPerPage} />
             )}
@@ -267,15 +268,17 @@ const ProductPage = () => {
       </motion.div>
 
       {/* Pagination Controls */}
-      <div className="pagination-controls">
-        <button onClick={handlePreviousPage} disabled={currentPage === 1}>
-          Previous
-        </button>
-        <span>Page {currentPage} of {totalPages}</span>
-        <button onClick={handleNextPage} disabled={currentPage >= totalPages}>
-          Next
-        </button>
-      </div>
+      {!error && (
+        <div className="pagination-controls">
+          <button onClick={handlePreviousPage} disabled={currentPage === 1}>
+            Previous
+          </button>
+          <span>Page {currentPage} of {totalPages}</span>
+          <button onClick={handleNextPage} disabled={currentPage >= totalPages}>
+            Next
+          </button>
+        </div>
+      )}
 
       <Footer />
     </motion.div>

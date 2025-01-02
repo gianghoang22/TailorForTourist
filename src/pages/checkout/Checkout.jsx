@@ -542,7 +542,11 @@ const Checkout = () => {
     return baseTotal + finalShippingFee;
   };
 
-  if (loading) return <div>Đang tải...</div>;
+  if (isLoading) {
+    return (
+      <h1 className="loading-message">Your order is being confirmed, please wait.</h1>
+    );
+  }
   if (error) return <div>{error}</div>;
 
   return (

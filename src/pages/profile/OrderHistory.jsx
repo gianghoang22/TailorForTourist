@@ -20,6 +20,8 @@ const OrderHistory = () => {
   const [hover, setHover] = useState(null);
   const [page, setPage] = useState(1);
   const [ordersPerPage] = useState(10); // Show 10 orders per page
+  const [showFeedbackButton, setShowFeedbackButton] = useState({}); // Thêm state để theo dõi nút feedback
+  const [feedbackGiven, setFeedbackGiven] = useState({}); // Thêm state để theo dõi phản hồi đã được gửi
 
   // Calculate pagination
   const indexOfLastOrder = page * ordersPerPage;
@@ -84,6 +86,15 @@ const OrderHistory = () => {
       console.log("No userID found in localStorage.");
       setError("No userID found in localStorage.");
     }
+  }, []);
+
+  useEffect(() => {
+    const storedUserID = localStorage.getItem("userID");
+    // ... existing code ...
+
+    // Kiểm tra trạng thái feedbackGiven từ localStorage
+    const storedFeedbackGiven = JSON.parse(localStorage.getItem("feedbackGiven")) || {};
+    setFeedbackGiven(storedFeedbackGiven);
   }, []);
 
   const fetchOrderDetails = (orderId) => {
@@ -212,12 +223,13 @@ const OrderHistory = () => {
               <table>
                 <thead>
                   <tr>
-                    <th>Order ID</th>
+                    <th>Order</th>
                     <th>Order Date</th>
-                    <th>Shipped Date</th>
+                    <th>Estimated delivery date</th>
                     <th>Status</th>
                     <th>Total Price</th>
                     <th>Deposit</th>
+                    <th>Balance</th>
                     <th>Payment</th>
                     <th>Actions</th>
                   </tr>
@@ -255,30 +267,42 @@ const OrderHistory = () => {
                           </td>
                           <td>${order.totalPrice?.toFixed(2) || ""}</td>
                           <td>${order.deposit?.toFixed(2) || ""}</td>
+                          <td>${(order.totalPrice - order.deposit)?.toFixed(2) || "N/A"}</td>
                           <td>
                             {paymentMethod ? paymentMethod.method : "Paypal"}
                           </td>
                           <td>
                             <button
+                              className="view-details-button"
                               onClick={() => handleViewDetails(order.orderId)}
                             >
                               View Details
                             </button>
-                            {order.status === "Shipped" && (
+                            {order.status === "Finish" && !feedbackGiven[order.orderId] && (
                               <button
                                 className="received-button"
                                 onClick={() => {
-                                  if (
-                                    window.confirm(
-                                      "Would you like to provide feedback for this order?"
-                                    )
-                                  ) {
-                                    setSelectedOrder(order.orderId);
-                                    setFeedbackModalIsOpen(true);
-                                  }
+                                  setSelectedOrder(order.orderId);
+                                  setShowFeedbackButton((prev) => ({ ...prev, [order.orderId]: true }));
+                                  setFeedbackGiven((prev) => {
+                                    const updatedFeedbackGiven = { ...prev, [order.orderId]: true };
+                                    localStorage.setItem("feedbackGiven", JSON.stringify(updatedFeedbackGiven));
+                                    return updatedFeedbackGiven;
+                                  });
                                 }}
                               >
                                 Received
+                              </button>
+                            )}
+                            {showFeedbackButton[order.orderId] && !feedbackGiven[order.orderId] && (
+                              <button
+                                className="feedback-button"
+                                onClick={() => {
+                                  setSelectedOrder(order.orderId);
+                                  setFeedbackModalIsOpen(true);
+                                }}
+                              >
+                                Feedback
                               </button>
                             )}
                           </td>
@@ -337,12 +361,12 @@ const OrderHistory = () => {
 
                     <div className="product-details-grid">
                       <div className="detail-section">
-                        <h4>Fabric Details</h4>
+                        <h4>Fabric</h4>
                         <p>{detail.fabricName}</p>
                       </div>
 
                       <div className="detail-section">
-                        <h4>Lining Details</h4>
+                        <h4>Lining</h4>
                         <p>{detail.liningName}</p>
                       </div>
 
@@ -369,7 +393,7 @@ const OrderHistory = () => {
                 ))}
 
                 <div className="order-summary-card">
-                  <h3>Order Summary</h3>
+                  <h3>Items quantity</h3>
                   <div className="summary-content">
                     <div className="summary-row">
                       <span>Total Items</span>
@@ -442,7 +466,7 @@ const OrderHistory = () => {
           </div>
         </Modal>
 
-        <a className="continue-shopping" href="#">
+        <a className="continue-shopping" href="/">
           Continue Shopping
         </a>
       </div>
