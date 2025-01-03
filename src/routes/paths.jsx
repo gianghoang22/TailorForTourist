@@ -36,11 +36,11 @@ import BookingThanks from "../pages/booking/BookingThanks";
 
 import StaffManagement from "../pages/managerdashboard/StaffManagement";
 import ManagerDashboard from "../pages/managerdashboard/ManagerDashboard";
+import ProductManagement from "../pages/managerdashboard/ProductManagement.jsx";
+import BookingManagement from "../pages/managerdashboard/BookingManagement.jsx";
 import FabricDetailPage from "../pages/fabric/FabricDetail";
 
 import ErrorBoundary from "../pages/ErrorBoundary/ErrorBoundary";
-import ProfitCalculation from "../pages/managerdashboard/ProfitCalculation";
-import ShipmentTracker from "../pages/managerdashboard/ShipmentTracker";
 
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import UserManagement from "../pages/admin/UserManagement";
@@ -107,12 +107,12 @@ export const routes = [
         element: <StaffManagement />,
       },
       {
-        path: "statistics",
-        element: <ProfitCalculation />,
+        path: "product",
+        element: <ProductManagement />,
       },
       {
-        path: "shipment",
-        element: <ShipmentTracker />,
+        path: "booking",
+        element: <BookingManagement />,
       },
       {
         path: "voucheravailable",

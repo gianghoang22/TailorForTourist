@@ -94,6 +94,9 @@ const CustomLining = () => {
   }, []);
 
   const handleLiningClick = (lining) => {
+    // Kiểm tra nếu lining đã được chọn
+    if (selectedLining && selectedLining.liningId === lining.liningId) return;
+
     setSelectedLining(lining);
     localStorage.setItem("liningId", lining.liningId);
     addToCart({
@@ -127,7 +130,7 @@ const CustomLining = () => {
       // if (!measurementId) {
       //   // Nếu chưa có measurementId, chuyển đến trang measureGuest
       //   toast.info("Please complete your measurements first");
-      //   // Lưu trạng thái hi��n tại để quay lại sau
+      //   // Lưu trạng thái hiện tại để quay lại sau
       //   localStorage.setItem("returnToCustomization", "true");
       //   navigate("/measure-guest");
       //   return;
@@ -166,7 +169,7 @@ const CustomLining = () => {
       console.error("Error:", error);
       if (error.response?.status === 401) {
         toast.error("Please login first");
-        navigate("/login");
+        navigate("/signin");
       } else {
         toast.error(
           error.response?.data?.message ||

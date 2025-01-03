@@ -236,6 +236,9 @@ const CustomStyle = () => {
   };
 
   const handleOptionValueClick = (styleOption) => {
+    // Kiểm tra nếu styleOption đã được chọn
+    if (isOptionSelected(styleOption)) return;
+
     // Cập nhật selectedOptions
     setSelectedOptions(prev => {
       const newSelectedOptions = {
@@ -259,7 +262,6 @@ const CustomStyle = () => {
       optionType: styleOption.optionType,
       imageUrl: optionTypeImages[styleOption.optionValue]
     });
-
   };
 
   const getOptionValues = (styleId, optionType) => {

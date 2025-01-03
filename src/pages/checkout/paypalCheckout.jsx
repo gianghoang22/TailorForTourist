@@ -121,16 +121,7 @@ const PayPalCheckoutButton = ({
   return (
     <div className="paypal-container">
       <div className="deposit-option">
-        {deliveryMethod !== 'Delivery' && (
-          <label className="deposit-label">
-            <input
-              type="checkbox"
-              checked={isDeposit}
-              onChange={(e) => setIsDeposit(e.target.checked)}
-            />
-            <span>Pay 50% Deposit</span>
-          </label>
-        )}
+        
         <p className="price-display">
           Original Price: ${validAmount.toFixed(2)}
           {validShippingFee > 0 && (

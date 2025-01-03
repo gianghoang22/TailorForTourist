@@ -61,9 +61,12 @@ const fetchOrdersByStoreId = async (storeId) => {
 };
 
 // Custom styling for components using `styled`
+const StyledTableHead = styled(TableHead)(({ theme }) => ({
+  backgroundColor: theme.palette.primary.main,
+}));
+
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: "bold",
-  backgroundColor: theme.palette.primary.main,
   color: theme.palette.common.white,
 }));
 
@@ -124,7 +127,7 @@ const OrderList = () => {
     paymentId: "",
     storeId: "",
     voucherId: "",
-    shipperPartnerId: "",
+    // shipperPartnerId: "4",
     orderDate: "",
     shippedDate: "",
     note: "",
@@ -138,7 +141,7 @@ const OrderList = () => {
   const [createOrderForm, setCreateOrderForm] = useState({
     storeId: 0,
     voucherId: 0,
-    shipperPartnerId: 0,
+    // shipperPartnerId: 0,
     shippedDate: "",
     note: "",
     paid: false,
@@ -184,6 +187,9 @@ const OrderList = () => {
   const [selectedMeasurement, setSelectedMeasurement] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 7;
+  const [userMeasurements, setUserMeasurements] = useState([]);
+  const [measurementIds, setMeasurementIds] = useState([]);
+  const [payments, setPayments] = useState({}); // Initialize as an empty object
 
   const handleDateFilterChange = (event) => {
     setDateFilter(event.target.value);
@@ -311,22 +317,24 @@ const OrderList = () => {
       if (selectedUser?.userId) {
         try {
           const response = await api.get(`/Measurement?userId=${selectedUser.userId}`);
+          console.log('Fetched Measurements:', response.data);
           setMeasurements(response.data);
-          // Nếu có measurement, chọn measurement đầu tiên
+          setMeasurementIds(response.data.map(measurement => measurement.measurementId));
           if (response.data.length > 0) {
-            setSelectedMeasurement(response.data[0]); // Chọn measurement đầu tiên
+            setMeasurementId(response.data[0].measurementId);
           }
         } catch (error) {
           console.error('Error fetching measurements:', error);
         }
       } else {
-        setMeasurements([]); // Reset measurements nếu không có user được chọn
-        setSelectedMeasurement(null); // Reset measurement đã chọn
+        setMeasurements([]);
+        setMeasurementId('');
+        setMeasurementIds([]);
       }
     };
 
     fetchMeasurements();
-  }, [selectedUser]); // Fetch measurements khi selectedUser thay đổi
+  }, [selectedUser]);
 
   const searchUsers = useCallback(
     debounce(async (query) => {
@@ -345,6 +353,24 @@ const OrderList = () => {
     }, 500),
     []
   );
+
+  const handleUserSelect = async (user) => {
+    setSelectedUser(user);
+    try {
+      const response = await api.get(`/Measurement?userId=${user.userId}`);
+      console.log('Fetched Measurements:', response.data);
+      setUserMeasurements(response.data);
+      setMeasurementId('');
+
+      // Lưu measurementId vào localStorage
+      if (response.data.length > 0) {
+        const userMeasurementId = response.data[0].measurementId;
+        localStorage.setItem('measurementId', userMeasurementId);
+      }
+    } catch (error) {
+      console.error('Error fetching measurements:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -378,7 +404,6 @@ const OrderList = () => {
         await api.put(`/Orders/${formState.id}`, formState);
         setSnackbarMessage("Order updated successfully");
         setSnackbarSeverity("success");
-        fetchOrders(); // Refresh the order list
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -484,23 +509,15 @@ const OrderList = () => {
         setSnackbarMessage('Order created successfully');
         setSnackbarSeverity('success');
         setOpen(false);
-        fetchOrders();
       } catch (error) {
-        console.log('API Error Response:', error.response);
-        console.log('API Error Data:', error.response?.data);
-        console.log('API Error Status:', error.response?.status);
-        console.log('API Error Message:', error.response?.data?.message);
-        console.log('API Error Details:', error.response?.data?.errors);
+        if (axios.isAxiosError(error)) {
+          console.error('Axios Error:', error);
+          console.error('Error Response:', error.response); // Thông tin phản hồi từ máy chủ
+          console.error('Error Message:', error.message); // Thông điệp lỗi
+        } else {
+          console.error('Unexpected Error:', error); // Lỗi không phải từ Axios
+        }
         
-        // Log full error object
-        console.error('Full Error Object:', {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          headers: error.response?.headers,
-          config: error.response?.config
-        });
-
         setSnackbarMessage(
           error.response?.data?.message || 
           'Failed to create order'
@@ -627,7 +644,19 @@ const OrderList = () => {
   };
 
   const handleAddCustomProduct = () => {
-    if (!selectedFabric || !selectedLining || selectedStyleOptions.length === 0 || !measurementId || customQuantity <= 0) {
+    if (!measurementId) {
+      console.error('No measurementId found');
+      return;
+    }
+
+    if (!selectedFabric || !selectedLining || selectedStyleOptions.length === 0 || customQuantity <= 0) {
+      console.log('Error: Please fill all required fields. Missing fields:', {
+        selectedFabric,
+        selectedLining,
+        selectedStyleOptions,
+        customQuantity
+      });
+
       setSnackbarMessage('Please fill all required fields');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -656,7 +685,6 @@ const OrderList = () => {
     setSelectedLining(null);
     setSelectedStyleOptions([]);
     setCustomQuantity(1);
-    setMeasurementId('');
     setOpenCustomDialog(false);
   };
 
@@ -685,6 +713,43 @@ const OrderList = () => {
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get('/User');
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchPayments = async () => {
+    try {
+      const response = await api.get('/Payments');
+      console.log('Payments Data:', response.data); // Log the payments data
+      const paymentsData = response.data;
+
+      // Create a mapping of orderId to payment method
+      const paymentMap = {};
+      paymentsData.forEach(payment => {
+        paymentMap[payment.orderId] = payment.method;
+      });
+
+      console.log('Payment Map:', paymentMap); // Log the payment map
+      setPayments(paymentMap); // Store the mapping in state
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+    }
+  };
+
+  // Call fetchPayments in useEffect
+  useEffect(() => {
+    fetchPayments();
+  }, []);
 
   if (loading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
@@ -868,7 +933,7 @@ const OrderList = () => {
             paymentId: "",
             storeId: "",
             voucherId: "",
-            shipperPartnerId: "",
+            // shipperPartnerId: "",
             orderDate: "",
             shippedDate: "",
             note: "",
@@ -885,44 +950,34 @@ const OrderList = () => {
 
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
-          <TableHead>
+          <StyledTableHead>
             <TableRow>
               <StyledTableCell>Order ID</StyledTableCell>
               <StyledTableCell>Customer</StyledTableCell>
               <StyledTableCell>Status</StyledTableCell>
-              <StyledTableCell>Payment ID</StyledTableCell>
+              <StyledTableCell>Payment Method</StyledTableCell>
               <StyledTableCell>Order Date</StyledTableCell>
               <StyledTableCell>Total Price</StyledTableCell>
               <StyledTableCell>Actions</StyledTableCell>
             </TableRow>
-          </TableHead>
+          </StyledTableHead>
           <TableBody>
             {filterOrders(currentOrders).map((order) => (
               <TableRow key={order.orderId} hover>
                 <TableCell>{order.orderId}</TableCell>
                 <TableCell>{order.guestName}</TableCell>
                 <TableCell>{order.status || 'Pending'}</TableCell>
-                <TableCell>{order.paymentId}</TableCell>
-                <TableCell>
-                  {new Date(order.orderDate).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  {order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}$
-                </TableCell>
+                <TableCell>{payments[order.orderId] || 'N/A'}</TableCell>
+                <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
+                <TableCell>{order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}$</TableCell>
                 <TableCell>
                   <Tooltip title="Edit Order">
-                    <IconButton
-                      onClick={() => handleEdit(order)}
-                      sx={{ color: "primary.main" }}
-                    >
+                    <IconButton onClick={() => handleEdit(order)} sx={{ color: "primary.main" }}>
                       <Edit />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="View Details">
-                    <IconButton
-                      onClick={() => handleViewDetails(order.orderId)}
-                      sx={{ color: "primary.main" }}
-                    >
+                    <IconButton onClick={() => handleViewDetails(order.orderId)} sx={{ color: "primary.main" }}>
                       <Visibility />
                     </IconButton>
                   </Tooltip>
@@ -1052,7 +1107,7 @@ const OrderList = () => {
           ) : (
             <>
               <Autocomplete
-                options={users}
+                options={users.filter(user => user.roleId === 3)}
                 getOptionLabel={(option) => 
                   option ? `${option.name || ''} (${option.email || ''})` : ''
                 }
@@ -1070,6 +1125,7 @@ const OrderList = () => {
                       guestEmail: newValue.email || '',
                       guestAddress: newValue.address || ''
                     }));
+                    fetchUserMeasurements(newValue);
                   }
                 }}
                 renderInput={(params) => (
@@ -1082,16 +1138,19 @@ const OrderList = () => {
                     helperText="Search for customers by name or email"
                   />
                 )}
-                renderOption={(props, option) => (
-                  <li {...props}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="body1">{option.name}</Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {option.email}
-                      </Typography>
-                    </div>
-                  </li>
-                )}
+                renderOption={(props, option) => {
+                  const { key, ...restProps } = props;
+                  return (
+                    <li key={key} {...restProps}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant="body1">{option.name}</Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {option.email}
+                        </Typography>
+                      </div>
+                    </li>
+                  );
+                }}
                 loading={users.length === 0}
                 loadingText="Searching..."
                 noOptionsText="No customers found"
@@ -1631,6 +1690,38 @@ const OrderList = () => {
                     InputProps={{
                       inputProps: { min: 1 }
                     }}
+                  />
+
+                  <Autocomplete
+                    options={measurements}
+                    getOptionLabel={(option) => {
+                      const user = users.find(user => user.userId === option.userId);
+                      return `${option.measurementId} (${user ? `${user.name} - ${user.email}` : 'Unknown User'})`;
+                    }}
+                    value={measurements.find(m => m.measurementId === measurementId) || null}
+                    onChange={(_, newValue) => {
+                      setMeasurementId(newValue?.measurementId || null);
+                      handleCreateFormChange('measurementId', newValue?.measurementId || null);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Measurement ID"
+                        margin="normal"
+                        fullWidth
+                      />
+                    )}
+                    renderOption={(props, option) => {
+                      const user = users.find(user => user.userId === option.userId);
+                      return (
+                        <li {...props}>
+                          <Typography>{`${option.measurementId} (${user ? `${user.name} - ${user.email}` : 'Unknown User'})`}</Typography>
+                        </li>
+                      );
+                    }}
+                    loading={measurements.length === 0}
+                    loadingText="Loading measurements..."
+                    noOptionsText="No measurements found"
                   />
                 </DialogContent>
                 <DialogActions>

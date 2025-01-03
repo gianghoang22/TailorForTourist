@@ -75,6 +75,8 @@ const CustomFabric = () => {
   };
 
   const handleFabricClick = (fabric) => {
+    if (selectedFabric && selectedFabric.fabricID === fabric.fabricID) return;
+
     setSelectedFabric(fabric);
     localStorage.setItem("selectedFabricID", fabric.fabricID);
     addToCart({

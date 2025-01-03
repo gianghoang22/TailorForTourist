@@ -58,6 +58,7 @@ const Checkout = () => {
   const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [discountedShippingFee, setDiscountedShippingFee] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeposit, setIsDeposit] = useState(false);
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -346,32 +347,23 @@ const Checkout = () => {
     }
   };
 
-  const handleCreatePayment = async (isDeposit, payAmount) => {
+  const handleCreatePayment = async (orderId, userId, method, paymentDetails, amount) => {
     try {
-        const token = localStorage.getItem('token');
-
-        // Tạo query parameters
-        const queryParams = new URLSearchParams({
-            isDeposit: isDeposit, // Truyền giá trị boolean trực tiếp
-            payAmount: payAmount, // Truyền giá trị số
-        }).toString();
-
-        // Gọi API với query parameters và headers chứa token
-        const response = await axios.post(`https://localhost:7194/Cart/createpayment?${queryParams}`, {}, {
-            headers: { Authorization: `Bearer ${token}` },
+        const response = await axios.post('https://localhost:7194/api/Payments', {
+            orderId: orderId,
+            userId: userId,
+            method: method,
+            paymentDate: new Date().toISOString().split('T')[0],
+            paymentDetails: paymentDetails,
+            status: "Success",
+            amount: amount
         });
 
-        // Check if response.data and paymentId are defined
-        if (response.data && response.data.paymentId) {
-            sessionStorage.setItem('paymentId', response.data.paymentId);
-            console.log('Payment ID saved to sessionStorage:', response.data.paymentId);
+        if (response.status === 201) {
+            console.log('Payment created successfully:', response.data);
         } else {
-            console.error('Payment ID not found in response:', response.data);
-            toast.error('Payment creation failed. Payment ID is missing.');
+            console.error('Payment creation failed:', response.data);
         }
-        
-        // Xử lý phản hồi nếu cần
-        console.log("Payment created successfully:", response.data);
     } catch (error) {
         console.error("Error creating payment:", error.response ? error.response.data : error);
         toast.error('Payment creation failed. Please try again.');
@@ -474,7 +466,7 @@ const Checkout = () => {
             guestName: guestName.trim(),
             guestEmail: guestEmail.trim(),
             guestAddress: guestAddress.trim(),
-            deposit: depositAmount.toString(), // Pass the deposit amount as a string
+            deposit: depositAmount.toString(),
             shippingfee: finalShippingFee.toString(),
             deliverymethod: deliveryMethod,
             storeId: storeId.toString()
@@ -487,19 +479,23 @@ const Checkout = () => {
         const token = localStorage.getItem('token');
         const url = `${CHECKOUT_API.confirmOrder}?${queryParams.toString()}`;
 
-        // Tính toán số tiền thanh toán
-        const payAmount = details.isDeposit ? details.depositAmount : apiCart.cartTotal;
+        // Tính toán giá trị tổng cho đơn hàng
+        const payAmount = apiCart.cartTotal; 
 
-        // Gọi hàm handleCreatePayment với payAmount đã được xác định
-        await handleCreatePayment(details.isDeposit, payAmount);
-
-        // Gọi API confirmOrder sau khi thanh toán đã được xử lý
-        const response = await axios.post(
-            url, requestBody, {
-                headers: { Authorization: `Bearer ${token}` },
+        // Call confirmOrder API
+        const response = await axios.post(url, requestBody, {
+            headers: { Authorization: `Bearer ${token}` },
         });
 
         if (response.status === 200 || response.status === 201) {
+            const orderId = response.data.orderId; // Get orderId from response
+            const userId = localStorage.getItem('userID'); // Get userId from localStorage
+            const method = "Paypal"; // Payment method
+            const paymentDetails = details.isDeposit ? "Make deposit 50%" : "Paid full"; // Payment details
+
+            // Call the new payment API
+            await handleCreatePayment(orderId, userId, method, paymentDetails, payAmount);
+
             setIsPaid(true);
             setPaymentDetails(details);
             toast.success('Order confirmed successfully!');
@@ -772,14 +768,25 @@ const Checkout = () => {
                             ))}
                           </select>
                         </div>
+                        {deliveryMethod !== 'Delivery' && (
+          <label className="deposit-label">
+            <input
+              type="checkbox"
+              checked={isDeposit}
+              onChange={(e) => setIsDeposit(e.target.checked)}
+            />
+            <span>Pay 50% Deposit</span>
+          </label>
+        )}
                         <PayPalCheckoutButton
-                          amount={apiCart.cartTotal}
+                          amount={isDeposit ? apiCart.cartTotal * 0.5 : apiCart.cartTotal}
                           shippingFee={selectedVoucher?.voucherCode.substring(0, 8) === 'FREESHIP' 
                             ? discountedShippingFee 
                             : shippingFee}
                           onSuccess={handlePaymentSuccess}
                           onError={handlePaymentError}
                           selectedVoucher={selectedVoucher}
+                          isDeposit={isDeposit}
                         />
                       </>
                     )}

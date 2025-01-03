@@ -1,0 +1,81 @@
+// Basic styling for the Product Management component
+$primary-color: #4CAF50; // Example primary color
+$header-bg-color: #f2f2f2; // Header background color
+$table-border: 1px solid #ddd; // Table border
+$hover-bg-color: lighten($primary-color, 40%); // Hover background color for rows
+
+.product-management {
+    h1 {
+        text-align: center;
+        color: $primary-color;
+        font-size: 2.5em; // Larger title for emphasis
+        margin-bottom: 30px; // Increased margin for spacing
+    }
+
+    table {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        border-collapse: collapse;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); // Deeper shadow for depth
+
+        thead {
+            background-color: $header-bg-color;
+
+            th {
+                padding: 20px; // Increased padding for headers
+                text-align: left;
+                border: $table-border;
+                font-size: 1.5em; // Larger font size for headers
+                color: #333; // Darker text color
+                text-transform: uppercase; // Uppercase for headers
+            }
+        }
+
+        tbody {
+            tr {
+                &:nth-child(even) {
+                    background-color: #f9f9f9; // Light background for even rows
+                }
+
+                &:hover {
+                    background-color: $hover-bg-color; // Hover effect
+                    transition: background-color 0.3s; // Smooth transition
+                }
+
+                td {
+                    padding: 15px; // Consistent padding for cells
+                    border: $table-border;
+                    font-size: 1.1em; // Slightly larger font size for readability
+                    color: #555; // Softer text color
+                }
+            }
+        }
+    }
+
+    .pagination {
+        text-align: center;
+        margin-top: 30px; // Increased margin for spacing
+
+        button {
+            margin: 0 5px;
+            padding: 12px 20px; // Increased padding for buttons
+            border: none;
+            background-color: $primary-color;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px; // Rounded corners
+            font-size: 1em; // Consistent font size for buttons
+
+            &:hover {
+                background-color: darken($primary-color, 10%); // Darker on hover
+                transition: background-color 0.3s; // Smooth transition
+            }
+
+            &:disabled {
+                background-color: lighten($primary-color, 20%); // Lighter when disabled
+                cursor: not-allowed; // Change cursor for disabled state
+            }
+        }
+    }
+}
