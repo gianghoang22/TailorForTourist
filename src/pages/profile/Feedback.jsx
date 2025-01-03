@@ -46,6 +46,11 @@ const Feedback = () => {
 
   const columns = [
     {
+      title: "Order",
+      dataIndex: "orderId",
+      key: "orderId"
+    },
+    {
       title: "Date",
       dataIndex: "dateSubmitted",
       key: "dateSubmitted",

@@ -50,25 +50,32 @@ body {
   .status {
     padding: 5px 10px;
     border-radius: 5px;
-    color: #b10e0e;
     font-size: 12px;
-  }
 
-  .finish {
-    background-color: #28a745;
-    color: #ffc107;
-  }
+    &.tailoring {
+      background-color: blue; // Màu nền xanh
+      color: white; // Màu chữ trắng
+    }
 
-  .shipping {
-    background-color: #6f42c1;
-  }
+    &.confirming {
+      background-color: pink; // Màu nền hồng
+      color: black; // Màu chữ đen
+    }
 
-  .out-of-delivery {
-    background-color: #dc3545;
-  }
+    &.shipping {
+      background-color: yellow; // Màu nền vàng
+      color: black; // Màu chữ đen
+    }
 
-  .pending {
-    background-color: #ffc107;
+    &.ready {
+      background-color: green; // Màu nền xanh lá
+      color: white; // Màu chữ trắng
+    }
+
+    &.finished {
+      background-color: green; // Màu nền xanh lá
+      color: white; // Màu chữ trắng
+    }
   }
 }
 
@@ -495,5 +502,26 @@ textarea {
 
   &:focus {
     outline: none; // Remove outline on focus
+  }
+}
+
+.feedback-button {
+  margin-top: 8px; // Khoảng cách phía trên
+  background-color: #28a745; // Màu nền xanh lá cây
+  color: white; // Màu chữ trắng
+  border: none; // Không có viền
+  padding: 5px 10px; // Padding cho nút
+  border-radius: 4px; // Bo tròn góc
+  cursor: pointer; // Con trỏ chuột khi di chuột qua
+  font-size: 14px; // Kích thước chữ
+  transition: background-color 0.3s ease; // Hiệu ứng chuyển màu nền khi hover
+  display: block; // Đặt nút thành khối để nằm dưới nút View Details
+
+  &:hover {
+    background-color: #218838; // Màu nền tối hơn khi hover
+  }
+
+  &:focus {
+    outline: none; // Xóa viền khi nút được chọn
   }
 }

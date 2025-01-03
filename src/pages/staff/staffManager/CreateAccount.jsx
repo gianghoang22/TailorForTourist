@@ -12,7 +12,7 @@ const CreateAccount = () => {
     status: 'active',
     isConfirmed: true,
     roleId: 3,
-    phone: ''
+    // phone: ''
   });
 
   const [message, setMessage] = useState('');
@@ -21,7 +21,7 @@ const CreateAccount = () => {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value === '' ? null : e.target.value
     });
   };
 
@@ -41,7 +41,7 @@ const CreateAccount = () => {
         status: 'active',
         isConfirmed: true,
         roleId: 3,
-        phone: ''
+        // phone: ''
       });
 
       console.log(response.data);

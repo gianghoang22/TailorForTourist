@@ -5,6 +5,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import "./MeasureList.scss"; // Import the new styles
 import { toast } from "react-toastify";
+import { TablePagination, Box, Button } from "@mui/material";
 
 const MeasureList = () => {
   const [users, setUsers] = useState([]);
@@ -17,6 +18,8 @@ const MeasureList = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [editingMeasurement, setEditingMeasurement] = useState(null);
   const [searchTerm, setSearchTerm] = useState(""); // Add search state
+  const [currentPage, setCurrentPage] = useState(1); // State for current page
+  const usersPerPage = 7; // Number of users per page
 
   const API_URL = "https://localhost:7194/api/Measurement";
   const USER_API_URL = "https://localhost:7194/api/User";
@@ -320,9 +323,14 @@ const MeasureList = () => {
   });
 
   // Add filtered users logic
-  const filteredUsers = users.filter(user => 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users
+    .filter(user => user.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => b.userId - a.userId); 
+
+  // Calculate the current users to display
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser); // Get users for the current page
 
   // Handle search input change
   const handleSearchChange = (e) => {
@@ -396,7 +404,7 @@ const MeasureList = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user) => {  // Changed from users to filteredUsers
+            {currentUsers.map((user) => {  // Changed from filteredUsers to currentUsers
               const measurement = measurements[user.userId];
               return (
                 <tr key={user.userId}>
@@ -446,6 +454,20 @@ const MeasureList = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        {Array.from({ length: Math.ceil(filteredUsers.length / usersPerPage) }, (_, index) => (
+          <Button
+            key={index}
+            onClick={() => setCurrentPage(index + 1)}
+            variant={currentPage === index + 1 ? 'contained' : 'outlined'}
+            sx={{ mx: 0.5 }}
+          >
+            {index + 1}
+          </Button>
+        ))}
+      </Box>
 
       {/* Measurement Detail Modal */}
       {showDetailModal && selectedMeasurement && (
