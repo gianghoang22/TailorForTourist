@@ -21,7 +21,6 @@ import "./StoreManagement.scss";
 const StoreManagement = () => {
   const [storeData, setStoreData] = useState([]);
   const [newStore, setNewStore] = useState({
-    storeId: 0,
     userId: "",
     name: "",
     address: "",
@@ -118,18 +117,20 @@ const StoreManagement = () => {
 
   const handleAdd = async () => {
     try {
-      // Validate required fields
-      const { name, address, contactNumber, openTime, closeTime } = newStore;
-      if (!name || !address || !contactNumber || !openTime || !closeTime) {
-        setError(
-          "Required fields are missing. Please complete all required fields."
-        );
-        return;
-      }
+      const storeCode = Math.floor(1000000 + Math.random() * 9000000);
 
-      // Convert numeric fields
       const storeToAdd = {
-        ...newStore,
+        storeId: 0,
+        userId: Number(newStore.userId),
+        name: newStore.name,
+        address: newStore.address,
+        contactNumber: newStore.contactNumber,
+        storeCode: storeCode,
+        openTime: `${newStore.openTime}:00`,
+        closeTime: `${newStore.closeTime}:00`,
+        staffIDs: newStore.staffIDs,
+        districtID: Number(newStore.districtID),
+        imgUrl: newStore.imgUrl,
         status: "Active",
       };
 
@@ -137,44 +138,26 @@ const StoreManagement = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("token").replace(/['"]+/g, "")}`,
         },
         body: JSON.stringify(storeToAdd),
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error("Server error response:", errorData);
-        throw new Error(`Failed to add store: ${response.status}`);
+        const text = await response.text();
+        throw new Error(
+          `Server error: ${response.status} - ${text || "No error details provided"}`
+        );
       }
 
-      // Handle the response
-      const contentType = response.headers.get("content-type");
-      let addedStore;
-      if (contentType && contentType.includes("application/json")) {
-        addedStore = await response.json();
-      } else {
-        addedStore = storeToAdd;
-      }
+      // Close the modal first
+      handleClose();
 
-      setStoreData([...storeData, addedStore]);
-      setError(null);
-      setShowSuccessMessage(true);
+      // Show success message
+      setSuccess(true);
 
-      // Reset form
-      setNewStore({
-        storeId: 0,
-        userId: 0,
-        name: "",
-        address: "",
-        contactNumber: "",
-        openTime: "",
-        closeTime: "",
-        staffIDs: "",
-        districtID: 0,
-        imgUrl: "",
-        status: "Active",
-      });
+      // Force reload immediately
+      window.location.href = window.location.href;
     } catch (error) {
       console.error("Error adding new store:", error);
       setError(error.message || "Failed to add store");
@@ -227,7 +210,6 @@ const StoreManagement = () => {
         );
         setStoreData(updatedStores);
         setNewStore({
-          storeId: 0,
           userId: 0,
           name: "",
           address: "",
@@ -264,7 +246,6 @@ const StoreManagement = () => {
       );
       setStoreData(updatedStores);
       setNewStore({
-        storeId: 0,
         userId: 0,
         name: "",
         address: "",
