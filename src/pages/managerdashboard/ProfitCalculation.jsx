@@ -121,7 +121,7 @@ const ProfitCalculation = () => {
         const date = new Date(order.orderDate);
         const month = date.getMonth();
         monthlyRevenue[month] += order.totalPrice || 0;
-        monthlyProfit[month] += (order.totalPrice || 0) * 0.7;
+        monthlyProfit[month] += (order.totalPrice || 0) * 0.3;
       }
     });
 
@@ -167,7 +167,7 @@ const ProfitCalculation = () => {
   };
 
   const totalRevenue = calculateTotals();
-  const totalProfit = totalRevenue * 0.7;
+  const totalProfit = totalRevenue * 0.3;
   const profitMargin =
     totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
