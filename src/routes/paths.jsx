@@ -59,10 +59,13 @@ import Feedback from "../pages/profile/Feedback";
 import VoucherAvailable from "../pages/managerdashboard/VoucherAvailable";
 import TailorRevenue from "../pages/tailor/TailorRevenue.jsx";
 import ProfitCalculation from "../pages/managerdashboard/ProfitCalculation";
+
 export const routes = [
   {
     path: "/",
-    element: <HomePage />,
+    element: (
+      <ProtectedRoute element={<HomePage />} allowedRoles={["customer"]} />
+    ),
   },
   {
     path: "/admin",

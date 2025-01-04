@@ -16,7 +16,11 @@ const ProtectedRoute = ({ element, allowedRoles, allowGuestAccess }) => {
   }
 
   if (isLoggedIn && !isAuthorized) {
-    return <Navigate to="/" />; // Redirect to home or an unauthorized page
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <h1 className="text-4xl font-bold">404 - Page Not Found</h1>
+      </div>
+    );
   }
 
   return element;
