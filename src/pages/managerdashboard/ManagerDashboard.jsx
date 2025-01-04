@@ -181,14 +181,16 @@ const ManagerDashboard = () => {
             return true;
           })();
 
-        // Status filtering
+        // Status filtering - Fix: Handle null/undefined status
         const matchesStatus =
-          statusFilter === "all" || order.status === statusFilter;
+          statusFilter === "all" ||
+          (order?.status && order.status === statusFilter);
 
-        // Process status filtering
+        // Process status filtering - Fix: Handle null/undefined status
         const matchesProcessStatus =
           processStatusFilter === "all" ||
-          processingStatuses[order.orderId] === processStatusFilter;
+          (processingStatuses[order.orderId] &&
+            processingStatuses[order.orderId] === processStatusFilter);
 
         return (
           matchesSearch && matchesDate && matchesStatus && matchesProcessStatus
@@ -679,6 +681,15 @@ const ManagerDashboard = () => {
       </Paper>
     </Box>
   );
+
+  useEffect(() => {
+    console.log("Current filters:", {
+      statusFilter,
+      processStatusFilter,
+      processingStatuses,
+      filteredOrdersLength: filteredOrders.length,
+    });
+  }, [statusFilter, processStatusFilter, processingStatuses, filteredOrders]);
 
   return (
     <motion.div

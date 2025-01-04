@@ -294,7 +294,14 @@ const TailorDashboard = () => {
 
           // Check for overdue dates based on current stage
           let isDue = false;
-          if (status !== "Finish") {
+          // Only check for due status if not in Delivery stage with Finish status
+          if (
+            status !== "Finish" &&
+            !(
+              order.stageName === STAGES.DELIVERY &&
+              order.stageStatus === "Finish"
+            )
+          ) {
             switch (order.stageName) {
               case STAGES.MAKE_SAMPLE:
                 isDue = isDateOverdue(order.dateSample);
