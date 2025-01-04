@@ -11,6 +11,9 @@ import {
   InputAdornment,
   Alert,
   CircularProgress,
+  InputBase,
+  IconButton,
+  Typography,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import "./VoucherAvailable.scss";
@@ -64,8 +67,13 @@ const VoucherAvailable = () => {
 
   return (
     <div className="voucher-available">
-      <h2>Available Vouchers</h2>
-      {error && <Alert severity="error">{error}</Alert>}
+      <div className="page-title">Available Vouchers</div>
+
+      {error && (
+        <Alert severity="error" className="error-alert">
+          {error}
+        </Alert>
+      )}
 
       {isLoading ? (
         <div className="loading-container">
@@ -74,57 +82,57 @@ const VoucherAvailable = () => {
       ) : (
         <>
           <div className="header">
-            <TextField
-              label="Search by Voucher Code"
-              variant="outlined"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="search-field"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            <Paper className="search-container">
+              <IconButton className="search-icon" aria-label="search">
+                <SearchIcon />
+              </IconButton>
+              <InputBase
+                className="search-input"
+                placeholder="Search by voucher code..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                fullWidth
+              />
+            </Paper>
           </div>
 
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Voucher Code</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Discount Number</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Start Date</TableCell>
-                  <TableCell>End Date</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredVouchers.map((v) => (
-                  <TableRow
-                    key={v.voucherId}
-                    className={`voucher-row ${v.status.toLowerCase()}`}
-                  >
-                    <TableCell>{v.voucherCode}</TableCell>
-                    <TableCell>{v.description}</TableCell>
-                    <TableCell>{v.discountNumber}%</TableCell>
-                    <TableCell style={{ color: getStatusColor(v.status) }}>
-                      {v.status}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(v.dateStart).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(v.dateEnd).toLocaleDateString()}
-                    </TableCell>
+          <Paper className="table-wrapper">
+            <TableContainer>
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Voucher Code</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell>Discount Number</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Start Date</TableCell>
+                    <TableCell>End Date</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {filteredVouchers.map((v) => (
+                    <TableRow
+                      key={v.voucherId}
+                      className={`voucher-row ${v.status.toLowerCase()}`}
+                    >
+                      <TableCell>{v.voucherCode}</TableCell>
+                      <TableCell>{v.description}</TableCell>
+                      <TableCell>{v.discountNumber}%</TableCell>
+                      <TableCell style={{ color: getStatusColor(v.status) }}>
+                        {v.status}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(v.dateStart).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(v.dateEnd).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
         </>
       )}
     </div>

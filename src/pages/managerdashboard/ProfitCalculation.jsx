@@ -23,6 +23,7 @@ import {
   PercentIcon,
 } from "lucide-react";
 import "./ProfitCalculation.scss";
+import html2pdf from "html2pdf.js";
 
 ChartJS.register(
   CategoryScale,
@@ -42,6 +43,8 @@ const ProfitCalculation = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     fetchData();
@@ -99,9 +102,22 @@ const ProfitCalculation = () => {
     const monthlyProfit = new Array(12).fill(0);
     const monthlyBookings = new Array(12).fill(0);
 
-    // Process orders
+    const filterByMonthAndYear = (date) => {
+      const orderDate = new Date(date);
+      const orderYear = orderDate.getFullYear();
+
+      if (selectedMonth === "all") {
+        return orderYear === selectedYear;
+      }
+      return (
+        orderYear === selectedYear &&
+        orderDate.getMonth() === parseInt(selectedMonth)
+      );
+    };
+
+    // Process orders with year filter
     orders.forEach((order) => {
-      if (order.status === "Finish") {
+      if (order.status === "Finish" && filterByMonthAndYear(order.orderDate)) {
         const date = new Date(order.orderDate);
         const month = date.getMonth();
         monthlyRevenue[month] += order.totalPrice || 0;
@@ -109,31 +125,24 @@ const ProfitCalculation = () => {
       }
     });
 
-    console.log("Processing bookings:", bookings);
-
-    // Process bookings with explicit logging
+    // Process bookings for current year only
     if (bookings && bookings.length > 0) {
       bookings.forEach((booking) => {
-        try {
-          // Extract month from booking date (format: "YYYY-MM-DD")
-          const month = parseInt(booking.bookingDate.split("-")[1]) - 1; // Convert to 0-based month
-          console.log(
-            `Processing booking for month: ${month + 1}, date: ${booking.bookingDate}`
-          );
+        const bookingYear = booking.bookingDate.split("-")[0];
+        if (
+          parseInt(bookingYear) === selectedYear &&
+          filterByMonthAndYear(booking.bookingDate)
+        ) {
+          const month = parseInt(booking.bookingDate.split("-")[1]) - 1;
           monthlyBookings[month] = (monthlyBookings[month] || 0) + 1;
-        } catch (error) {
-          console.error(`Error processing booking:`, booking, error);
         }
       });
     }
 
-    console.log("Monthly bookings data:", monthlyBookings);
-
-    // Calculate total bookings for current year
-    const currentYear = new Date().getFullYear();
+    // Calculate total bookings for current year only
     const totalBookings = bookings.filter((booking) => {
       const bookingYear = booking.bookingDate.split("-")[0];
-      return parseInt(bookingYear) === currentYear;
+      return parseInt(bookingYear) === selectedYear;
     }).length;
 
     return {
@@ -147,11 +156,18 @@ const ProfitCalculation = () => {
 
   const monthlyData = processMonthlyData();
 
-  // Calculate totals
-  const totalRevenue = orders
-    .filter((order) => order.status === "Finish")
-    .reduce((sum, order) => sum + (order.totalPrice || 0), 0);
-  const totalProfit = totalRevenue * 0.7; //
+  // Calculate totals for selected year
+  const calculateTotals = () => {
+    return orders
+      .filter((order) => {
+        const orderYear = new Date(order.orderDate).getFullYear();
+        return order.status === "Finish" && orderYear === selectedYear;
+      })
+      .reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+  };
+
+  const totalRevenue = calculateTotals();
+  const totalProfit = totalRevenue * 0.7;
   const profitMargin =
     totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
@@ -259,34 +275,105 @@ const ProfitCalculation = () => {
     }
   };
 
+  // Remove hardcoded changes/values from StatCards
+  const statCardsData = {
+    topRow: [
+      {
+        title: "Total Revenue",
+        value: `$${totalRevenue.toFixed(2)}`,
+        subtext: `for ${new Date().getFullYear()}`,
+        icon: <DollarSignIcon />,
+        className: "revenue",
+      },
+      {
+        title: "Average Monthly Revenue",
+        value: `$${(totalRevenue / 12).toFixed(2)}`,
+        subtext: "per month",
+        icon: <DollarSignIcon />,
+        className: "revenue",
+      },
+      {
+        title: "Peak Revenue Month",
+        value:
+          monthlyData.labels[
+            monthlyData.revenue.indexOf(Math.max(...monthlyData.revenue))
+          ],
+        subtext: `$${Math.max(...monthlyData.revenue).toFixed(2)}`,
+        icon: <TrendingUpIcon />,
+        className: "revenue",
+      },
+    ],
+    middleRow: [
+      {
+        title: "Total Profit",
+        value: `$${totalProfit.toFixed(2)}`,
+        subtext: `for ${new Date().getFullYear()}`,
+        icon: <DollarSignIcon />,
+        className: "profit",
+      },
+      {
+        title: "Average Monthly Profit",
+        value: `$${(totalProfit / 12).toFixed(2)}`,
+        subtext: "per month",
+        icon: <DollarSignIcon />,
+        className: "profit",
+      },
+      {
+        title: "Peak Profit Month",
+        value:
+          monthlyData.labels[
+            monthlyData.profit.indexOf(Math.max(...monthlyData.profit))
+          ],
+        subtext: `$${Math.max(...monthlyData.profit).toFixed(2)}`,
+        icon: <TrendingUpIcon />,
+        className: "profit",
+      },
+    ],
+  };
+
+  const generatePDF = () => {
+    const element = document.getElementById("profit-calculation-content");
+    const opt = {
+      margin: 1,
+      filename: "venue-statistics.pdf",
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+    };
+
+    html2pdf().set(opt).from(element).save();
+  };
+
   return (
     <div className="profit-calculation">
-      <h1>Venue and Profit Statistics</h1>
+      <div className="title">Venue and Profit Statistics</div>
 
-      <div className="stat-cards">
-        <StatCard
-          title="Total Revenue"
-          value={`$${totalRevenue.toFixed(2)}`}
-          change="+15%"
-          icon={<DollarSignIcon />}
-          positive
-          className="revenue"
-        />
-        <StatCard
-          title="Total Profit"
-          value={`$${totalProfit.toFixed(2)}`}
-          change="+8%"
-          icon={<TrendingUpIcon />}
-          positive
-          className="profit"
-        />
-        <StatCard
-          title="Profit Margin"
-          value={`${profitMargin.toFixed(1)}%`}
-          change="-2%"
-          icon={<PercentIcon />}
-          className="margin"
-        />
+      <div className="controls">
+        <select
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+          className="year-filter"
+        >
+          <option value={2024}>2024</option>
+          <option value={2025}>2025</option>
+        </select>
+
+        <select
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+          className="month-filter"
+        >
+          <option value="all">All Months</option>
+          {monthlyData.labels.map((month, index) => (
+            <option key={month} value={index}>
+              {month}
+            </option>
+          ))}
+        </select>
+
+        <button onClick={generatePDF} className="print-button">
+          Download PDF
+        </button>
       </div>
 
       <div className="chart-navigation">
@@ -310,63 +397,31 @@ const ProfitCalculation = () => {
         </TabButton>
       </div>
 
-      <div className="chart-container">
-        <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Chart</h2>
-        {loading ? (
-          <p>Loading data...</p>
-        ) : error ? (
-          <p>Error: {error}</p>
-        ) : (
-          <div className="chart-wrapper">{renderActiveChart()}</div>
-        )}
-      </div>
+      <div id="profit-calculation-content">
+        <div className="stat-cards">
+          {statCardsData.topRow.map((card, index) => (
+            <StatCard key={index} {...card} />
+          ))}
+        </div>
 
-      <div className="stat-cards">
-        <StatCard
-          title="Average Event Size"
-          value="150"
-          subtext="guests per event"
-          icon={<UsersIcon />}
-        />
-        <StatCard
-          title="Booking Rate"
-          value="85%"
-          change="+5%"
-          icon={<CalendarIcon />}
-          positive
-        />
-        <StatCard
-          title="Repeat Customers"
-          value="32%"
-          subtext="of total bookings"
-          icon={<RepeatIcon />}
-        />
-      </div>
+        <div className="chart-container">
+          <h2>
+            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Chart
+          </h2>
+          {loading ? (
+            <p>Loading data...</p>
+          ) : error ? (
+            <p>Error: {error}</p>
+          ) : (
+            <div className="chart-wrapper">{renderActiveChart()}</div>
+          )}
+        </div>
 
-      <div className="stat-cards">
-        <StatCard
-          title="Total Bookings"
-          value={monthlyData.totalBookings.toString()}
-          subtext={`for ${new Date().getFullYear()}`}
-          icon={<CalendarIcon />}
-        />
-        <StatCard
-          title="Average Monthly Bookings"
-          value={(monthlyData.totalBookings / 12).toFixed(1)}
-          subtext="per month"
-          icon={<CalendarIcon />}
-          positive
-        />
-        <StatCard
-          title="Peak Booking Month"
-          value={
-            monthlyData.labels[
-              monthlyData.bookings.indexOf(Math.max(...monthlyData.bookings))
-            ]
-          }
-          subtext={`${Math.max(...monthlyData.bookings)} bookings`}
-          icon={<TrendingUpIcon />}
-        />
+        <div className="stat-cards">
+          {statCardsData.middleRow.map((card, index) => (
+            <StatCard key={index} {...card} />
+          ))}
+        </div>
       </div>
     </div>
   );

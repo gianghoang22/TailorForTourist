@@ -11,7 +11,14 @@
     color: #111827;
     margin-bottom: 1.5rem;
   }
-
+  .title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a237e;
+    padding: 16px 0;
+    margin-bottom: 16px;
+    text-align: left;
+  }
   .stat-cards {
     margin-top: 2rem;
     display: grid;
@@ -145,6 +152,35 @@
       position: relative;
       height: 300px;
       width: 100%;
+    }
+  }
+
+  .controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+
+    .year-filter,
+    .month-filter {
+      padding: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      min-width: 150px;
+    }
+
+    .print-button {
+      padding: 0.5rem 1rem;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+
+      &:hover {
+        background-color: #45a049;
+      }
     }
   }
 }
