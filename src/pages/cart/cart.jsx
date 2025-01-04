@@ -449,7 +449,7 @@ const Cart = () => {
             <>
               <p>Your cart is empty.</p>
               <button className="return-home-button">
-                <Link to="/">Return Home</Link>
+                <Link to="/">Continue Shopping</Link>
               </button>
             </>
           )}

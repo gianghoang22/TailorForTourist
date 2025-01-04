@@ -35,6 +35,7 @@ const VoucherManagement = () => {
   const [error, setError] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showDeleteSuccessMessage, setShowDeleteSuccessMessage] = useState(false);
 
   useEffect(() => {
     const fetchVoucherData = async () => {
@@ -303,6 +304,30 @@ const VoucherManagement = () => {
     }
   };
 
+<<<<<<< HEAD
+=======
+  const handleDelete = async (voucherId) => {
+    try {
+      const response = await fetch(
+        `https://localhost:7194/api/Voucher/${voucherId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Error deleting voucher");
+      }
+      setVoucherData(voucherData.filter((v) => v.voucherId !== voucherId));
+      setError(null);
+      setShowDeleteSuccessMessage(true);
+    } catch (error) {
+      console.error("Error deleting voucher:", error);
+      setError(error.message);
+    }
+  };
+
+>>>>>>> bbb2eb3fe54694a6296adf3b7be55f2778cbe548
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
@@ -538,6 +563,29 @@ const VoucherManagement = () => {
               </TableBody>
             </Table>
           </TableContainer>
+<<<<<<< HEAD
+=======
+
+          <Fade in={showSuccessMessage}>
+            <div>
+              {showSuccessMessage && (
+                <Alert severity="success">
+                  Voucher successfully updated/added!
+                </Alert>
+              )}
+            </div>
+          </Fade>
+
+          <Fade in={showDeleteSuccessMessage}>
+            <div>
+              {showDeleteSuccessMessage && (
+                <Alert severity="success">
+                  Voucher successfully deleted!
+                </Alert>
+              )}
+            </div>
+          </Fade>
+>>>>>>> bbb2eb3fe54694a6296adf3b7be55f2778cbe548
         </>
       )}
     </div>

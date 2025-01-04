@@ -144,23 +144,19 @@ const Address = ({ initialAddress, onAddressChange }) => {
     }
 
     const ward = wards.find((w) => w.wardCode === wardCode);
-    console.log("Ward Selection:", {
-        wardCode: wardCode,
-        wardName: ward?.wardName,
-        fullWardData: ward,
-    });
-
     if (ward && selectedDistrict) {
         setSelectedWard(ward);
-        const fullAddress = `${ward.wardName}, ${selectedDistrict.districtName}`;
+        
+        const addressDetail = `${ward.wardName}, ${selectedDistrict.districtName}, ${selectedProvince.provinceName}`;
+        
+        const fullAddress = `${addressDetail}, ${manualAddress}`;
 
         const addressData = {
             fullAddress,
             wardCode: ward.wardCode,
             districtId: selectedDistrict.districtID,
+            addressDetail
         };
-
-        console.log("Final Address Data:", addressData);
 
         onAddressChange(addressData);
     }

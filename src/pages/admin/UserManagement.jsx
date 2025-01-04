@@ -86,9 +86,7 @@ const UserManagement = () => {
         }
 
         const data = await response.json();
-        console.log("Fetched data:", data); // Debug log
-        setUserData(data);
-        setLoading(false);
+        setUserData(data.sort((a, b) => b.userId - a.userId));
       } catch (error) {
         console.error("Error fetching user data:", error);
         setError("Error fetching user data. Please try again later.");

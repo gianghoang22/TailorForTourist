@@ -74,6 +74,49 @@ const ManagerDashboard = () => {
     revenue: 0,
   });
   const [includeFixStage, setIncludeFixStage] = useState(false);
+ 
+  const BASE_URL = "https://localhost:7194/api";  
+
+  const fetchStoreByManagerId = async (userId) => {
+    const response = await fetch(`${BASE_URL}/Store/userId/${userId}`);
+    if (!response.ok) {
+        throw new Error("Failed to fetch store");
+    }
+    return response.json();
+};
+
+const fetchOrdersByStoreId = async (storeId) => {
+  const response = await fetch(`${BASE_URL}/Orders/store/${storeId}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch orders");
+  }
+  return response.json();
+};
+
+const fetchOrders = async () => {
+  try {
+    const userId = localStorage.getItem("userID");
+    console.log("Retrieved userId from localStorage:", userId);
+
+    if (!userId) {
+      throw new Error("User ID not found");
+    }
+    const storeData = await fetchStoreByManagerId(userId);
+    const ordersData = await fetchOrdersByStoreId(storeData.storeId);
+    setOrders(
+      Array.isArray(ordersData) ? ordersData : [ordersData]
+    );
+    setLoading(false);
+  } catch (err) {
+    setError(err.message);
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchOrders();
+}, []);
+
 
   const filteredOrders = useMemo(() => {
     if (!Array.isArray(orders)) return [];
@@ -144,7 +187,8 @@ const ManagerDashboard = () => {
       return (
         matchesSearch && matchesDate && matchesStatus && matchesProcessStatus
       );
-    });
+    })
+    .sort((a, b) => b.orderId - a.orderId);
   }, [
     orders,
     searchTerm,
@@ -335,36 +379,11 @@ const ManagerDashboard = () => {
     }
   };
 
-  const fetchOrders = async () => {
-    const token = localStorage.getItem("token");
-    setLoading(true);
-    try {
-      const response = await fetch("https://localhost:7194/api/Orders", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log("API Response:", data);
-      setOrders(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      setError("Error fetching orders. Please try again later.");
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchTailorPartners = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch("https://localhost:7194/api/TailorPartner", {
+      const response = await fetch("  https://localhost:7194/api/TailorPartner", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -483,11 +502,11 @@ const ManagerDashboard = () => {
     }
   };
 
-  const fetchOrderStatus = async (orderId) => {
+  const fetchOrderStatus = async (id) => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Orders/${orderId}`,
+        `https://localhost:7194/api/Orders/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -660,7 +679,6 @@ const ManagerDashboard = () => {
               alt="Logo"
               style={{ width: "160px", height: "auto" }}
             />
-            <span className="title">M.</span>
           </div>
           <div className="user-info">
             <ul className="menu">
@@ -682,10 +700,10 @@ const ManagerDashboard = () => {
               </li>
               <li>
                 <Link
-                  className={`${location.pathname === "/manager/statistics" ? "active" : ""}`}
-                  to="/manager/statistics"
+                  className={`${location.pathname === "/manager/product" ? "active" : ""}`}
+                  to="/manager/product"
                 >
-                  <i className="fas fa-chart-bar"></i> Statistics
+                  <i className="fas fa-chart-bar"></i> Product
                 </Link>
               </li>
               <li>
@@ -698,10 +716,10 @@ const ManagerDashboard = () => {
               </li>
               <li>
                 <Link
-                  className={`${location.pathname === "/manager/shipment" ? "active" : ""}`}
-                  to="/manager/shipment"
+                  className={`${location.pathname === "/manager/booking" ? "active" : ""}`}
+                  to="/manager/booking"
                 >
-                  <i className="fas fa-shipping-fast"></i> Shipment
+                  <i className="fas fa-shipping-fast"></i> Booking
                 </Link>
                 <Link
                   className="logout-link"

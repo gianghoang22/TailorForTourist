@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMapMarkerAlt, faEnvelope, faUser, faMobileAlt, faPhone } from '@fortawesome/free-solid-svg-icons';
 import './ContactUs.scss';
@@ -18,6 +18,25 @@ const ContactUs = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [responseMessage, setResponseMessage] = useState('');
+  const [stores, setStores] = useState([]);
+
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        const response = await fetch('https://localhost:7194/api/Store');
+        if (response.ok) {
+          const data = await response.json();
+          setStores(data);
+        } else {
+          console.error('Failed to fetch stores');
+        }
+      } catch (error) {
+        console.error('An error occurred while fetching stores:', error);
+      }
+    };
+
+    fetchStores();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -74,43 +93,30 @@ const ContactUs = () => {
             <div className="contact-col">
               <div className="sec-title">
                 <h1 className="tt-txt">
-                  <span className="tt-sub">CONTACT US</span> A Dong Silk
+                  <span className="tt-sub">CONTACT US</span> MATCHA VEST
                 </h1>
               </div>
               <div className="sec-smr">
-                <p><strong>A Dong Silk</strong> is devoted to serving the needs of its current and prospective clients and will respond to any questions, comments, or concerns within 24 hours.</p>
+                <p><strong>Matcha Vest</strong> is devoted to serving the needs of its current and prospective clients and will respond to any questions, comments, or concerns within 24 hours.</p>
               </div>
             </div>
             <div className="contact-col">
               <dl className="conactInfo-dl">
-                <dt><FontAwesomeIcon icon={faMapMarkerAlt} /></dt>
-                <dd>
-                  <p className="lb">Hoi An</p>
-                  <p>40 Le Loi, Hoi An, Vietnam<br />
-                  62 Tran Hung Dao, Hoi An, Vietnam<br />
-                  91 Tran Hung Dao, Hoi An, Vietnam</p>
-                </dd>
-                <dt><FontAwesomeIcon icon={faEnvelope} /></dt>
-                <dd>
-                  <p className="lb">Email</p>
-                  <p><a href="mailto:info@adongsilk.com">info@adongsilk.com</a></p>
-                  <p><a href="mailto:sales@adongsilk.com">sales@adongsilk.com</a></p>
-                </dd>   
-                <dt><FontAwesomeIcon icon={faUser} /></dt>
-                <dd>
-                  <p className="lb">Sale</p>
-                  <p><a href="tel:+84905540898">(+84) 905 540 898 (Phone/Whatsapp)</a></p>
-                </dd>
-                <dt><FontAwesomeIcon icon={faMobileAlt} /></dt>
-                <dd>
-                  <p className="lb">Phone number</p>
-                  <p><a href="tel:+842353910579">(+84) 235 3910 579</a></p>
-                </dd>
-                <dt><FontAwesomeIcon icon={faPhone} /></dt>
-                <dd>
-                  <p className="lb">Hotline</p>
-                  <p><a href="tel:+84913480276">(+84) 913 480 276 (Phone/Whatsapp)</a></p>
-                </dd>
+                {stores.map(store => (
+                  <React.Fragment key={store.storeId}>
+                    <dt><FontAwesomeIcon icon={faMapMarkerAlt} /></dt>
+                    <dd>
+                      <p className="lb">Address</p>
+                      <strong>{store.name}</strong>
+                      <p>{store.address}</p>
+                    </dd>
+                    <dt><FontAwesomeIcon icon={faMobileAlt} /></dt>
+                    <dd>
+                      <p className="lb">Contact Number</p>
+                      <p>{store.contactNumber}</p>
+                    </dd>
+                  </React.Fragment>
+                ))}
               </dl>
             </div>
             <div className="contact-col">
@@ -181,6 +187,7 @@ const ContactUs = () => {
               </form>
             </div>
           </div>
+          
         </div>
       </div>
       <Footer />

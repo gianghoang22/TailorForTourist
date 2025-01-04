@@ -98,6 +98,10 @@ const OrderHistory = () => {
     // Kiểm tra trạng thái feedbackGiven từ localStorage
     const storedFeedbackGiven = JSON.parse(localStorage.getItem("feedbackGiven")) || {};
     setFeedbackGiven(storedFeedbackGiven);
+
+    // Khôi phục trạng thái showFeedbackButton từ localStorage
+    const storedShowFeedbackButton = JSON.parse(localStorage.getItem("showFeedbackButton")) || {};
+    setShowFeedbackButton(storedShowFeedbackButton);
   }, []);
 
   const fetchOrderDetails = (orderId) => {
@@ -202,7 +206,11 @@ const OrderHistory = () => {
   };
 
   const handleConfirmReceived = () => {
-    setShowFeedbackButton((prev) => ({ ...prev, [selectedOrder]: true })); // Hiển thị nút Feedback
+    setShowFeedbackButton((prev) => {
+      const updatedShowFeedbackButton = { ...prev, [selectedOrder]: true };
+      localStorage.setItem("showFeedbackButton", JSON.stringify(updatedShowFeedbackButton)); // Lưu vào localStorage
+      return updatedShowFeedbackButton;
+    });
     setFeedbackGiven((prev) => {
       const updatedFeedbackGiven = { ...prev, [selectedOrder]: true };
       localStorage.setItem("feedbackGiven", JSON.stringify(updatedFeedbackGiven));
