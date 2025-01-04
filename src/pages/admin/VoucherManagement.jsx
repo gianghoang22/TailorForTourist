@@ -15,6 +15,8 @@ import {
   Fade,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
 import "./VoucherManagement.scss";
 
 const VoucherManagement = () => {
@@ -179,6 +181,13 @@ const VoucherManagement = () => {
       const updatedData = await fetchResponse.json();
       setVoucherData(updatedData);
 
+      setShowSuccessMessage(true);
+
+      // Hide success message after 2 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 1000);
+
       // Reset form
       setNewVoucher({
         voucherId: null,
@@ -191,12 +200,6 @@ const VoucherManagement = () => {
       });
 
       setError(null);
-      setShowSuccessMessage(true);
-
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setShowSuccessMessage(false);
-      }, 3000);
     } catch (error) {
       console.error("Error adding new voucher:", error);
       setError(error.message || "Failed to add voucher");
@@ -265,7 +268,14 @@ const VoucherManagement = () => {
           )
         );
 
-        // Reset form
+        setShowSuccessMessage(true);
+
+        // Hide success message after 2 seconds
+        setTimeout(() => {
+          setShowSuccessMessage(false);
+        }, 2000);
+
+        // Reset form and state
         setNewVoucher({
           voucherId: null,
           status: "Pending",
@@ -277,7 +287,6 @@ const VoucherManagement = () => {
         });
         setEditIndex(null);
         setError(null);
-        setShowSuccessMessage(true);
         return;
       }
 
@@ -291,26 +300,6 @@ const VoucherManagement = () => {
     } catch (error) {
       console.error("Error updating voucher:", error);
       setError(error.message || "Failed to update voucher");
-    }
-  };
-
-  const handleDelete = async (voucherId) => {
-    try {
-      const response = await fetch(
-        `https://localhost:7194/api/Voucher/${voucherId}`,
-        {
-          method: "DELETE",
-        }
-      );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error deleting voucher");
-      }
-      setVoucherData(voucherData.filter((v) => v.voucherId !== voucherId));
-      setError(null);
-    } catch (error) {
-      console.error("Error deleting voucher:", error);
-      setError(error.message);
     }
   };
 
@@ -335,10 +324,53 @@ const VoucherManagement = () => {
     }
   };
 
+  const handleCancel = () => {
+    setEditIndex(null);
+    setNewVoucher({
+      voucherId: null,
+      status: "Pending",
+      voucherCode: "",
+      description: "",
+      discountNumber: 0,
+      dateStart: "",
+      dateEnd: "",
+    });
+  };
+
   return (
     <div className="voucher-management">
       <h2>Voucher Management</h2>
       {error && <Alert severity="error">{error}</Alert>}
+      {showSuccessMessage && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(255, 255, 255, 0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            paddingTop: "20px",
+            zIndex: 9999,
+          }}
+        >
+          <Alert
+            severity="success"
+            style={{
+              padding: "1rem 2rem",
+              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+              width: "auto",
+              minWidth: "300px",
+              fontSize: "1.1rem",
+            }}
+          >
+            Voucher successfully updated/added!
+          </Alert>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="loading-container">
@@ -347,7 +379,11 @@ const VoucherManagement = () => {
       ) : (
         <>
           <div className="header">
-            <form className="form" onSubmit={handleAdd}>
+            <form
+              className="form"
+              onSubmit={handleAdd}
+              style={{ marginRight: "20px" }}
+            >
               <TextField
                 label="Voucher Code"
                 name="voucherCode"
@@ -398,16 +434,47 @@ const VoucherManagement = () => {
                 }}
               />
               {editIndex ? (
-                <Button
-                  type="button"
-                  variant="contained"
-                  color="primary"
-                  onClick={handleUpdate}
-                >
-                  Update Voucher
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    variant="contained"
+                    onClick={handleUpdate}
+                    startIcon={<EditIcon />}
+                    sx={{
+                      backgroundColor: "#2196F3",
+                      color: "white",
+                      textTransform: "uppercase",
+                      "&:hover": {
+                        backgroundColor: "#1976d2",
+                      },
+                    }}
+                  >
+                    Update Voucher
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={handleCancel}
+                    sx={{
+                      marginLeft: "1rem",
+                      color: "#D946EF",
+                      borderColor: "#D946EF",
+                      textTransform: "none",
+                      "&:hover": {
+                        borderColor: "#D946EF",
+                        backgroundColor: "rgba(217, 70, 239, 0.04)",
+                      },
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </>
               ) : (
-                <Button type="submit" variant="contained" color="secondary">
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<AddIcon />}
+                >
                   Add Voucher
                 </Button>
               )}
@@ -462,16 +529,8 @@ const VoucherManagement = () => {
                         variant="outlined"
                         color="primary"
                         onClick={() => handleEdit(v)}
-                        style={{ marginRight: "0.5rem" }}
                       >
                         Edit
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="secondary"
-                        onClick={() => handleDelete(v.voucherId)}
-                      >
-                        Delete
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -479,16 +538,6 @@ const VoucherManagement = () => {
               </TableBody>
             </Table>
           </TableContainer>
-
-          <Fade in={showSuccessMessage}>
-            <div>
-              {showSuccessMessage && (
-                <Alert severity="success">
-                  Voucher successfully updated/added!
-                </Alert>
-              )}
-            </div>
-          </Fade>
         </>
       )}
     </div>

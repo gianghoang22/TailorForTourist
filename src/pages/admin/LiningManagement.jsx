@@ -31,7 +31,7 @@ const LiningManagement = () => {
     liningId: null,
     liningName: "",
     imageUrl: "",
-    status: "Active",
+    status: "Available",
   });
   const [editIndex, setEditIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,7 +61,18 @@ const LiningManagement = () => {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        setLiningData(data);
+        console.log("Fetched data:", data); // Debug log
+
+        // Check if data is an array or needs to be extracted from response
+        const liningsArray = Array.isArray(data)
+          ? data
+          : data.data
+            ? data.data
+            : data.linings
+              ? data.linings
+              : [];
+
+        setLiningData(liningsArray);
       } catch (error) {
         console.error("Error fetching lining data:", error);
         setError("Error fetching lining data. Please try again later.");
@@ -79,10 +90,19 @@ const LiningManagement = () => {
 
   const handleAdd = async () => {
     try {
-      const { liningId, ...liningToAdd } = newLining;
-      const token = getAuthToken();
+      if (!newLining.liningName || !newLining.imageUrl) {
+        setError("Lining Name and Image URL are required");
+        return;
+      }
 
-      const response = await fetch("https://localhost:7194/api/Linings", {
+      const token = getAuthToken();
+      const liningToAdd = {
+        liningName: newLining.liningName,
+        imageUrl: newLining.imageUrl,
+        status: "Available",
+      };
+
+      await fetch("https://localhost:7194/api/Linings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -91,16 +111,43 @@ const LiningManagement = () => {
         body: JSON.stringify(liningToAdd),
       });
 
-      if (!response.ok) {
-        const errorResponse = await response.json();
-        console.error("Error response:", errorResponse);
-        throw new Error(errorResponse.message || "Error adding new lining");
-      }
+      // Fetch updated data
+      const fetchResponse = await fetch("https://localhost:7194/api/Linings", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      window.location.reload();
+      if (fetchResponse.ok) {
+        const updatedData = await fetchResponse.json();
+        console.log("Updated data after add:", updatedData); // Debug log
+
+        // Handle the data structure
+        const liningsArray = Array.isArray(updatedData)
+          ? updatedData
+          : updatedData.data
+            ? updatedData.data
+            : updatedData.linings
+              ? updatedData.linings
+              : [];
+
+        setLiningData(liningsArray);
+
+        // Reset form
+        setNewLining({
+          liningId: null,
+          liningName: "",
+          imageUrl: "",
+          status: "Available",
+        });
+
+        setShowSuccessMessage(true);
+        setTimeout(() => setShowSuccessMessage(false), 3000);
+        setError(null);
+      }
     } catch (error) {
-      console.error("Error adding new lining:", error);
-      setError(error.message);
+      console.error("Error in lining operation:", error);
+      setError("Error adding lining. Please try again.");
     }
   };
   const handleEdit = (lining) => {
@@ -112,6 +159,9 @@ const LiningManagement = () => {
     try {
       const token = getAuthToken();
 
+      // Create a copy of the data without the liningId
+      const { liningId, ...updateData } = newLining;
+
       const response = await fetch(
         `https://localhost:7194/api/Linings/${editIndex}`,
         {
@@ -120,18 +170,34 @@ const LiningManagement = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(newLining),
+          body: JSON.stringify(updateData),
         }
       );
-
-      console.log("Response Status:", response.status);
 
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Error updating lining");
       }
 
-      window.location.reload();
+      // Update the local state directly instead of fetching again
+      setLiningData((prevData) =>
+        prevData.map((item) =>
+          item.liningId === editIndex ? { ...item, ...updateData } : item
+        )
+      );
+
+      // Reset form state
+      setEditIndex(null);
+      setNewLining({
+        liningId: null,
+        liningName: "",
+        imageUrl: "",
+        status: "Available",
+      });
+
+      // Show success message
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
     } catch (error) {
       console.error("Error updating lining:", error);
       setError(error.message);
@@ -140,43 +206,44 @@ const LiningManagement = () => {
 
   const handleStatusChange = async (liningId, newStatus) => {
     try {
-      const liningToUpdate = liningData.find((l) => l.liningId === liningId);
-      const updatedLining = { ...liningToUpdate, status: newStatus };
-
       const token = getAuthToken();
       if (!token) {
         throw new Error("No authentication token found");
       }
 
+      console.log("Sending status:", newStatus); // Debug log
+
       const response = await fetch(
-        `https://localhost:7194/api/Linings/${liningId}`,
+        `https://localhost:7194/api/Linings/${liningId}/status`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(updatedLining),
+          body: JSON.stringify(newStatus), // Send just the status string
         }
       );
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
-        throw new Error(
-          `Error updating status: ${response.status} ${errorText}`
-        );
+        const errorData = await response.text();
+        console.error("Update error:", errorData);
+        throw new Error("Failed to update status");
       }
 
+      // Update local state
       setLiningData(
         liningData.map((l) =>
           l.liningId === liningId ? { ...l, status: newStatus } : l
         )
       );
+
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
       setError(null);
     } catch (error) {
       console.error("Error updating status:", error);
-      setError(error.message);
+      setError("Failed to update status");
     }
   };
 
@@ -184,15 +251,32 @@ const LiningManagement = () => {
     setSearchTerm(e.target.value);
   };
 
-  const filteredLinings = liningData.filter((l) =>
-    l.liningName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredLinings = Array.isArray(liningData)
+    ? liningData
+        .sort((a, b) => b.liningId - a.liningId)
+        .filter((l) =>
+          l.liningName.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    : [];
 
   const indexOfLastLining = currentPage * itemsPerPage;
   const indexOfFirstLining = indexOfLastLining - itemsPerPage;
-  const currentLinings = filteredLinings.slice(indexOfFirstLining, indexOfLastLining);
+  const currentLinings = filteredLinings.slice(
+    indexOfFirstLining,
+    indexOfLastLining
+  );
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const handleCancel = () => {
+    setEditIndex(null);
+    setNewLining({
+      liningId: null,
+      liningName: "",
+      imageUrl: "",
+      status: "Available",
+    });
+  };
 
   return (
     <div className="lining-management">
@@ -200,16 +284,37 @@ const LiningManagement = () => {
         Lining Management
       </Typography>
 
-      <Fade in={error != null}>
-        <div>{error && <Alert severity="error">{error}</Alert>}</div>
-      </Fade>
-      <Fade in={showSuccessMessage}>
-        <div>
-          {showSuccessMessage && (
-            <Alert severity="success">Lining successfully updated/added!</Alert>
-          )}
+      {showSuccessMessage && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(255, 255, 255, 0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            paddingTop: "20px",
+            zIndex: 9999,
+          }}
+        >
+          <Alert
+            severity="success"
+            style={{
+              padding: "1rem 2rem",
+              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+              width: "auto",
+              minWidth: "300px",
+              fontSize: "1.1rem",
+            }}
+          >
+            Lining successfully updated/added!
+          </Alert>
         </div>
-      </Fade>
+      )}
+      {error && <Alert severity="error">{error}</Alert>}
 
       {isLoading ? (
         <Box className="loading-container">
@@ -218,31 +323,31 @@ const LiningManagement = () => {
       ) : (
         <>
           <Paper className="header" elevation={0}>
-            <div className="form">
-              <Tooltip title="Enter lining name">
-                <TextField
-                  label="Lining Name"
-                  name="liningName"
-                  value={newLining.liningName}
-                  onChange={handleChange}
-                  variant="outlined"
-                  fullWidth
-                  className="form-group"
-                  required
-                />
-              </Tooltip>
-              <Tooltip title="Enter image URL">
-                <TextField
-                  label="Image URL"
-                  name="imageUrl"
-                  value={newLining.imageUrl}
-                  onChange={handleChange}
-                  variant="outlined"
-                  fullWidth
-                  className="form-group"
-                  required
-                />
-              </Tooltip>
+            <div className="form" style={{ marginRight: "20px" }}>
+              <TextField
+                label="Lining Name"
+                name="liningName"
+                value={newLining.liningName}
+                onChange={handleChange}
+                variant="outlined"
+                size="small"
+                sx={{
+                  marginRight: "1rem",
+                  width: "250px",
+                }}
+              />
+              <TextField
+                label="Image URL"
+                name="imageUrl"
+                value={newLining.imageUrl}
+                onChange={handleChange}
+                variant="outlined"
+                size="small"
+                sx={{
+                  marginRight: "1rem",
+                  width: "250px",
+                }}
+              />
 
               <Box
                 sx={{
@@ -253,15 +358,32 @@ const LiningManagement = () => {
                 }}
               >
                 {editIndex ? (
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleUpdate}
-                    className="action-button"
-                    startIcon={<EditIcon />}
-                  >
-                    Update Lining
-                  </Button>
+                  <>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleUpdate}
+                      className="action-button"
+                      startIcon={<EditIcon />}
+                    >
+                      Update Lining
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      sx={{
+                        color: "#D946EF",
+                        borderColor: "#D946EF",
+                        "&:hover": {
+                          borderColor: "#D946EF",
+                          backgroundColor: "rgba(217, 70, 239, 0.04)",
+                        },
+                      }}
+                      onClick={handleCancel}
+                      className="action-button"
+                    >
+                      Cancel
+                    </Button>
+                  </>
                 ) : (
                   <Button
                     variant="contained"
@@ -282,6 +404,7 @@ const LiningManagement = () => {
               value={searchTerm}
               onChange={handleSearchChange}
               className="search-field"
+              size="small"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -316,33 +439,37 @@ const LiningManagement = () => {
                     <TableCell>
                       <Chip
                         label={l.status}
-                        color={l.status === "Active" ? "success" : "default"}
+                        color={l.status === "Available" ? "success" : "error"}
+                        variant="outlined"
                         size="small"
+                        sx={{
+                          minWidth: "80px",
+                          fontSize: "0.875rem",
+                        }}
                       />
                     </TableCell>
                     <TableCell align="right">
-                      <Tooltip title="Edit lining">
-                        <Button
-                          variant="outlined"
-                          color="primary"
-                          onClick={() => handleEdit(l)}
-                          size="small"
-                          sx={{ mr: 1 }}
-                        >
-                          Edit
-                        </Button>
-                      </Tooltip>
-                      <Select
-                        value={l.status || "Active"}
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleEdit(l)}
+                        style={{ marginRight: "8px" }}
+                      >
+                        Edit
+                      </Button>
+                      <TextField
+                        select
+                        value={l.status}
+                        size="small"
                         onChange={(e) =>
                           handleStatusChange(l.liningId, e.target.value)
                         }
-                        size="small"
-                        sx={{ minWidth: 120 }}
+                        variant="outlined"
+                        style={{ width: "120px" }}
                       >
-                        <MenuItem value="Active">Active</MenuItem>
-                        <MenuItem value="Deactive">Deactive</MenuItem>
-                      </Select>
+                        <MenuItem value="Available">Available</MenuItem>
+                        <MenuItem value="Unavailable">Unavailable</MenuItem>
+                      </TextField>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -351,16 +478,19 @@ const LiningManagement = () => {
           </TableContainer>
 
           <div className="pagination">
-            {Array.from({ length: Math.ceil(filteredLinings.length / itemsPerPage) }, (_, index) => (
-              <Button
-                key={index + 1}
-                onClick={() => paginate(index + 1)}
-                variant={currentPage === index + 1 ? "contained" : "outlined"}
-                style={{ margin: "0 5px" }}
-              >
-                {index + 1}
-              </Button>
-            ))}
+            {Array.from(
+              { length: Math.ceil(filteredLinings.length / itemsPerPage) },
+              (_, index) => (
+                <Button
+                  key={index + 1}
+                  onClick={() => paginate(index + 1)}
+                  variant={currentPage === index + 1 ? "contained" : "outlined"}
+                  style={{ margin: "0 5px" }}
+                >
+                  {index + 1}
+                </Button>
+              )
+            )}
           </div>
         </>
       )}

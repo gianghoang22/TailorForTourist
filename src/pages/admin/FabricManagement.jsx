@@ -14,8 +14,11 @@ import {
   CircularProgress,
   Select,
   MenuItem,
+  Chip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
 import "./FabricManagement.scss";
 
 const FabricManagement = () => {
@@ -35,6 +38,7 @@ const FabricManagement = () => {
   const [error, setError] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const fetchFabricData = async () => {
     try {
@@ -81,7 +85,7 @@ const FabricManagement = () => {
         ...newFabric,
         price: parseFloat(newFabric.price),
         tag: parseInt(newFabric.tag, 10),
-        status: "Active",
+        status: "Available",
       };
 
       console.log("Adding Fabric Data:", JSON.stringify(fabricToAdd));
@@ -113,7 +117,12 @@ const FabricManagement = () => {
 
       setFabricData([...fabricData, addedFabric]);
       setError(null);
+      setSuccessMessage("Fabric successfully added!");
       setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        setSuccessMessage("");
+      }, 3000);
 
       // Reset form after successful addition
       setNewFabric({
@@ -138,7 +147,10 @@ const FabricManagement = () => {
     }
   };
   const handleEdit = (fabric) => {
-    setNewFabric(fabric);
+    setNewFabric({
+      ...fabric,
+      status: fabric.status || "Available",
+    });
     setEditIndex(fabric.fabricID);
   };
 
@@ -166,7 +178,7 @@ const FabricManagement = () => {
         description: newFabric.description,
         imageUrl: newFabric.imageUrl || "",
         tag: parseInt(newFabric.tag, 10),
-        status: "Active",
+        status: newFabric.status || "Available",
       };
 
       console.log("Sending update request:", fabricToUpdate); // Debug log
@@ -207,7 +219,12 @@ const FabricManagement = () => {
       });
       setEditIndex(null);
       setError(null);
+      setSuccessMessage("Fabric successfully updated!");
       setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        setSuccessMessage("");
+      }, 3000);
     } catch (error) {
       console.error("Error updating fabric:", error);
       setError(error.message || "Failed to update fabric");
@@ -240,41 +257,32 @@ const FabricManagement = () => {
     setSearchTerm(e.target.value);
   };
 
-  const filteredFabrics = fabricData.filter((f) =>
-    f.fabricName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredFabrics = fabricData
+    .sort((a, b) => b.fabricID - a.fabricID) // Sort by fabricID in descending order
+    .filter((f) =>
+      f.fabricName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   const handleStatusChange = async (fabricID, newStatus) => {
     try {
       const token = localStorage.getItem("token");
 
-      // Create the update object
-      const updateData = {
-        fabricID: fabricID,
-        fabricName: fabricData.find((f) => f.fabricID === fabricID)?.fabricName,
-        price: fabricData.find((f) => f.fabricID === fabricID)?.price,
-        description: fabricData.find((f) => f.fabricID === fabricID)
-          ?.description,
-        imageUrl: fabricData.find((f) => f.fabricID === fabricID)?.imageUrl,
-        tag: fabricData.find((f) => f.fabricID === fabricID)?.tag,
-        status: newStatus,
-      };
-
-      // Update the endpoint to match your API
       const response = await fetch(
-        `https://localhost:7194/api/Fabrics/${fabricID}`,
+        `https://localhost:7194/api/Fabrics/${fabricID}/status`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
+            Accept: "*/*",
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(updateData),
+          body: `"${newStatus}"`,
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to update status");
+        const errorText = await response.text();
+        throw new Error(`Failed to update status: ${errorText}`);
       }
 
       // Update local state
@@ -284,7 +292,12 @@ const FabricManagement = () => {
         )
       );
       setError(null);
+      setSuccessMessage("Status successfully updated!");
       setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        setSuccessMessage("");
+      }, 3000);
     } catch (error) {
       console.error("Error updating status:", error);
       setError(error.message);
@@ -307,14 +320,60 @@ const FabricManagement = () => {
 
   const indexOfLastFabric = currentPage * itemsPerPage;
   const indexOfFirstFabric = indexOfLastFabric - itemsPerPage;
-  const currentFabrics = fabricData.slice(indexOfFirstFabric, indexOfLastFabric);
+  const currentFabrics = filteredFabrics.slice(
+    indexOfFirstFabric,
+    indexOfLastFabric
+  );
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const handleCancelEdit = () => {
+    setEditIndex(null);
+    setNewFabric({
+      fabricName: "",
+      price: 0,
+      description: "",
+      imageUrl: "",
+      tag: 0,
+    });
+    setError(null);
+  };
 
   return (
     <div className="fabric-management">
       <h2>Fabric Management</h2>
       {error && <Alert severity="error">{error}</Alert>}
+
+      {showSuccessMessage && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(255, 255, 255, 0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            paddingTop: "20px",
+            zIndex: 9999,
+          }}
+        >
+          <Alert
+            severity="success"
+            style={{
+              padding: "1rem 2rem",
+              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+              width: "auto",
+              minWidth: "300px",
+              fontSize: "1.1rem",
+            }}
+          >
+            {successMessage}
+          </Alert>
+        </div>
+      )}
 
       {isLoading ? (
         <div
@@ -324,8 +383,19 @@ const FabricManagement = () => {
         </div>
       ) : (
         <>
-          <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div className="form" style={{ display: 'flex', alignItems: 'center' }}>
+          <div
+            className="header"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "1rem",
+            }}
+          >
+            <div
+              className="form"
+              style={{ display: "flex", alignItems: "center" }}
+            >
               <TextField
                 label="Fabric Name"
                 name="fabricName"
@@ -365,7 +435,11 @@ const FabricManagement = () => {
                   name="tag"
                   select
                   value={newFabric.tag}
-                  onChange={(e) => handleChange({ target: { name: "tag", value: e.target.value } })}
+                  onChange={(e) =>
+                    handleChange({
+                      target: { name: "tag", value: e.target.value },
+                    })
+                  }
                   variant="outlined"
                   style={{ width: "200px" }}
                 >
@@ -375,19 +449,39 @@ const FabricManagement = () => {
                 </TextField>
               </div>
               {editIndex ? (
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  onClick={handleUpdate}
-                  style={{ marginLeft: "1rem" }}
-                >
-                  Update Fabric
-                </Button>
+                <>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleUpdate}
+                    startIcon={<EditIcon />}
+                    style={{ marginLeft: "1rem" }}
+                  >
+                    Update Fabric
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    sx={{
+                      color: "#9c27b0",
+                      borderColor: "#9c27b0",
+                      textTransform: "none",
+                      marginLeft: "1rem",
+                      "&:hover": {
+                        borderColor: "#9c27b0",
+                        backgroundColor: "transparent",
+                      },
+                    }}
+                    onClick={handleCancelEdit}
+                  >
+                    Cancel
+                  </Button>
+                </>
               ) : (
                 <Button
                   variant="contained"
                   color="secondary"
                   onClick={handleAdd}
+                  startIcon={<AddIcon />}
                   style={{ marginLeft: "1rem" }}
                 >
                   Add Fabric
@@ -395,7 +489,7 @@ const FabricManagement = () => {
               )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
               <TextField
                 label="Search by Fabric Name"
                 variant="outlined"
@@ -444,7 +538,18 @@ const FabricManagement = () => {
                       />
                     </TableCell>
                     <TableCell>{getTagName(f.tag)}</TableCell>
-                    <TableCell>{f.status}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={f.status}
+                        color={f.status === "Available" ? "success" : "error"}
+                        variant="outlined"
+                        size="small"
+                        sx={{
+                          minWidth: "80px",
+                          fontSize: "0.875rem",
+                        }}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Button
                         variant="outlined"
@@ -455,15 +560,15 @@ const FabricManagement = () => {
                         Edit
                       </Button>
                       <Select
-                        value={f.status || "Active"}
+                        value={f.status || "Available"}
                         onChange={(e) =>
                           handleStatusChange(f.fabricID, e.target.value)
                         }
                         size="small"
                         style={{ minWidth: "120px" }}
                       >
-                        <MenuItem value="Active">Active</MenuItem>
-                        <MenuItem value="Deactive">Deactive</MenuItem>
+                        <MenuItem value="Available">Available</MenuItem>
+                        <MenuItem value="Unavailable">Unavailable</MenuItem>
                       </Select>
                     </TableCell>
                   </TableRow>
@@ -473,23 +578,20 @@ const FabricManagement = () => {
           </TableContainer>
 
           <div className="pagination">
-            {Array.from({ length: Math.ceil(fabricData.length / itemsPerPage) }, (_, index) => (
-              <Button
-                key={index + 1}
-                onClick={() => paginate(index + 1)}
-                variant={currentPage === index + 1 ? "contained" : "outlined"}
-                style={{ margin: "0 5px" }}
-              >
-                {index + 1}
-              </Button>
-            ))}
+            {Array.from(
+              { length: Math.ceil(filteredFabrics.length / itemsPerPage) },
+              (_, index) => (
+                <Button
+                  key={index + 1}
+                  onClick={() => paginate(index + 1)}
+                  variant={currentPage === index + 1 ? "contained" : "outlined"}
+                  style={{ margin: "0 5px" }}
+                >
+                  {index + 1}
+                </Button>
+              )
+            )}
           </div>
-
-          {showSuccessMessage && (
-            <Alert severity="success" style={{ marginTop: "1rem" }}>
-              Fabric successfully saved!
-            </Alert>
-          )}
         </>
       )}
     </div>

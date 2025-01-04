@@ -14,8 +14,11 @@ import {
   CircularProgress,
   Select,
   MenuItem,
+  Chip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
 import "./StoreManagement.scss";
 
 const StoreManagement = () => {
@@ -41,6 +44,7 @@ const StoreManagement = () => {
   const [staff, setStaff] = useState([]);
   const [provinces, setProvinces] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState([]);
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     const fetchStoreData = async () => {
@@ -108,8 +112,13 @@ const StoreManagement = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "staffIDs") {
-      setSelectedStaff(typeof value === "string" ? value.split(",") : value);
-      setNewStore({ ...newStore, staffIDs: value.join(",") });
+      setSelectedStaff(
+        Array.isArray(value) ? value : value.split(",").map(Number)
+      );
+      setNewStore({
+        ...newStore,
+        staffIDs: Array.isArray(value) ? value.join(",") : value,
+      });
     } else {
       setNewStore({ ...newStore, [name]: value });
     }
@@ -117,62 +126,8 @@ const StoreManagement = () => {
 
   const handleAdd = async () => {
     try {
-      const storeCode = Math.floor(1000000 + Math.random() * 9000000);
-
-      const storeToAdd = {
-        storeId: 0,
-        userId: Number(newStore.userId),
-        name: newStore.name,
-        address: newStore.address,
-        contactNumber: newStore.contactNumber,
-        storeCode: storeCode,
-        openTime: `${newStore.openTime}:00`,
-        closeTime: `${newStore.closeTime}:00`,
-        staffIDs: newStore.staffIDs,
-        districtID: Number(newStore.districtID),
-        imgUrl: newStore.imgUrl,
-        status: "Active",
-      };
-
-      const response = await fetch("https://localhost:7194/api/Store", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token").replace(/['"]+/g, "")}`,
-        },
-        body: JSON.stringify(storeToAdd),
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(
-          `Server error: ${response.status} - ${text || "No error details provided"}`
-        );
-      }
-
-      // Close the modal first
-      handleClose();
-
-      // Show success message
-      setSuccess(true);
-
-      // Force reload immediately
-      window.location.href = window.location.href;
-    } catch (error) {
-      console.error("Error adding new store:", error);
-      setError(error.message || "Failed to add store");
-    }
-  };
-
-  const handleEdit = (store) => {
-    setNewStore(store);
-    setEditIndex(store.storeId);
-  };
-
-  const handleUpdate = async () => {
-    try {
       // Validate required fields
-      if (!newStore.name || !newStore.address || !newStore.contactNumber) {
+      if (!validateFields()) {
         setError("All fields are required. Please complete all fields.");
         return;
       }
@@ -180,9 +135,8 @@ const StoreManagement = () => {
       // Check for unique store name and contact number
       const isDuplicate = storeData.some(
         (store) =>
-          (store.name === newStore.name ||
-            store.contactNumber === newStore.contactNumber) &&
-          store.storeId !== editIndex
+          store.name === newStore.name ||
+          store.contactNumber === newStore.contactNumber
       );
       if (isDuplicate) {
         setError(
@@ -191,75 +145,159 @@ const StoreManagement = () => {
         return;
       }
 
-      const response = await fetch(
-        `https://localhost:7194/api/Store/${editIndex}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(newStore),
-        }
-      );
+      const response = await fetch("https://localhost:7194/api/Store", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          ...newStore,
+          storeId: 0,
+          storeCode: Math.floor(1000000 + Math.random() * 9000000),
+          openTime: `${newStore.openTime}:00`,
+          closeTime: `${newStore.closeTime}:00`,
+        }),
+      });
 
-      // Check if response is 204 No Content
-      if (response.status === 204) {
-        // Update local state directly since we know the update was successful
-        const updatedStores = storeData.map((s) =>
-          s.storeId === editIndex ? { ...s, ...newStore } : s
-        );
-        setStoreData(updatedStores);
+      // Handle response
+      if (response.ok) {
+        const addedStore = await response.json();
+
+        // Update local state
+        setStoreData((prevStores) => [...prevStores, addedStore]);
+
+        // Reset form
         setNewStore({
-          userId: 0,
+          userId: "",
           name: "",
           address: "",
           contactNumber: "",
           openTime: "",
           closeTime: "",
           staffIDs: "",
-          districtID: 0,
+          districtID: "",
+          imgUrl: "",
+          status: "Active",
+        });
+
+        setError(null);
+        setSuccessMessage("Store successfully added!");
+        setShowSuccessMessage(true);
+
+        // Add timeout to reload page after showing success message
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000); // Reload after 2 seconds (matching the success message duration)
+      } else {
+        // If response is not ok, handle error
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to add store");
+      }
+    } catch (error) {
+      console.error("Error adding store:", error);
+      setError(error.message);
+    }
+  };
+
+  const validateFields = () => {
+    return (
+      newStore.userId &&
+      newStore.name &&
+      newStore.address &&
+      newStore.contactNumber &&
+      newStore.openTime &&
+      newStore.closeTime &&
+      newStore.districtID
+    );
+  };
+
+  const handleEdit = (store) => {
+    console.log("Editing store:", store); // Debug log
+    const staffIDsArray = store.staffIDs
+      ? store.staffIDs.split(",").map(Number)
+      : [];
+    setSelectedStaff(staffIDsArray);
+
+    // Preserve the storeId and other existing data
+    setNewStore({
+      ...store,
+      storeId: store.storeId, // Make sure to keep the storeId
+      openTime: store.openTime.substring(0, 5),
+      closeTime: store.closeTime.substring(0, 5),
+      staffIDs: store.staffIDs || "",
+      status: store.status || "Active",
+    });
+    setEditIndex(store.storeId);
+  };
+
+  const handleUpdate = async () => {
+    try {
+      // Validate required fields
+      if (!validateFields()) {
+        setError("All fields are required. Please complete all fields.");
+        return;
+      }
+
+      // Make sure we're using the existing storeId
+      const updateData = {
+        ...newStore,
+        storeId: editIndex, // Ensure storeId is included
+        openTime: `${newStore.openTime}:00`,
+        closeTime: `${newStore.closeTime}:00`,
+        // Preserve existing data that shouldn't change
+        storeCode: storeData.find((s) => s.storeId === editIndex)?.storeCode,
+      };
+
+      console.log("Updating store with data:", updateData); // Debug log
+
+      const response = await fetch(
+        `https://localhost:7194/api/Store/${editIndex}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
+
+      if (response.status === 204 || response.ok) {
+        // Update local state
+        setStoreData((prevStores) =>
+          prevStores.map((store) =>
+            store.storeId === editIndex ? updateData : store
+          )
+        );
+
+        // Reset form and states
+        setNewStore({
+          userId: "",
+          name: "",
+          address: "",
+          contactNumber: "",
+          openTime: "",
+          closeTime: "",
+          staffIDs: "",
+          districtID: "",
           imgUrl: "",
           status: "Active",
         });
         setEditIndex(null);
+        setSelectedStaff([]);
         setError(null);
+        setSuccessMessage("Store successfully updated!");
         setShowSuccessMessage(true);
-        return;
-      }
 
-      // If not 204, try to parse response as JSON
-      if (!response.ok) {
-        let errorMessage = "Error updating store";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch (jsonError) {
-          const errorText = await response.text();
-          errorMessage = errorText || errorMessage;
-        }
-        throw new Error(errorMessage);
+        setTimeout(() => {
+          setShowSuccessMessage(false);
+          setSuccessMessage("");
+        }, 3000);
+      } else {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to update store");
       }
-
-      const updatedStore = await response.json();
-      const updatedStores = storeData.map((s) =>
-        s.storeId === editIndex ? updatedStore : s
-      );
-      setStoreData(updatedStores);
-      setNewStore({
-        userId: 0,
-        name: "",
-        address: "",
-        contactNumber: "",
-        openTime: "",
-        closeTime: "",
-        staffIDs: "",
-        districtID: 0,
-        imgUrl: "",
-        status: "Active",
-      });
-      setEditIndex(null);
-      setError(null);
-      setShowSuccessMessage(true);
     } catch (error) {
       console.error("Error updating store:", error);
       setError(error.message);
@@ -319,10 +357,12 @@ const StoreManagement = () => {
           )
         );
         setError(null);
+        setSuccessMessage("Store status successfully updated!");
         setShowSuccessMessage(true);
 
         setTimeout(() => {
           setShowSuccessMessage(false);
+          setSuccessMessage("");
         }, 3000);
       } else {
         throw new Error(`Error updating store status: ${response.status}`);
@@ -370,12 +410,58 @@ const StoreManagement = () => {
     );
   };
 
+  // Add this function to handle cancel
+  const handleCancelEdit = () => {
+    setEditIndex(null);
+    setNewStore({
+      userId: "",
+      name: "",
+      address: "",
+      contactNumber: "",
+      openTime: "",
+      closeTime: "",
+      staffIDs: "",
+      districtID: "",
+      imgUrl: "",
+      status: "Active",
+    });
+    setSelectedStaff([]);
+    setError(null);
+  };
+
   return (
     <div className="store-management">
       <h2>Store Management</h2>
       {error && <Alert severity="error">{error}</Alert>}
       {showSuccessMessage && (
-        <Alert severity="success">Store successfully updated/added!</Alert>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(255, 255, 255, 0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            paddingTop: "20px",
+            zIndex: 9999,
+          }}
+        >
+          <Alert
+            severity="success"
+            style={{
+              padding: "1rem 2rem",
+              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+              width: "auto",
+              minWidth: "300px",
+              fontSize: "1.1rem",
+            }}
+          >
+            {successMessage}
+          </Alert>
+        </div>
       )}
 
       {isLoading ? (
@@ -537,18 +623,37 @@ const StoreManagement = () => {
                 )}
               </Select>
               {editIndex ? (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleUpdate}
-                >
-                  Update Store
-                </Button>
+                <>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleUpdate}
+                    startIcon={<EditIcon />}
+                  >
+                    Update Store
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    sx={{
+                      color: "#D946EF",
+                      borderColor: "#D946EF",
+                      "&:hover": {
+                        borderColor: "#D946EF",
+                        backgroundColor: "rgba(217, 70, 239, 0.04)",
+                      },
+                    }}
+                    onClick={handleCancelEdit}
+                    style={{ marginLeft: "1rem" }}
+                  >
+                    Cancel
+                  </Button>
+                </>
               ) : (
                 <Button
                   variant="contained"
                   color="secondary"
                   onClick={handleAdd}
+                  startIcon={<AddIcon />}
                 >
                   Add Store
                 </Button>
@@ -635,8 +740,17 @@ const StoreManagement = () => {
                     <TableCell style={{ whiteSpace: "nowrap" }}>
                       {s.closeTime}
                     </TableCell>
-                    <TableCell style={{ whiteSpace: "nowrap" }}>
-                      {s.status}
+                    <TableCell>
+                      <Chip
+                        label={s.status}
+                        color={s.status === "Active" ? "success" : "error"}
+                        variant="outlined"
+                        size="small"
+                        sx={{
+                          minWidth: "80px",
+                          fontSize: "0.875rem",
+                        }}
+                      />
                     </TableCell>
                     <TableCell style={{ whiteSpace: "nowrap" }}>
                       <Button
