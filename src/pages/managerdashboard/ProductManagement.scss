@@ -18,6 +18,8 @@ $hover-bg-color: lighten($primary-color, 40%); // Hover background color for row
         margin: 0 auto;
         border-collapse: collapse;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); // Deeper shadow for depth
+        border-radius: 8px; // Rounded corners for the table
+        overflow: hidden; // Prevent overflow for rounded corners
 
         thead {
             background-color: $header-bg-color;

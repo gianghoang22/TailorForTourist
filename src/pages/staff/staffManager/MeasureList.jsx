@@ -110,6 +110,21 @@ const MeasureList = () => {
     pantsLength: Yup.number()
       .required("Pants length is required")
       .min(50, "Pants length should be at least 50cm"),
+    age: Yup.number()
+      .required("Age is required")
+      .min(0, "Age cannot be negative"),
+    chest: Yup.number()
+      .required("Chest size is required")
+      .min(30, "Chest size should be at least 30cm"),
+    shoulder: Yup.number()
+      .required("Shoulder size is required")
+      .min(20, "Shoulder size should be at least 20cm"),
+    sleeveLength: Yup.number()
+      .required("Sleeve length is required")
+      .min(20, "Sleeve length should be at least 20cm"),
+    jacketLength: Yup.number()
+      .required("Jacket length is required")
+      .min(50, "Jacket length should be at least 50cm"),
   });
 
   const formik = useFormik({
@@ -189,7 +204,7 @@ const MeasureList = () => {
         
         setMeasurements(prevMeasurements => {
           const updatedMeasurements = { ...prevMeasurements };
-          // Tìm và xóa measurement có measurementId tương ứng
+          // Find and delete measurement with corresponding measurementId
           Object.keys(updatedMeasurements).forEach(userId => {
             if (updatedMeasurements[userId].measurementId === measurementId) {
               delete updatedMeasurements[userId];
@@ -219,6 +234,19 @@ const MeasureList = () => {
     setSelectedMeasurement(null);
   };
 
+  // Function to update the measurements state after create/edit/delete
+  const updateMeasurementsState = (measurementData, isEdit = false) => {
+    setMeasurements(prevMeasurements => {
+      const updatedMeasurements = { ...prevMeasurements };
+      if (isEdit) {
+        updatedMeasurements[measurementData.userId] = measurementData; // Update existing measurement
+      } else {
+        updatedMeasurements[measurementData.userId] = measurementData; // Add new measurement
+      }
+      return updatedMeasurements;
+    });
+  };
+
   const createFormik = useFormik({
     initialValues: {
       userId: 0,
@@ -239,24 +267,7 @@ const MeasureList = () => {
       sleeveLength: 0,
       jacketLength: 0
     },
-    validationSchema: Yup.object({
-      weight: Yup.number().required('This field is required'),
-      height: Yup.number().required('This field is required'),
-      neck: Yup.number().required('This field is required'),
-      hip: Yup.number().required('This field is required'),
-      waist: Yup.number().required('This field is required'),
-      armhole: Yup.number().required('This field is required'),
-      biceps: Yup.number().required('This field is required'),
-      pantsWaist: Yup.number().required('This field is required'),
-      crotch: Yup.number().required('This field is required'),
-      thigh: Yup.number().required('This field is required'),
-      pantsLength: Yup.number().required('This field is required'),
-      age: Yup.number().required('This field is required'),
-      chest: Yup.number().required('This field is required'),
-      shoulder: Yup.number().required('This field is required'),
-      sleeveLength: Yup.number().required('This field is required'),
-      jacketLength: Yup.number().required('This field is required')
-    }),
+    validationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
         if (!selectedUserId) {
@@ -285,27 +296,16 @@ const MeasureList = () => {
         };
 
         let response;
-        
+
         if (editingMeasurement) {
           // Update measurement
-          await axios.delete(`${API_URL}/${editingMeasurement.measurementId}`);
-          response = await axios.post(API_URL, measurementData);
-          
-          setMeasurements(prevMeasurements => ({
-            ...prevMeasurements,
-            [selectedUserId]: response.data
-          }));
-          
+          await axios.put(`${API_URL}/${editingMeasurement.measurementId}`, measurementData);
+          updateMeasurementsState(measurementData, true); // Update state
           toast.success('Measurement updated successfully!');
         } else {
           // Create new measurement
           response = await axios.post(API_URL, measurementData);
-          
-          setMeasurements(prevMeasurements => ({
-            ...prevMeasurements,
-            [selectedUserId]: response.data
-          }));
-          
+          updateMeasurementsState(response.data); // Update state
           toast.success('Measurement created successfully!');
         }
 
@@ -382,12 +382,7 @@ const MeasureList = () => {
               onChange={handleSearchChange}
             />
           </div>
-          <button 
-            className="primary-button create-button"
-            onClick={() => setShowCreateModal(true)}
-          >
-            Create New Measurement
-          </button>
+          
         </div>
       </div>
 

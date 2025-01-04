@@ -52,7 +52,7 @@ export const HomePageBody4 = () => {
   return (
     <>
     {/* link-info */}
-    <section className='kpart sec k-sec'>
+    {/* <section className='kpart sec k-sec'>
         <div className="decor-sec">
             <img src="https://adongsilk.com/template/images/review-decor.png" alt="" />
         </div>
@@ -89,7 +89,7 @@ export const HomePageBody4 = () => {
                 </div>
             </div>
         </div>
-    </section>
+    </section> */}
 
     {/* feedback */}
     <section className='fback sec'>

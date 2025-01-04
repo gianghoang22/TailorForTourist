@@ -71,19 +71,13 @@ const CustomLining = () => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        setLinings(data);
-
-        // Auto-select first lining if none selected
-        // const savedLiningId = localStorage.getItem("liningId");
-        // if (savedLiningId) {
-        //   const savedLining = data.find(l => l.liningId === parseInt(savedLiningId));
-        //   if (savedLining) {
-        //     setSelectedLining(savedLining);
-        //   }
-        // } else if (data.length > 0) {
-        //   handleLiningClick(data[0]);
-        // }
+        const result = await response.json();
+        console.log("Dữ liệu trả về:", result);
+        if (Array.isArray(result.data)) {
+          setLinings(result.data);
+        } else {
+          throw new Error("Dữ liệu không hợp lệ: không phải là mảng");
+        }
       } catch (error) {
         setError(error.message);
       } finally {
@@ -94,6 +88,12 @@ const CustomLining = () => {
   }, []);
 
   const handleLiningClick = (lining) => {
+    // Check if the lining is unavailable
+    if (lining.status === "Unavailable") {
+      toast.error("Product is not available!");
+      return;
+    }
+
     // Kiểm tra nếu lining đã được chọn
     if (selectedLining && selectedLining.liningId === lining.liningId) return;
 
@@ -200,7 +200,7 @@ const CustomLining = () => {
 
         <div className="right-items-lining">
           <ul className="list-lining">
-            {linings.map((lining) => (
+            {Array.isArray(linings) && linings.map((lining) => (
               <li
                 key={lining.liningId}
                 className={`lining-item ${selectedLining && selectedLining.liningId === lining.liningId ? "selected" : ""}`}

@@ -102,12 +102,6 @@ export const HomePageBody2 = () => {
                   </p>
                 </div>
                 <div className="kban-btn mt-20">
-                  <a
-                    href="https://adongsilk.com/lists/wedding/"
-                    className="btn primary-btn"
-                  >
-                    View full collection
-                  </a>
                 </div>
               </div>
 

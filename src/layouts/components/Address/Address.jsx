@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./Address.scss";
 
-const Address = ({ initialAddress, onAddressChange }) => {
+const Address = ({ initialAddress, onAddressChange, resetAddress, setResetAddress }) => {
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [selectedWard, setSelectedWard] = useState(null);
@@ -29,6 +29,21 @@ const Address = ({ initialAddress, onAddressChange }) => {
 
     loadInitialData();
   }, [initialAddress]);
+
+  useEffect(() => {
+    // Reset states when resetAddress prop changes
+    if (resetAddress) {
+      setSelectedProvince("");
+      setSelectedDistrict(null);
+      setSelectedWard(null);
+      setWards([]);
+      setDistricts([]);
+      setManualAddress(""); // Reset manual address if needed
+      console.log("Address fields reset");
+      // Đặt lại resetAddress về false
+      setResetAddress(false);
+    }
+  }, [resetAddress]);
 
   const fetchProvinces = async () => {
     try {
@@ -147,15 +162,12 @@ const Address = ({ initialAddress, onAddressChange }) => {
     if (ward && selectedDistrict) {
         setSelectedWard(ward);
         
-        const addressDetail = `${ward.wardName}, ${selectedDistrict.districtName}, ${selectedProvince.provinceName}`;
-        
-        const fullAddress = `${addressDetail}, ${manualAddress}`;
+        const fullAddress = `${manualAddress}`;
 
         const addressData = {
             fullAddress,
             wardCode: ward.wardCode,
             districtId: selectedDistrict.districtID,
-            addressDetail
         };
 
         onAddressChange(addressData);

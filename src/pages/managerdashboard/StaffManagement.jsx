@@ -82,68 +82,68 @@ const StaffManagement = () => {
   const isUniquePhone = (phone) =>
     !staffData.some((staff) => staff.phone === phone);
 
-  const handleAdd = async () => {
-    if (
-      !newStaff.name ||
-      !newStaff.email ||
-      !newStaff.phone ||
-      !newStaff.address
-    ) {
-      setError("All fields are required.");
-      return;
-    }
+  // const handleAdd = async () => {
+  //   if (
+  //     !newStaff.name ||
+  //     !newStaff.email ||
+  //     !newStaff.phone ||
+  //     !newStaff.address
+  //   ) {
+  //     setError("All fields are required.");
+  //     return;
+  //   }
 
-    if (!emailRegex.test(newStaff.email)) {
-      setError("Invalid email format");
-      return;
-    }
-    if (!phoneRegex.test(newStaff.phone)) {
-      setError("Phone number must be 10 digits");
-      return;
-    }
-    if (!isUniqueEmail(newStaff.email)) {
-      setError("Email already exists");
-      return;
-    }
-    if (!isUniquePhone(newStaff.phone)) {
-      setError("Phone number already exists");
-      return;
-    }
+  //   if (!emailRegex.test(newStaff.email)) {
+  //     setError("Invalid email format");
+  //     return;
+  //   }
+  //   if (!phoneRegex.test(newStaff.phone)) {
+  //     setError("Phone number must be 10 digits");
+  //     return;
+  //   }
+  //   if (!isUniqueEmail(newStaff.email)) {
+  //     setError("Email already exists");
+  //     return;
+  //   }
+  //   if (!isUniquePhone(newStaff.phone)) {
+  //     setError("Phone number already exists");
+  //     return;
+  //   }
 
-    const token = localStorage.getItem("token");
-    try {
-      const response = await fetch("https://localhost:7194/api/User", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newStaff),
-      });
+  //   const token = localStorage.getItem("token");
+  //   try {
+  //     const response = await fetch("https://localhost:7194/api/User", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify(newStaff),
+  //     });
 
-      const responseBody = await response.json();
-      console.log("Response Status:", response.status);
-      console.log("Response Body:", responseBody);
+  //     const responseBody = await response.json();
+  //     console.log("Response Status:", response.status);
+  //     console.log("Response Body:", responseBody);
 
-      if (response.ok) {
-        // Successfully added staff, refresh the page
-        window.location.reload();
-      } else if (response.status === 403) {
-        alert("You do not have permission to add staff.");
-        return;
-      } else {
-        throw new Error(responseBody.message || "Error adding new staff");
-      }
-    } catch (error) {
-      console.error("Error adding new staff:", error);
-      setError(error.message);
-    }
-  };
+  //     if (response.ok) {
+  //       // Successfully added staff, refresh the page
+  //       window.location.reload();
+  //     } else if (response.status === 403) {
+  //       alert("You do not have permission to add staff.");
+  //       return;
+  //     } else {
+  //       throw new Error(responseBody.message || "Error adding new staff");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error adding new staff:", error);
+  //     setError(error.message);
+  //   }
+  // };
 
-  const handleEdit = (staff) => {
-    setNewStaff(staff);
-    setEditIndex(staff.userId);
-  };
+  // const handleEdit = (staff) => {
+  //   setNewStaff(staff);
+  //   setEditIndex(staff.userId);
+  // };
 
   const handleCancel = () => {
     setNewStaff({
@@ -161,106 +161,106 @@ const StaffManagement = () => {
     setEditIndex(null);
   };
 
-  const handleUpdate = async () => {
-    if (
-      !newStaff.name ||
-      !newStaff.email ||
-      !newStaff.phone ||
-      !newStaff.address
-    ) {
-      setError("All fields are required.");
-      return;
-    }
+  // const handleUpdate = async () => {
+  //   if (
+  //     !newStaff.name ||
+  //     !newStaff.email ||
+  //     !newStaff.phone ||
+  //     !newStaff.address
+  //   ) {
+  //     setError("All fields are required.");
+  //     return;
+  //   }
 
-    if (!emailRegex.test(newStaff.email)) {
-      setError("Invalid email format");
-      return;
-    }
-    if (!phoneRegex.test(newStaff.phone)) {
-      setError("Phone number must be 10 digits");
-      return;
-    }
-    if (!isUniqueEmail(newStaff.email) && editIndex !== newStaff.userId) {
-      setError("Email already exists");
-      return;
-    }
-    if (!isUniquePhone(newStaff.phone) && editIndex !== newStaff.userId) {
-      setError("Phone number already exists");
-      return;
-    }
+  //   if (!emailRegex.test(newStaff.email)) {
+  //     setError("Invalid email format");
+  //     return;
+  //   }
+  //   if (!phoneRegex.test(newStaff.phone)) {
+  //     setError("Phone number must be 10 digits");
+  //     return;
+  //   }
+  //   if (!isUniqueEmail(newStaff.email) && editIndex !== newStaff.userId) {
+  //     setError("Email already exists");
+  //     return;
+  //   }
+  //   if (!isUniquePhone(newStaff.phone) && editIndex !== newStaff.userId) {
+  //     setError("Phone number already exists");
+  //     return;
+  //   }
 
-    const token = localStorage.getItem("token");
-    try {
-      const response = await fetch(
-        `https://localhost:7194/api/User/${editIndex}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(newStaff),
-        }
-      );
+  //   const token = localStorage.getItem("token");
+  //   try {
+  //     const response = await fetch(
+  //       `https://localhost:7194/api/User/${editIndex}`,
+  //       {
+  //         method: "PUT",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify(newStaff),
+  //       }
+  //     );
 
-      const responseBody = await response.json();
-      console.log("Response Status:", response.status);
-      console.log("Response Body:", responseBody);
+  //     const responseBody = await response.json();
+  //     console.log("Response Status:", response.status);
+  //     console.log("Response Body:", responseBody);
 
-      if (response.ok) {
-        const updatedStaff = staffData.map((s) =>
-          s.userId === editIndex ? { ...s, ...newStaff } : s
-        );
-        setStaffData(updatedStaff);
-        setNewStaff({
-          name: "",
-          email: "",
-          password: "123456",
-          roleId: 2,
-          status: "Active",
-        });
-        setEditIndex(null);
-        setError(null);
-      } else if (response.status === 403) {
-        alert("You do not have permission to update staff.");
-        return;
-      } else {
-        throw new Error(responseBody.message || "Error updating staff");
-      }
-    } catch (error) {
-      console.error("Error updating staff:", error);
-      setError(error.message);
-    }
-  };
+  //     if (response.ok) {
+  //       const updatedStaff = staffData.map((s) =>
+  //         s.userId === editIndex ? { ...s, ...newStaff } : s
+  //       );
+  //       setStaffData(updatedStaff);
+  //       setNewStaff({
+  //         name: "",
+  //         email: "",
+  //         password: "123456",
+  //         roleId: 2,
+  //         status: "Active",
+  //       });
+  //       setEditIndex(null);
+  //       setError(null);
+  //     } else if (response.status === 403) {
+  //       alert("You do not have permission to update staff.");
+  //       return;
+  //     } else {
+  //       throw new Error(responseBody.message || "Error updating staff");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error updating staff:", error);
+  //     setError(error.message);
+  //   }
+  // };
 
-  const handleDelete = async (userId) => {
-    const token = localStorage.getItem("token");
-    try {
-      const response = await fetch(
-        `https://localhost:7194/api/User/${userId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+  // const handleDelete = async (userId) => {
+  //   const token = localStorage.getItem("token");
+  //   try {
+  //     const response = await fetch(
+  //       `https://localhost:7194/api/User/${userId}`,
+  //       {
+  //         method: "DELETE",
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
 
-      if (response.ok) {
-        setStaffData(staffData.filter((s) => s.userId !== userId));
-        setError(null);
-      } else if (response.status === 403) {
-        alert("You do not have permission to delete staff.");
-        return;
-      } else {
-        const responseBody = await response.json();
-        throw new Error(responseBody.message || "Error deleting staff");
-      }
-    } catch (error) {
-      console.error("Error deleting staff:", error);
-      setError(error.message);
-    }
-  };
+  //     if (response.ok) {
+  //       setStaffData(staffData.filter((s) => s.userId !== userId));
+  //       setError(null);
+  //     } else if (response.status === 403) {
+  //       alert("You do not have permission to delete staff.");
+  //       return;
+  //     } else {
+  //       const responseBody = await response.json();
+  //       throw new Error(responseBody.message || "Error deleting staff");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting staff:", error);
+  //     setError(error.message);
+  //   }
+  // };
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -275,7 +275,7 @@ const StaffManagement = () => {
       <h2>Staff Management</h2>
       {error && <Alert severity="error">{error}</Alert>}
       <div className="header">
-        <div className="form">
+        {/* <div className="form">
           <TextField
             label="Name"
             name="name"
@@ -325,7 +325,7 @@ const StaffManagement = () => {
               Cancel
             </Button>
           )}
-        </div>
+        </div> */}
 
         <TextField
           label="Search by Name"
@@ -350,7 +350,6 @@ const StaffManagement = () => {
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -358,23 +357,8 @@ const StaffManagement = () => {
               <TableRow key={s.userId}>
                 <TableCell>{s.name}</TableCell>
                 <TableCell>{s.email}</TableCell>
-                <TableCell>{s.status}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={() => handleEdit(s)}
-                    style={{ marginRight: "0.5rem" }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={() => handleDelete(s.userId)}
-                  >
-                    Delete
-                  </Button>
+                <TableCell className={s.status === "Active" ? "status-active" : "status-inactive"}>
+                  {s.status}
                 </TableCell>
               </TableRow>
             ))}

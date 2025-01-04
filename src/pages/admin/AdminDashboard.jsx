@@ -38,9 +38,13 @@ const AdminDashboard = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
+  // Add new state for total revenue
+  const [totalRevenue, setTotalRevenue] = useState(0);
+
   useEffect(() => {
     fetchDashboardStats();
     fetchTransactions(); // Add this new fetch call
+    fetchOrdersAndCalculateTotal(); // Fetch orders on component mount
   }, []);
 
   const fetchDashboardStats = async () => {
@@ -132,7 +136,7 @@ const AdminDashboard = () => {
         totalFabrics: Array.isArray(fabricsData) ? fabricsData.length : 0,
         totalStores: Array.isArray(storesData) ? storesData.length : 0,
         activeVouchers: Array.isArray(vouchersData)
-          ? vouchersData.filter((v) => v.status === "Active").length
+          ? vouchersData.filter((v) => v.status === "Active" || v.status === "OnGoing").length
           : 0,
       });
     } catch (error) {
@@ -250,7 +254,9 @@ const AdminDashboard = () => {
       }
 
       const data = await response.json();
-      setTransactions(data);
+      // Sort transactions by paymentId in descending order
+      const sortedData = data.sort((a, b) => b.paymentId - a.paymentId);
+      setTransactions(sortedData);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     }
@@ -396,6 +402,40 @@ const AdminDashboard = () => {
     </Box>
   );
 
+  // Add new function to fetch orders and calculate total price
+  const fetchOrdersAndCalculateTotal = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("No authentication token found");
+      return;
+    }
+
+    try {
+      const response = await fetch("https://localhost:7194/api/Orders", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Orders API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      // Filter orders with status "Finish" and calculate total price
+      const finishedOrders = data.filter(order => order.status === "Finish");
+      const total = finishedOrders.reduce((acc, order) => acc + order.totalPrice, 0);
+      
+      setTotalRevenue(total); // Update the total revenue state
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    }
+  };
+
   return (
     <div className="admin-dashboard">
       <div className="flex">
@@ -407,7 +447,6 @@ const AdminDashboard = () => {
               alt="Logo"
               style={{ width: "160px", height: "auto" }}
             />
-            <span className="title">A.</span>
           </div>
           <div className="user-info">
             <div className="user-avatar">
@@ -464,6 +503,14 @@ const AdminDashboard = () => {
                   to="/admin/voucher-management"
                 >
                   <i className="fas fa-truck"></i> Voucher
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className={`${location.pathname === "/admin/shipper" ? "active" : ""}`}
+                  to="/admin/shipper-management"
+                >
+                  <i className="fas fa-truck"></i> Shipper Partner
                 </Link>
               </li>
 
@@ -571,90 +618,97 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Main Content Area */}
-              <Box sx={{ display: "flex", gap: 3, p: 3 }}>
+              {/* Total Revenue Section */}
+              <div className="total-revenue">
+                <h2>Total Revenue: ${totalRevenue.toFixed(2)}</h2>
+                <p>This is the total revenue generated from all finished orders.</p>
+              </div>
+
+              {/* Recent Transactions Section */}
+              <div className="recent-transactions">
                 {renderTransactionsSection()}
-                {/* System Information Panel */}
-                <Box sx={{ flex: "1 1 30%" }}>
-                  <Paper
-                    sx={{
-                      p: 3,
-                      height: "100%",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                      borderRadius: "12px",
-                      background: "white",
-                    }}
+              </div>
+
+              {/* System Information Panel */}
+              <Box sx={{ flex: "1 1 30%" }}>
+                <Paper
+                  sx={{
+                    p: 3,
+                    height: "100%",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    borderRadius: "12px",
+                    background: "white",
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
                   >
-                    <Typography
-                      variant="h6"
-                      gutterBottom
-                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    <i className="fas fa-info-circle"></i> System Information
+                  </Typography>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                  >
+                    <Paper
+                      sx={{
+                        p: 2,
+                        background: "#f8f9fa",
+                        borderRadius: "8px",
+                      }}
                     >
-                      <i className="fas fa-info-circle"></i> System Information
-                    </Typography>
-                    <Box
-                      sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                      <Typography variant="subtitle2" color="textSecondary">
+                        <i className="fas fa-clock"></i> Last Updated
+                      </Typography>
+                      <Typography variant="body1">
+                        {new Date().toLocaleString()}
+                      </Typography>
+                    </Paper>
+
+                    <Paper
+                      sx={{
+                        p: 2,
+                        background: "#f8f9fa",
+                        borderRadius: "8px",
+                      }}
                     >
-                      <Paper
-                        sx={{
-                          p: 2,
-                          background: "#f8f9fa",
-                          borderRadius: "8px",
-                        }}
-                      >
-                        <Typography variant="subtitle2" color="textSecondary">
-                          <i className="fas fa-clock"></i> Last Updated
-                        </Typography>
-                        <Typography variant="body1">
-                          {new Date().toLocaleString()}
-                        </Typography>
-                      </Paper>
+                      <Typography variant="subtitle2" color="textSecondary">
+                        <i className="fas fa-server"></i> System Status
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: "#4caf50" }}>
+                        Operational
+                      </Typography>
+                    </Paper>
 
-                      <Paper
-                        sx={{
-                          p: 2,
-                          background: "#f8f9fa",
-                          borderRadius: "8px",
-                        }}
-                      >
-                        <Typography variant="subtitle2" color="textSecondary">
-                          <i className="fas fa-server"></i> System Status
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: "#4caf50" }}>
-                          Operational
-                        </Typography>
-                      </Paper>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        background: "#f8f9fa",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <Typography variant="subtitle2" color="textSecondary">
+                        <i className="fas fa-database"></i> Database Status
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: "#4caf50" }}>
+                        Connected
+                      </Typography>
+                    </Paper>
 
-                      <Paper
-                        sx={{
-                          p: 2,
-                          background: "#f8f9fa",
-                          borderRadius: "8px",
-                        }}
-                      >
-                        <Typography variant="subtitle2" color="textSecondary">
-                          <i className="fas fa-database"></i> Database Status
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: "#4caf50" }}>
-                          Connected
-                        </Typography>
-                      </Paper>
-
-                      <Paper
-                        sx={{
-                          p: 2,
-                          background: "#f8f9fa",
-                          borderRadius: "8px",
-                        }}
-                      >
-                        <Typography variant="subtitle2" color="textSecondary">
-                          <i className="fas fa-code-branch"></i> Version
-                        </Typography>
-                        <Typography variant="body1">v1.0.0</Typography>
-                      </Paper>
-                    </Box>
-                  </Paper>
-                </Box>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        background: "#f8f9fa",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <Typography variant="subtitle2" color="textSecondary">
+                        <i className="fas fa-code-branch"></i> Version
+                      </Typography>
+                      <Typography variant="body1">v1.0.0</Typography>
+                    </Paper>
+                  </Box>
+                </Paper>
               </Box>
             </>
           )}

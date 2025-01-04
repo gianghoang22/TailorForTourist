@@ -77,6 +77,12 @@ const CustomFabric = () => {
   const handleFabricClick = (fabric) => {
     if (selectedFabric && selectedFabric.fabricID === fabric.fabricID) return;
 
+    // Check if the fabric is unavailable
+    if (fabric.status === "Unavailable") {
+      toast.error("Product is not available!");
+      return;
+    }
+
     setSelectedFabric(fabric);
     localStorage.setItem("selectedFabricID", fabric.fabricID);
     addToCart({

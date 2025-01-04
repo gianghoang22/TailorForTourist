@@ -57,7 +57,7 @@ export function HomePageBody() {
         {/* Clients Area */}
         <div id="sec-thumb" className="sec-thumb sec-featbn">
           <section className="bn-feat-item">
-            <a href="#" className="img">
+            <a className="img">
               <img
                 width="640"
                 height="400"
@@ -74,15 +74,15 @@ export function HomePageBody() {
             </a>
             <div className="info left-txt">
               <p className="sub-name">
-                <a href="#">BE OUTSTANDING AT THE WEDDING</a>
+                <a >BE OUTSTANDING AT THE WEDDING</a>
               </p>
               <h4 className="feat-name">
-                <a href="#">Wedding suits I wedding dress</a>
+                <a >Wedding suits I wedding dress</a>
               </h4>
             </div>
           </section>
           <section className="bn-feat-item">
-            <a href="https://adongsilk.com/custom-suits/" className="img">
+            <a className="img">
               <img
                 width="640"
                 height="400"
@@ -99,17 +99,17 @@ export function HomePageBody() {
             </a>
             <div className="info center-txt">
               <p className="sub-name">
-                <a href="https://adongsilk.com/custom-suits/">
+                <a>
                   DESIGN YOUR NEW FAVORITE SUITS
                 </a>
               </p>
               <h4 className="feat-name">
-                <a href="https://adongsilk.com/custom-suits/">CUSTOM SUITS</a>
+                <a>CUSTOM SUITS</a>
               </h4>
             </div>
           </section>
           <section className="bn-feat-item">
-            <a href="https://adongsilk.com/custom-your-shirt/" className="img">
+            <a className="img">
               <img
                 width="640"
                 height="400"
@@ -126,12 +126,12 @@ export function HomePageBody() {
             </a>
             <div className="info right-txt">
               <p className="sub-name">
-                <a href="https://adongsilk.com/custom-your-shirt/">
+                <a>
                   MADE TO MEASURE AND DESIGNED BY YOU
                 </a>
               </p>
               <h4 className="feat-name">
-                <a href="https://adongsilk.com/custom-your-shirt/">
+                <a>
                   CUSTOM SHIRTS
                 </a>
               </h4>

@@ -347,16 +347,7 @@ const BookingList = () => {
       </Paper>
 
       {/* Add Chart Section */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Booking Trends
-        </Typography>
-        {loading ? (
-          <div>Loading...</div>
-        ) : (
-          <BookingChart data={processBookingData(bookings)} />
-        )}
-      </Paper>
+      
 
       <TableContainer component={Paper}>
         <Table>

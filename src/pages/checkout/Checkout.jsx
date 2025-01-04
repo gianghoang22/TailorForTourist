@@ -42,7 +42,7 @@ const Checkout = () => {
   const [guestAddress, setGuestAddress] = useState('');
   const [deliveryMethod, setDeliveryMethod] = useState('Pick up');
   const [isPaid, setIsPaid] = useState(false);
-  const [storeId, setStoreId] = useState(1);
+  const [storeId, setStoreId] = useState();
   const navigate = useNavigate();
   const [customDetails, setCustomDetails] = useState({});
   const [stores, setStores] = useState([]);
@@ -59,6 +59,8 @@ const Checkout = () => {
   const [discountedShippingFee, setDiscountedShippingFee] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeposit, setIsDeposit] = useState(false);
+  const [guestPhone, setGuestPhone] = useState('');
+  const [resetAddress, setResetAddress] = useState(false);
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -203,25 +205,26 @@ const Checkout = () => {
     fetchUserData();
   }, []);
 
-  useEffect(() => {
-    console.log('Address Change Detected:', {
-      'Phương thức giao hàng': deliveryMethod,
-      'Địa chỉ': guestAddress,
-      'Cửa hàng gần nhất': nearestStore,
-      'wardCode': document.querySelector('input[name="wardCode"]')?.value,
-      'districtId': document.querySelector('input[name="districtId"]')?.value
-    });
+  // useEffect(() => {
+  //   console.log('Address Change Detected:', {
+  //     'Phương thức giao hàng': deliveryMethod,
+  //     'Địa chỉ': guestAddress,
+  //     'Cửa hàng gần nhất': nearestStore,
+  //     'wardCode': document.querySelector('input[name="wardCode"]')?.value,
+  //     'districtId': document.querySelector('input[name="districtId"]')?.value
+  //   });
 
-    if (deliveryMethod === 'Delivery' && guestAddress && nearestStore) {
-      const addressData = {
-        wardCode: document.querySelector('input[name="wardCode"]')?.value,
-        districtId: document.querySelector('input[name="districtId"]')?.value,
-      };
-      if (addressData.wardCode && addressData.districtId) {
-        calculateShippingFee(addressData);
-      }
-    }
-  }, [deliveryMethod, guestAddress, nearestStore]);
+  //   if (deliveryMethod === 'Delivery' && guestAddress && nearestStore) {
+  //     const addressData = {
+  //       wardCode: document.querySelector('input[name="wardCode"]')?.value,
+  //       districtId: document.querySelector('input[name="districtId"]')?.value,
+  //     };
+  //     console.log(addressData);
+  //     if (addressData.wardCode && addressData.districtId) {
+  //       calculateShippingFee(addressData);
+  //     }
+  //   }
+  // }, [deliveryMethod, guestAddress, nearestStore]);
 
   useEffect(() => {
     const fetchVouchers = async () => {
@@ -253,7 +256,7 @@ const Checkout = () => {
         districtId: addressData?.districtId,
         nearestStore: nearestStore
       });
-      setShippingFee(0);
+      setShippingFee(2);
       return;
     }
 
@@ -288,6 +291,7 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error('Lỗi tính phí vận chuyển:', error);
+      setShippingFee(2);
     }
   };
 
@@ -314,12 +318,10 @@ const Checkout = () => {
 
   const handleStoreSelect = (store) => {
     setNearestStore(store);
-    if (guestAddress) {
-      calculateShippingFee({
-        wardCode: document.querySelector('input[name="wardCode"]')?.value,
-        districtId: document.querySelector('input[name="districtId"]')?.value,
-      });
-    }
+    setStoreId(store.storeId);
+    setGuestAddress('');
+    setResetAddress(true);
+    console.log("Updated storeId:", store.storeId);
   };
 
   const handleVoucherSelect = async (voucher) => {
@@ -375,8 +377,8 @@ const Checkout = () => {
     try {
         setIsLoading(true);
         
-        // Use the depositAmount from the details
-        const depositAmount = details.depositAmount; // Get the deposit amount
+        // Tính toán depositAmount bao gồm shippingFee
+        const depositAmount = isDeposit ? (apiCart.cartTotal * 0.5 ) : (apiCart.cartTotal + shippingFee);
 
         // Validation checks
         const errors = [];
@@ -392,6 +394,12 @@ const Checkout = () => {
             errors.push('Please enter a valid email address');
         }
 
+        if (!guestPhone.trim()) {
+            errors.push('Please enter your phone number');
+        } else if (!/^\d{10}$/.test(guestPhone)) {
+            errors.push('Please enter a valid phone number (10 digits)');
+        }
+
         if (deliveryMethod === 'Pick up') {
             if (!storeId) {
                 errors.push('Please select a store for pick up');
@@ -403,11 +411,11 @@ const Checkout = () => {
             if (!nearestStore) {
                 errors.push('Please select the nearest store');
             }
-            const wardCode = document.querySelector('input[name="wardCode"]')?.value;
-            const districtId = document.querySelector('input[name="districtId"]')?.value;
-            if (!wardCode || !districtId) {
-                errors.push('Please select a valid delivery address with ward and district');
-            }
+            // const wardCode = document.querySelector('input[name="wardCode"]')?.value;
+            // const districtId = document.querySelector('input[name="districtId"]')?.value;
+            // if (!wardCode || !districtId) {
+            //     errors.push('Please select a valid delivery address with ward and district');
+            // }
         }
 
         if (!apiCart?.cartItems?.length) {
@@ -469,7 +477,7 @@ const Checkout = () => {
             deposit: depositAmount.toString(),
             shippingfee: finalShippingFee.toString(),
             deliverymethod: deliveryMethod,
-            storeId: storeId.toString()
+            storeId: storeId
         });
 
         if (selectedVoucher && selectedVoucher.voucherId) {
@@ -480,7 +488,7 @@ const Checkout = () => {
         const url = `${CHECKOUT_API.confirmOrder}?${queryParams.toString()}`;
 
         // Tính toán giá trị tổng cho đơn hàng
-        const payAmount = apiCart.cartTotal; 
+        const payAmount = isDeposit ? (apiCart.cartTotal * 0.5 + shippingFee) : (apiCart.cartTotal + shippingFee); // Tính toán payAmount bao gồm shippingFee
 
         // Call confirmOrder API
         const response = await axios.post(url, requestBody, {
@@ -491,7 +499,7 @@ const Checkout = () => {
             const orderId = response.data.orderId; // Get orderId from response
             const userId = localStorage.getItem('userID'); // Get userId from localStorage
             const method = "Paypal"; // Payment method
-            const paymentDetails = details.isDeposit ? "Make deposit 50%" : "Paid full"; // Payment details
+            const paymentDetails = isDeposit ? "Make deposit 50%" : "Paid full"; // Update payment details
 
             // Call the new payment API
             await handleCreatePayment(orderId, userId, method, paymentDetails, payAmount);
@@ -592,6 +600,19 @@ const Checkout = () => {
 
                     <div className="form-group">
                       <label>
+                        Phone Number <span className="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Enter your phone number"
+                        value={guestPhone}
+                        onChange={(e) => setGuestPhone(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>
                         Delivery Method <span className="required">*</span>
                       </label>
                       <select
@@ -660,6 +681,8 @@ const Checkout = () => {
                           <Address 
                             initialAddress={userData?.address} 
                             onAddressChange={handleAddressChange}
+                            resetAddress={resetAddress}
+                            setResetAddress={setResetAddress}
                           />
                         </div>
                       </>

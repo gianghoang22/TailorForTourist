@@ -18,19 +18,19 @@ export const Footer = () => {
                     <div className="menu-ft1-container">
                         <ul id='menu-ft1' className='menu'>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="#">Term of use</a>
+                                <a href="">Term of use</a>
                             </li>
                             <li id='menu-item-58' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="#">Privacy policy</a>
+                                <a href="">Privacy policy</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="#">Shipping policy</a>
+                                <a href="">Shipping policy</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="#">Payment policy</a>
+                                <a href="">Payment policy</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="#">Warranty policy</a>
+                                <a href="">Warranty policy</a>
                             </li>
                         </ul>
                     </div>
@@ -42,16 +42,16 @@ export const Footer = () => {
                     <div className="menu-ft2-container">
                         <ul id='menu-ft2' className='menu'>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="#">FAQS</a>
+                                <a href="">FAQS</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="#">RESELLER</a>
+                                <a href="">RESELLER</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="#">How to order</a>
+                                <a href="">How to order</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="#">How to measure</a>
+                                <a href="">How to measure</a>
                             </li>
                         </ul>
                     </div>
@@ -62,14 +62,12 @@ export const Footer = () => {
                     <h3 className='ft-tt'>EXPERIENCES</h3>
                     <div className="menu-ft3-container">
                         <ul id='menu-ft3' className='menu'>
+                            
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="#">blog</a>
+                                <a href="">tip for custom tailor</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="#">tip for custom tailor</a>
-                            </li>
-                            <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="#">Customer Review</a>
+                                <a href="">Customer Review</a>
                             </li>
                         </ul>
                     </div>

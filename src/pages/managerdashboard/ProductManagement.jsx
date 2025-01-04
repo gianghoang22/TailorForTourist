@@ -90,8 +90,6 @@ const ProductManagement = () => {
                         <th>Product Code</th>
                         <th>Price</th>
                         <th>Quantity</th>
-                        <th>Image</th>
-                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -101,8 +99,6 @@ const ProductManagement = () => {
                             <td>{product.productCode}</td>
                             <td>{product.price}</td>
                             <td>{product.quantity}</td>
-                            <td><img src={product.imgURL} alt={product.productCode} /></td>
-                            <td>{product.status}</td>
                         </tr>
                     ))}
                 </tbody>

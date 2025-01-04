@@ -284,6 +284,27 @@
       }
     }
   }
+
+  .total-revenue {
+    padding: 24px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%); // Light blue gradient
+    margin-top: 20px; // Space above the total revenue section
+
+    h2 {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin: 10px 0;
+      color: #1a237e; // Dark blue color for the text
+    }
+
+    p {
+      font-size: 1rem;
+      color: #666; // Gray color for the label
+    }
+  }
 }
 
 .quick-link {

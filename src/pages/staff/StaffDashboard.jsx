@@ -261,7 +261,7 @@ const StaffDashboard = () => {
     <div className={`staff-dashboard ${darkMode ? "dark-mode" : ""}`}>
       <div className="sidebar">
         <div className="logo">
-          <Dashboard /> EmployeeHub
+          <Dashboard /> Matcha Vest Staff
         </div>
         <div className="menu-items">
           <Button
@@ -310,16 +310,6 @@ const StaffDashboard = () => {
       </div>
 
       <div className="main-content">
-        <div className="header">
-          <Typography variant="h4" component="h1">
-            Dashboard Overview
-          </Typography>
-          <div className="header-actions">
-            <Button onClick={() => setDarkMode(!darkMode)}>
-              {darkMode ? "Light Mode" : "Dark Mode"}
-            </Button>
-          </div>
-        </div>
 
         <Container maxWidth={false} className="dashboard-content">
           {renderDashboardContent()}

@@ -79,7 +79,7 @@ const PayPalCheckoutButton = ({
               onSuccess({
                 ...details,
                 isDeposit,
-                depositAmount: isDeposit ? validAmount * 0.5 : 0,
+                depositAmount: isDeposit ? validAmount * 0.5 : validAmount,
                 totalAmount: finalPrice,
                 appliedVoucher: selectedVoucher,
                 confirmOrder: true,

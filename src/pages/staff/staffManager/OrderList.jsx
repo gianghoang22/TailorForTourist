@@ -40,6 +40,7 @@ import Slider from "@mui/material/Slider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import BankingPayment from '../../../assets/img/elements/bankingPayment.jpg'
 
 const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
@@ -131,7 +132,7 @@ const OrderList = () => {
     orderDate: "",
     shippedDate: "",
     note: "",
-    paid: false,
+    paid: "",
     totalPrice: "",
   });
   const [orderDetails, setOrderDetails] = useState(null);
@@ -189,7 +190,15 @@ const OrderList = () => {
   const ordersPerPage = 7;
   const [userMeasurements, setUserMeasurements] = useState([]);
   const [measurementIds, setMeasurementIds] = useState([]);
-  const [payments, setPayments] = useState({}); // Initialize as an empty object
+  const [payments, setPayments] = useState({}); 
+  const [openPaymentDialog, setOpenPaymentDialog] = useState(false); // State to control the payment dialog
+  const [unpaidOrders, setUnpaidOrders] = useState([]);
+  const [userId, setUserId] = useState(''); // State để lưu userId
+  const [amount, setAmount] = useState(0); // State để lưu amount
+  const [createdOrderId, setCreatedOrderId] = useState(''); // State cho createdOrderId
+  const [method, setMethod] = useState(''); // State cho payment method
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]); // Tự động chọn ngày hiện tại
+  const [paymentDetails, setPaymentDetails] = useState('Paid full'); // Mặc định là "Paid full"
 
   const handleDateFilterChange = (event) => {
     setDateFilter(event.target.value);
@@ -396,6 +405,23 @@ const OrderList = () => {
     fetchOrders();
   }, []);
 
+  const fetchUnpaidOrders = async () => {
+    try {
+      const userId = localStorage.getItem("userID");
+      console.log("Retrieved userId from localStorage:", userId);
+
+      if (!userId) {
+        throw new Error("User ID not found");
+      }
+      const storeData = await fetchStoreByStaffId(userId);
+      const ordersData = await fetchOrdersByStoreId(storeData.storeId);
+      const unpaidOrderData = ordersData.filter(order => order.paid === false);
+      setUnpaidOrders(unpaidOrderData);
+    } catch (error) {
+      console.error('Error fetching unpaid orders:', error);
+    }
+  };
+
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     setOpen(false);
@@ -483,7 +509,7 @@ const OrderList = () => {
         userId: selectedUser?.userId || null,
         storeId: createOrderForm.storeId,
         voucherId: createOrderForm.voucherId || null,
-        shipperPartnerId: null,
+        // shipperPartnerId: null,
         shippedDate: formattedShippedDate,
         note: createOrderForm.note || '',
         paid: createOrderForm.paid || false,
@@ -506,6 +532,17 @@ const OrderList = () => {
       try {
         const response = await api.post('/Orders/staffcreateorder', orderPayload);
         console.log('API Response Success:', response.data);
+        
+        const orderId = response.data.orderId; // Lưu orderId
+        setCreatedOrderId(orderId);
+        localStorage.setItem('orderId', orderId);
+        
+        // Gọi hàm để lấy thông tin đơn hàng
+        await fetchOrderDetails(orderId); // Đảm bảo orderId được truyền đúng
+        
+        // Mở dialog createPayment
+        setOpenPaymentDialog(true);
+        
         setSnackbarMessage('Order created successfully');
         setSnackbarSeverity('success');
         setOpen(false);
@@ -552,52 +589,57 @@ const OrderList = () => {
     console.log('Calculating Shipping Fee with data:', addressData);
     
     if (!addressData?.wardCode || !addressData?.districtId || !nearestStore) {
-      console.log('Missing required data:', {
-        wardCode: addressData?.wardCode,
-        districtId: addressData?.districtId,
-        nearestStore: nearestStore
-      });
-      setShippingFee(0);
-      return;
+        console.log('Missing required data:', {
+            wardCode: addressData?.wardCode,
+            districtId: addressData?.districtId,
+            nearestStore: nearestStore
+        });
+        setCreateOrderForm(prev => ({
+            ...prev,
+            shippingFee: 2
+        }));
+        return;
     }
 
     try {
-      const shippingPayload = {
-        serviceId: 0,
-        insuranceValue: 0,
-        coupon: "",
-        toWardCode: addressData.wardCode,
-        toDistrictId: parseInt(addressData.districtId),
-        fromDistrictId: nearestStore.districtID,
-        weight: 0,
-        length: 0,
-        width: 0,
-        height: 0,
-        shopCode: nearestStore.storeCode
-      };
+        const shippingPayload = {
+            serviceId: 0,
+            insuranceValue: 0,
+            coupon: "",
+            toWardCode: addressData.wardCode,
+            toDistrictId: parseInt(addressData.districtId),
+            fromDistrictId: nearestStore.districtID,
+            weight: 0,
+            length: 0,
+            width: 0,
+            height: 0,
+            shopCode: nearestStore.storeCode
+        };
 
-      console.log('Shipping Fee Payload:', shippingPayload);
+        console.log('Shipping Fee Payload:', shippingPayload);
 
-      const response = await axios.post(
-        'https://localhost:7194/api/Shipping/calculate-fee',
-        shippingPayload
-      );
+        const response = await axios.post(
+            'https://localhost:7194/api/Shipping/calculate-fee',
+            shippingPayload
+        );
 
-      if (response.data) {
-        console.log('Shipping Fee Response (VND):', response.data.total);
-        const shippingFeeVND = response.data.total || 0;
-        const shippingFeeUSD = await convertVNDToUSD(shippingFeeVND);
-        console.log('Shipping Fee (USD):', shippingFeeUSD);
-        setCreateOrderForm(prev => ({
-          ...prev,
-          shippingFee: shippingFeeUSD
-        }));
-      }
+        if (response.data) {
+            console.log('Shipping Fee Response (VND):', response.data.total);
+            const shippingFeeVND = response.data.total || 0;
+            const shippingFeeUSD = await convertVNDToUSD(shippingFeeVND);
+            console.log('Shipping Fee (USD):', shippingFeeUSD);
+            setCreateOrderForm(prev => ({
+                ...prev,
+                shippingFee: shippingFeeUSD
+            }));
+        }
     } catch (error) {
-      console.error('Error calculating shipping fee:', error);
-      setSnackbarMessage('Error calculating shipping fee');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+        console.error('Error calculating shipping fee:', error);
+        setCreateOrderForm(prev => ({
+            ...prev,
+            shippingFee: 2
+        }));
+        setSnackbarOpen(true);
     }
   };
 
@@ -616,68 +658,84 @@ const OrderList = () => {
   }, [createOrderForm.deliveryMethod, createOrderForm.guestAddress, nearestStore]);
 
   const handleAddProduct = () => {
-    if (selectedProduct && productQuantity > 0) {
-      // Log selected product để kiểm tra
-      console.log('Selected Product:', selectedProduct);
-      
-      const newProduct = {
-        productID: selectedProduct.productID,
-        productCode: selectedProduct.productCode,
-        quantity: productQuantity,
-        price: selectedProduct.price || 0
-      };
-      
-      // Log new product để kiểm tra
-      console.log('New Product:', newProduct);
-      
-      setSelectedProducts([...selectedProducts, newProduct]);
-      setCreateOrderForm(prev => ({
-        ...prev,
-        products: [...prev.products, newProduct]
-      }));
-      
-      // Reset form
-      setSelectedProduct(null);
-      setProductQuantity(1);
-      setOpenProductDialog(false);
+    try {
+      if (selectedProduct && productQuantity > 0) {
+        // Log selected product để kiểm tra
+        console.log('Selected Product:', selectedProduct);
+        
+        const newProduct = {
+          productID: selectedProduct.productID,
+          productCode: selectedProduct.productCode,
+          quantity: productQuantity,
+          price: selectedProduct.price || 0
+        };
+        
+        // Log new product để kiểm tra
+        console.log('New Product:', newProduct);
+        
+        setSelectedProducts([...selectedProducts, newProduct]);
+        setCreateOrderForm(prev => ({
+          ...prev,
+          products: [...prev.products, newProduct]
+        }));
+        
+        // Reset form
+        setSelectedProduct(null);
+        setProductQuantity(1);
+        setOpenProductDialog(false);
+      } else {
+        throw new Error("Please select a product and enter a valid quantity."); // Bắt lỗi nếu không có sản phẩm hoặc số lượng không hợp lệ
+      }
+    } catch (error) {
+      console.error('Error adding product:', error.message); // Log lỗi ra console
+      // Có thể hiển thị thông báo lỗi cho người dùng nếu cần
+      setSnackbarMessage(error.message);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
   const handleAddCustomProduct = () => {
+    // Kiểm tra xem measurementId có tồn tại không
     if (!measurementId) {
-      console.error('No measurementId found');
-      return;
+        console.error('No measurementId found');
+        setSnackbarMessage('Please select a measurement ID');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+        return;
     }
 
+    // Kiểm tra xem các trường bắt buộc đã được điền đầy đủ chưa
     if (!selectedFabric || !selectedLining || selectedStyleOptions.length === 0 || customQuantity <= 0) {
-      console.log('Error: Please fill all required fields. Missing fields:', {
-        selectedFabric,
-        selectedLining,
-        selectedStyleOptions,
-        customQuantity
-      });
+        console.log('Error: Please fill all required fields. Missing fields:', {
+            selectedFabric,
+            selectedLining,
+            selectedStyleOptions,
+            customQuantity
+        });
 
-      setSnackbarMessage('Please fill all required fields');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
-      return;
+        setSnackbarMessage('Please fill all required fields');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+        return;
     }
 
+    // Nếu tất cả các điều kiện đều hợp lệ, thêm sản phẩm tùy chỉnh
     const newCustomProduct = {
-      productCode: `CUSTOM-${Date.now()}`,
-      categoryID: 5,
-      fabricID: selectedFabric.fabricID,
-      liningID: selectedLining.liningId,
-      measurementID: parseInt(measurementId),
-      quantity: customQuantity,
-      pickedStyleOptions: selectedStyleOptions.map(option => ({
-        styleOptionID: option.styleOptionId
-      }))
+        productCode: `CUSTOM-${Date.now()}`,
+        categoryID: 5,
+        fabricID: selectedFabric.fabricID,
+        liningID: selectedLining.liningId,
+        measurementID: parseInt(measurementId),
+        quantity: customQuantity,
+        pickedStyleOptions: selectedStyleOptions.map(option => ({
+            styleOptionID: option.styleOptionId
+        }))
     };
 
     setCreateOrderForm(prev => ({
-      ...prev,
-      customProducts: [...prev.customProducts, newCustomProduct]
+        ...prev,
+        customProducts: [...prev.customProducts, newCustomProduct]
     }));
 
     // Reset form
@@ -751,6 +809,73 @@ const OrderList = () => {
     fetchPayments();
   }, []);
 
+  // Function to handle payment form submission
+  const handlePaymentSubmit = async (event) => {
+    event.preventDefault();
+    const paymentPayload = {
+        orderId: createdOrderId,
+        userId: userId,
+        method: method, 
+        paymentDate: paymentDate,
+        paymentDetails: paymentDetails,
+        amount: amount
+    };
+
+    try {
+        const response = await api.post('/Payments', paymentPayload);
+        console.log('Payment created successfully:', response.data);
+        setSnackbarMessage('Payment created successfully');
+        setSnackbarSeverity('success');
+
+        // Cập nhật payment method cho đơn hàng mà không cần reload trang
+        setPayments(prevPayments => ({
+            ...prevPayments,
+            [createdOrderId]: method // Cập nhật phương thức thanh toán cho orderId
+        }));
+    } catch (error) {
+        console.error('Error creating payment:', error);
+        setSnackbarMessage('Failed to create payment');
+        setSnackbarSeverity('error');
+    }
+    setSnackbarOpen(true);
+    setOpenPaymentDialog(false); // Close the dialog after submission
+  };
+
+  // Call fetchUnpaidOrders in useEffect to load unpaid orders on component mount
+  useEffect(() => {
+    fetchUnpaidOrders();
+  }, []);
+
+  const fetchOrderDetails = async (orderId) => {
+    try {
+        const response = await api.get(`/Orders/${orderId}`);
+        console.log('Order Details Response:', response.data); // Kiểm tra phản hồi
+        const orderData = response.data;
+
+        // Kiểm tra xem userId có tồn tại không
+        if (orderData.userID) {
+            setUserId(orderData.userID); // Lưu userId
+        } else {
+            console.error('userId not found in order data');
+        }
+
+        // Cộng thêm shippingFee vào amount
+        const totalAmount = orderData.totalPrice + (orderData.shippingFee || 0); // Cộng shippingFee vào totalPrice
+        setAmount(totalAmount); // Lưu amount
+    } catch (error) {
+        console.error('Error fetching order details:', error);
+    }
+  };
+
+  useEffect(() => {
+    const orderId = localStorage.getItem('orderId');
+    console.log('Retrieved orderId from localStorage:', orderId); // Kiểm tra giá trị
+    if (orderId) {
+        setCreatedOrderId(orderId);
+        fetchOrderDetails(orderId); // Gọi hàm để lấy thông tin đơn hàng
+    }
+  }, []);
+
   if (loading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
 
@@ -761,12 +886,7 @@ const OrderList = () => {
       </Typography>
 
       {/* Chart Section */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Orders Overview
-        </Typography>
-        {loading ? <CircularProgress /> : <OrderChart data={orders} />}
-      </Paper>
+      
 
       {/* Enhanced Filter Section */}
       <Paper sx={{ p: 3, mb: 3, backgroundColor: "#f8f9fa" }}>
@@ -933,7 +1053,6 @@ const OrderList = () => {
             paymentId: "",
             storeId: "",
             voucherId: "",
-            // shipperPartnerId: "",
             orderDate: "",
             shippedDate: "",
             note: "",
@@ -947,6 +1066,15 @@ const OrderList = () => {
       >
         Add Order
       </StyledButton>
+
+      {/* <Button
+        variant="contained"
+        color="secondary"
+        onClick={() => setOpenPaymentDialog(true)}
+        sx={{ mb: 2, ml: 2 }}
+      >
+        Create Payment
+      </Button> */}
 
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
@@ -971,11 +1099,7 @@ const OrderList = () => {
                 <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
                 <TableCell>{order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}$</TableCell>
                 <TableCell>
-                  <Tooltip title="Edit Order">
-                    <IconButton onClick={() => handleEdit(order)} sx={{ color: "primary.main" }}>
-                      <Edit />
-                    </IconButton>
-                  </Tooltip>
+                  
                   <Tooltip title="View Details">
                     <IconButton onClick={() => handleViewDetails(order.orderId)} sx={{ color: "primary.main" }}>
                       <Visibility />
@@ -1037,9 +1161,9 @@ const OrderList = () => {
               <Grid item xs={12}>
                 <Typography variant="subtitle1"><strong>Status:</strong> {orderDetails.status || 'Pending'}</Typography>
               </Grid>
-              <Grid item xs={12}>
+              {/* <Grid item xs={12}>
                 <Typography variant="subtitle1"><strong>Payment ID:</strong> {orderDetails.paymentId || ""}</Typography>
-              </Grid>
+              </Grid> */}
               <Grid item xs={12}>
                 <Typography variant="subtitle1"><strong>Order Date:</strong> {new Date(orderDetails.orderDate).toLocaleDateString()}</Typography>
               </Grid>
@@ -1398,7 +1522,7 @@ const OrderList = () => {
                 />
               )}
               <TextField
-                label="Shipped Date"
+                label="Expected delivery date"
                 type="date"
                 value={createOrderForm.shippedDate}
                 onChange={(e) => handleCreateFormChange('shippedDate', e.target.value)}
@@ -1415,14 +1539,16 @@ const OrderList = () => {
                 multiline
                 rows={2}
               />
-              <TextField
-                label="Deposit"
-                type="number"
-                value={createOrderForm.deposit}
-                onChange={(e) => handleCreateFormChange('deposit', parseFloat(e.target.value))}
-                fullWidth
-                margin="normal"
-              />
+              {createOrderForm.deliveryMethod !== 'Delivery' && (
+                <TextField
+                    label="Deposit"
+                    type="number"
+                    value={createOrderForm.deposit}
+                    onChange={(e) => handleCreateFormChange('deposit', parseFloat(e.target.value))}
+                    fullWidth
+                    margin="normal"
+                />
+              )}
               
               
               {/* You might want to add more complex inputs for products and customProducts arrays */}
@@ -1737,10 +1863,78 @@ const OrderList = () => {
                 onClick={handleCreateOrder}
                 disabled={isCreatingOrder}
               >
-                Create Order
+                Next
               </Button>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Dialog */}
+      <Dialog open={openPaymentDialog} onClose={() => setOpenPaymentDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Create Payment</DialogTitle>
+        <DialogContent>
+          <form onSubmit={handlePaymentSubmit}>
+            <TextField
+              label="Order ID"
+              value={createdOrderId || ''} 
+              fullWidth
+              margin="normal"
+              disabled
+            />
+            <TextField
+              label="User ID"
+              value={userId || ''}
+              fullWidth
+              margin="normal"
+              disabled 
+            />
+            <TextField
+              label="Amount"
+              value={amount || ''} 
+              fullWidth
+              margin="normal"
+              disabled 
+            />
+            <TextField
+              label="Payment Method"
+              select
+              value={method}
+              onChange={(e) => setMethod(e.target.value)} // Cập nhật method
+              fullWidth
+              margin="normal"
+            >
+              <MenuItem value="Cash">Cash</MenuItem>
+              <MenuItem value="Paypal">Banking Payment</MenuItem>
+            </TextField>
+            {method === 'Paypal' && (
+              <div>
+                <img src={BankingPayment} alt="Banking Payment" style={{ width: '50%', marginTop: '10px' }} />
+              </div>
+            )}
+            <TextField
+              label="Payment Date"
+              type="date"
+              value={paymentDate} // Sử dụng paymentDate từ state
+              onChange={(e) => setPaymentDate(e.target.value)} // Cập nhật paymentDate
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Payment Details"
+              select
+              value={paymentDetails}
+              onChange={(e) => setPaymentDetails(e.target.value)} // Cập nhật paymentDetails
+              fullWidth
+              margin="normal"
+            >
+              <MenuItem value="Paid full">Paid full</MenuItem>
+              <MenuItem value="Make deposit 50%">Make deposit 50%</MenuItem>
+            </TextField>
+            <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>
+              Create Payment
+            </Button>
+          </form>
         </DialogContent>
       </Dialog>
 

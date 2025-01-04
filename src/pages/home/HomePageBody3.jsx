@@ -25,14 +25,14 @@ export const HomePageBody3 = () => {
                 GALLERY
               </h2>
             </div>
-            <div className="kgall-btn">
+            {/* <div className="kgall-btn">
               <a
                 href="https://adongsilk.com/gallery/"
                 className="btn primary-btn"
               >
                 View detail{" "}
               </a>
-            </div>
+            </div> */}
           </motion.div>
           <div className="kgall-main">
             <div className="kgall-list">
@@ -48,8 +48,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/tailored-wedding-suits-01/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/tailored-wedding-suits-01/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -78,8 +78,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/tailored_wedding_suits/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/tailored_wedding_suits/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -110,8 +110,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/tailored-wedding-suits/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/tailored-wedding-suits/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -140,8 +140,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/online_tailored_wedding_suits_01/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/online_tailored_wedding_suits_01/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -172,8 +172,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/tailored-wedding-suits_05/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/tailored-wedding-suits_05/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -202,8 +202,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/linen-wedding-suits-in-hoi-an/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/linen-wedding-suits-in-hoi-an/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -232,8 +232,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/wedding-suit/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/wedding-suit/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -262,8 +262,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/tailored-wedding-suits-in-hoi-an-2/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/tailored-wedding-suits-in-hoi-an-2/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -294,8 +294,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/tailored-wedding-suit-dress-in-hoi-an/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/tailored-wedding-suit-dress-in-hoi-an/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -326,8 +326,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/wedding-dress-ms06/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/wedding-dress-ms06/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -356,8 +356,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/online-wedding-suits-02/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/online-wedding-suits-02/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -386,8 +386,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/wedding-dress-ms04/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/wedding-dress-ms04/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -416,8 +416,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/wedding-dress-ms02/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/wedding-dress-ms02/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -444,8 +444,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/tailored-wedding-suits-in-hoi-an/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/tailored-wedding-suits-in-hoi-an/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
@@ -474,8 +474,8 @@ export const HomePageBody3 = () => {
                 }}
               >
                 <a
-                  href="https://adongsilk.com/gallery-detail/tailored-wedding-suits-08/"
-                  className="kgall-box"
+                  // href="https://adongsilk.com/gallery-detail/tailored-wedding-suits-08/"
+                  // className="kgall-box"
                 >
                   <span className="kgall-img">
                     <img
