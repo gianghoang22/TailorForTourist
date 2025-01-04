@@ -58,6 +58,7 @@ import TailorDashboard from "../pages/tailor/TailorDashboard";
 import Feedback from "../pages/profile/Feedback";
 import VoucherAvailable from "../pages/managerdashboard/VoucherAvailable";
 import TailorRevenue from "../pages/tailor/TailorRevenue.jsx";
+import ProfitCalculation from "../pages/managerdashboard/ProfitCalculation";
 export const routes = [
   {
     path: "/",
@@ -117,6 +118,10 @@ export const routes = [
       {
         path: "voucheravailable",
         element: <VoucherAvailable />,
+      },
+      {
+        path: "profitcalculation",
+        element: <ProfitCalculation />,
       },
     ],
   },

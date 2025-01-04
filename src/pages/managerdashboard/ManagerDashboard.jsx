@@ -74,121 +74,121 @@ const ManagerDashboard = () => {
     revenue: 0,
   });
   const [includeFixStage, setIncludeFixStage] = useState(false);
- 
-  const BASE_URL = "https://localhost:7194/api";  
+
+  const BASE_URL = "https://localhost:7194/api";
 
   const fetchStoreByManagerId = async (userId) => {
     const response = await fetch(`${BASE_URL}/Store/userId/${userId}`);
     if (!response.ok) {
-        throw new Error("Failed to fetch store");
+      throw new Error("Failed to fetch store");
     }
     return response.json();
-};
+  };
 
-const fetchOrdersByStoreId = async (storeId) => {
-  const response = await fetch(`${BASE_URL}/Orders/store/${storeId}`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch orders");
-  }
-  return response.json();
-};
-
-const fetchOrders = async () => {
-  try {
-    const userId = localStorage.getItem("userID");
-    console.log("Retrieved userId from localStorage:", userId);
-
-    if (!userId) {
-      throw new Error("User ID not found");
+  const fetchOrdersByStoreId = async (storeId) => {
+    const response = await fetch(`${BASE_URL}/Orders/store/${storeId}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch orders");
     }
-    const storeData = await fetchStoreByManagerId(userId);
-    const ordersData = await fetchOrdersByStoreId(storeData.storeId);
-    setOrders(
-      Array.isArray(ordersData) ? ordersData : [ordersData]
-    );
-    setLoading(false);
-  } catch (err) {
-    setError(err.message);
-    setLoading(false);
-  }
-};
+    return response.json();
+  };
 
-useEffect(() => {
-  fetchOrders();
-}, []);
+  const fetchOrders = async () => {
+    try {
+      const userId = localStorage.getItem("userID");
+      console.log("Retrieved userId from localStorage:", userId);
 
+      if (!userId) {
+        throw new Error("User ID not found");
+      }
+      const storeData = await fetchStoreByManagerId(userId);
+      const ordersData = await fetchOrdersByStoreId(storeData.storeId);
+      setOrders(Array.isArray(ordersData) ? ordersData : [ordersData]);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   const filteredOrders = useMemo(() => {
     if (!Array.isArray(orders)) return [];
 
-    return orders.filter((order) => {
-      const matchesSearch = order?.note
-        ?.toLowerCase()
-        .includes(searchTerm?.toLowerCase() || "");
+    return orders
+      .filter((order) => {
+        const matchesSearch = order?.note
+          ?.toLowerCase()
+          .includes(searchTerm?.toLowerCase() || "");
 
-      // Date filtering
-      const orderDate = new Date(order.orderDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset time to start of day
+        // Date filtering
+        const orderDate = new Date(order.orderDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time to start of day
 
-      const matchesDate =
-        dateFilter === "all" ||
-        (() => {
-          if (dateFilter === "custom") {
-            const start = startDate ? new Date(startDate) : null;
-            const end = endDate ? new Date(endDate) : null;
+        const matchesDate =
+          dateFilter === "all" ||
+          (() => {
+            if (dateFilter === "custom") {
+              const start = startDate ? new Date(startDate) : null;
+              const end = endDate ? new Date(endDate) : null;
 
-            // Set end date to end of day for inclusive comparison
-            if (end) {
-              end.setHours(23, 59, 59, 999);
+              // Set end date to end of day for inclusive comparison
+              if (end) {
+                end.setHours(23, 59, 59, 999);
+              }
+
+              return (
+                (!start || orderDate >= start) && (!end || orderDate <= end)
+              );
             }
 
-            return (!start || orderDate >= start) && (!end || orderDate <= end);
-          }
+            if (dateFilter === "today") {
+              return orderDate.toDateString() === today.toDateString();
+            }
 
-          if (dateFilter === "today") {
-            return orderDate.toDateString() === today.toDateString();
-          }
+            if (dateFilter === "week") {
+              const weekAgo = new Date();
+              weekAgo.setDate(today.getDate() - 7);
+              weekAgo.setHours(0, 0, 0, 0);
+              return orderDate >= weekAgo;
+            }
 
-          if (dateFilter === "week") {
-            const weekAgo = new Date();
-            weekAgo.setDate(today.getDate() - 7);
-            weekAgo.setHours(0, 0, 0, 0);
-            return orderDate >= weekAgo;
-          }
+            if (dateFilter === "month") {
+              // Get first day of previous month
+              const previousMonth = new Date();
+              previousMonth.setMonth(previousMonth.getMonth() - 1);
+              previousMonth.setDate(1);
+              previousMonth.setHours(0, 0, 0, 0);
 
-          if (dateFilter === "month") {
-            // Get first day of previous month
-            const previousMonth = new Date();
-            previousMonth.setMonth(previousMonth.getMonth() - 1);
-            previousMonth.setDate(1);
-            previousMonth.setHours(0, 0, 0, 0);
+              // Get first day of current month
+              const currentMonth = new Date();
+              currentMonth.setDate(1);
+              currentMonth.setHours(0, 0, 0, 0);
 
-            // Get first day of current month
-            const currentMonth = new Date();
-            currentMonth.setDate(1);
-            currentMonth.setHours(0, 0, 0, 0);
+              return orderDate >= previousMonth && orderDate < currentMonth;
+            }
 
-            return orderDate >= previousMonth && orderDate < currentMonth;
-          }
+            return true;
+          })();
 
-          return true;
-        })();
+        // Status filtering
+        const matchesStatus =
+          statusFilter === "all" || order.status === statusFilter;
 
-      // Status filtering
-      const matchesStatus =
-        statusFilter === "all" || order.status === statusFilter;
+        // Process status filtering
+        const matchesProcessStatus =
+          processStatusFilter === "all" ||
+          processingStatuses[order.orderId] === processStatusFilter;
 
-      // Process status filtering
-      const matchesProcessStatus =
-        processStatusFilter === "all" ||
-        processingStatuses[order.orderId] === processStatusFilter;
-
-      return (
-        matchesSearch && matchesDate && matchesStatus && matchesProcessStatus
-      );
-    })
-    .sort((a, b) => b.orderId - a.orderId);
+        return (
+          matchesSearch && matchesDate && matchesStatus && matchesProcessStatus
+        );
+      })
+      .sort((a, b) => b.orderId - a.orderId);
   }, [
     orders,
     searchTerm,
@@ -379,17 +379,19 @@ useEffect(() => {
     }
   };
 
-
   const fetchTailorPartners = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch("  https://localhost:7194/api/TailorPartner", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        "  https://localhost:7194/api/TailorPartner",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -505,14 +507,11 @@ useEffect(() => {
   const fetchOrderStatus = async (id) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(
-        `https://localhost:7194/api/Orders/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`https://localhost:7194/api/Orders/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -696,6 +695,14 @@ useEffect(() => {
                   to="/manager/staff-management"
                 >
                   <i className="fas fa-users"></i> Staff Management
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className={`${location.pathname === "/manager/profitcalculation" ? "active" : ""}`}
+                  to="/manager/profitcalculation"
+                >
+                  <i className="fas fa-chart-bar"></i> Statistics
                 </Link>
               </li>
               <li>

@@ -90,12 +90,13 @@ const UserManagement = () => {
       } catch (error) {
         console.error("Error fetching user data:", error);
         setError("Error fetching user data. Please try again later.");
+      } finally {
         setLoading(false);
       }
     };
 
     fetchUserData();
-  }, []); // Empty dependency array means this runs once when component mounts
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
