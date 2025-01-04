@@ -1,117 +1,330 @@
 import React, { useEffect, useState } from "react";
-import './ProductManagement.scss';
+import {
+  CircularProgress,
+  Paper,
+  InputBase,
+  IconButton,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Alert,
+} from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import "./ProductManagement.scss";
 
 const BASE_URL = "https://localhost:7194/api";
 
 const ProductManagement = () => {
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const productsPerPage = 7;
-    const [currentProducts, setCurrentProducts] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 7;
+  const [currentProducts, setCurrentProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [allProductDetails, setAllProductDetails] = useState({});
 
-    const fetchStoreByManagerId = async (userId) => {
-        const response = await fetch(`${BASE_URL}/Store/userId/${userId}`);
-        if (!response.ok) {
-            throw new Error("Failed to fetch store");
-        }
-        return response.json();
-    };
-
-    const fetchProductByStoreId = async (storeId) => {
-        const response = await fetch(`${BASE_URL}/Product/products/custom-false/instoreid?storeId=${storeId}`);
-        if (!response.ok) {
-            throw new Error("Fail to fetch products");
-        }
-        return response.json();
+  const fetchStoreByManagerId = async (userId) => {
+    const response = await fetch(`${BASE_URL}/Store/userId/${userId}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch store");
     }
+    return response.json();
+  };
 
-    const fetchProductDetailsById = async (productId) => {
-        const response = await fetch(`${BASE_URL}/Product/products/custom-false?productID=${productId}`);
+  const fetchProductByStoreId = async (storeId) => {
+    const response = await fetch(
+      `${BASE_URL}/Product/products/custom-false/instoreid?storeId=${storeId}`
+    );
+    if (!response.ok) {
+      throw new Error("Fail to fetch products");
+    }
+    return response.json();
+  };
+
+  const fetchProductDetailsById = async (productId) => {
+    const response = await fetch(
+      `${BASE_URL}/Product/products/custom-false?productID=${productId}`
+    );
+    if (!response.ok) {
+      throw new Error("Failed to fetch product details");
+    }
+    return response.json();
+  };
+
+  useEffect(() => {
+    const fetchProductsInstore = async () => {
+      setIsLoading(true);
+      try {
+        const userId = localStorage.getItem("userID");
+        if (!userId) {
+          throw new Error("User ID not found");
+        }
+        const storeData = await fetchStoreByManagerId(userId);
+        const storeId = storeData.storeId;
+        const productsData = await fetchProductByStoreId(storeId);
+        const productsArray = Array.isArray(productsData)
+          ? productsData
+          : [productsData];
+
+        const response = await fetch(`${BASE_URL}/Product`);
         if (!response.ok) {
-            throw new Error("Failed to fetch product details");
+          throw new Error("Failed to fetch product details");
         }
-        return response.json();
-    };
+        const allProductsList = await response.json();
 
-    useEffect(() => {
-        const fetchProductsInstore = async () => {
-            try {
-                const userId = localStorage.getItem("userID");
-                if (!userId) {
-                    throw new Error("User ID not found");
-                }
-                const storeData = await fetchStoreByManagerId(userId);
-                const storeId = storeData.storeId;
-                const productsData = await fetchProductByStoreId(storeId);
-                setProducts(
-                    Array.isArray(productsData) ? productsData : [productsData]
-                );
-                setLoading(false);
-            } catch (err) {
-                console.error("Error fetching products:", err);
-                setError(err.message);
-                setLoading(false);
-            }
+        const details = {};
+        productsArray.forEach((storeProduct) => {
+          const fullProduct = allProductsList.find(
+            (p) => p.productID === storeProduct.productId
+          );
+          if (fullProduct) {
+            const status =
+              storeProduct.quantity === 0 ? "Unavailable" : "Available";
+            details[storeProduct.productId] = {
+              ...storeProduct,
+              ...fullProduct,
+              imgURL: fullProduct.imgURL,
+              status: status,
+            };
+          }
+        });
+
+        setProducts(productsArray);
+        setAllProductDetails(details);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProductsInstore();
+  }, []);
+
+  // Calculate the index of the first and last product on the current page
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+
+  // Simplify the filtered products logic
+  const filteredProducts = products.filter(
+    (product) =>
+      product.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.productId?.toString().includes(searchTerm)
+  );
+
+  // Log for debugging
+  useEffect(() => {
+    console.log("All product details:", allProductDetails);
+    console.log("Filtered products:", filteredProducts);
+  }, [allProductDetails, filteredProducts]);
+
+  // Update the useEffect for pagination and search to use cached details
+  useEffect(() => {
+    if (!isLoading && filteredProducts.length > 0) {
+      const currentProductsWithDetails = filteredProducts
+        .slice(indexOfFirstProduct, indexOfLastProduct)
+        .map((product) => ({
+          ...product,
+          ...allProductDetails[product.productId],
+        }));
+      setCurrentProducts(currentProductsWithDetails);
+    }
+  }, [
+    filteredProducts,
+    indexOfFirstProduct,
+    indexOfLastProduct,
+    allProductDetails,
+  ]);
+
+  // Handle page change without loading state
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const updateProductStatus = async (productId, quantity) => {
+    try {
+      const newStatus = quantity === 0 ? "Unavailable" : "Available";
+
+      const response = await fetch(
+        `${BASE_URL}/Product/${productId}/update-status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newStatus),
         }
-        fetchProductsInstore();
-    })
+      );
 
-    // Calculate the index of the first and last product on the current page
-    const indexOfLastProduct = currentPage * productsPerPage;
-    const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+      if (!response.ok) {
+        throw new Error("Failed to update product status");
+      }
 
-    useEffect(() => {
-        const fetchCurrentProducts = async () => {
-            const productsWithDetails = await Promise.all(products.slice(indexOfFirstProduct, indexOfLastProduct).map(async (product) => {
-                const productDetails = await fetchProductDetailsById(product.productId);
-                return { ...product, ...productDetails }; // Merge product data with fetched details
-            }));
-            setCurrentProducts(productsWithDetails);
-        };
+      // Update local state
+      setAllProductDetails((prev) => ({
+        ...prev,
+        [productId]: {
+          ...prev[productId],
+          status: newStatus,
+        },
+      }));
+    } catch (error) {
+      console.error("Error updating product status:", error);
+      setError("Failed to update product status");
+    }
+  };
 
-        fetchCurrentProducts();
-    }, [products, indexOfFirstProduct, indexOfLastProduct]); // Add dependencies
+  return (
+    <div className="product-management">
+      <Typography variant="h4" component="h1" className="page-title">
+        Product Management
+      </Typography>
 
-    // Function to handle page change
-    const handlePageChange = (pageNumber) => {
-        setCurrentPage(pageNumber);
-    };
+      {error && (
+        <Alert severity="error" className="error-alert">
+          {error}
+        </Alert>
+      )}
 
-
-    return (
+      {isLoading ? (
+        <div className="loading-container">
+          <CircularProgress />
+        </div>
+      ) : (
         <>
-            <h1>Product Management</h1>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Product ID</th>
-                        <th>Product Code</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {currentProducts.map(product => (
-                        <tr key={product.productId}>
-                            <td>{product.productId}</td>
-                            <td>{product.productCode}</td>
-                            <td>{product.price}</td>
-                            <td>{product.quantity}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-            <div className="pagination">
-                {Array.from({ length: Math.ceil(products.length / productsPerPage) }, (_, index) => (
-                    <button key={index + 1} onClick={() => handlePageChange(index + 1)}>
-                        {index + 1}
-                    </button>
-                ))}
+          <div className="header">
+            <Paper className="search-container">
+              <IconButton className="search-icon" aria-label="search">
+                <SearchIcon />
+              </IconButton>
+              <InputBase
+                className="search-input"
+                placeholder="Search by product code or ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                fullWidth
+              />
+            </Paper>
+          </div>
+
+          <Paper className="table-wrapper">
+            <TableContainer>
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Product ID</TableCell>
+                    <TableCell>Product Code</TableCell>
+                    <TableCell>Price</TableCell>
+                    <TableCell>Quantity</TableCell>
+                    <TableCell>Image</TableCell>
+                    <TableCell>Status</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {currentProducts.map((product) => {
+                    const productDetails = allProductDetails[product.productId];
+                    const status =
+                      productDetails?.quantity === 0
+                        ? "Unavailable"
+                        : "Available";
+
+                    return (
+                      <TableRow
+                        key={product?.productId || "no-id"}
+                        className="table-row"
+                        hover
+                      >
+                        <TableCell>{product?.productId}</TableCell>
+                        <TableCell>{product?.productCode}</TableCell>
+                        <TableCell>
+                          ${product?.price?.toFixed(2) || "0.00"}
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={`quantity-badge ${(product?.quantity || 0) < 10 ? "low" : "normal"}`}
+                          >
+                            {product?.quantity || 0}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {productDetails?.imgURL && (
+                            <div className="image-container">
+                              <img
+                                className="product-image"
+                                src={productDetails.imgURL}
+                                alt={product.productCode || "Product"}
+                              />
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={`status-badge ${status.toLowerCase()}`}
+                          >
+                            {status}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+
+          <div className="pagination">
+            <button
+              className={`pagination-btn ${currentPage === 1 ? "disabled" : ""}`}
+              disabled={currentPage === 1}
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              <i className="fas fa-chevron-left"></i>
+            </button>
+
+            <div className="page-numbers">
+              {Array.from(
+                {
+                  length: Math.ceil(filteredProducts.length / productsPerPage),
+                },
+                (_, index) => (
+                  <button
+                    key={index + 1}
+                    className={`page-number ${currentPage === index + 1 ? "active" : ""}`}
+                    onClick={() => handlePageChange(index + 1)}
+                  >
+                    {index + 1}
+                  </button>
+                )
+              )}
             </div>
+
+            <button
+              className={`pagination-btn ${
+                currentPage ===
+                Math.ceil(filteredProducts.length / productsPerPage)
+                  ? "disabled"
+                  : ""
+              }`}
+              disabled={
+                currentPage ===
+                Math.ceil(filteredProducts.length / productsPerPage)
+              }
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              <i className="fas fa-chevron-right"></i>
+            </button>
+          </div>
         </>
-    )
-}
+      )}
+    </div>
+  );
+};
 
 export default ProductManagement;

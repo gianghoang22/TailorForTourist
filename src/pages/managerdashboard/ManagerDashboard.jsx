@@ -27,12 +27,15 @@ import {
   Typography,
   FormControlLabel,
   Checkbox,
+  Backdrop,
+  Fade,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import "./ManagerDashboard.scss";
 import logo from "./../../assets/img/icon/matcha.png";
 import Pagination from "@mui/material/Pagination";
+import { motion } from "framer-motion";
 
 const ManagerDashboard = () => {
   const location = useLocation();
@@ -74,6 +77,8 @@ const ManagerDashboard = () => {
     revenue: 0,
   });
   const [includeFixStage, setIncludeFixStage] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
 
   const BASE_URL = "https://localhost:7194/api";
 
@@ -94,6 +99,7 @@ const ManagerDashboard = () => {
   };
 
   const fetchOrders = async () => {
+    setIsLoading(true);
     try {
       const userId = localStorage.getItem("userID");
       console.log("Retrieved userId from localStorage:", userId);
@@ -104,10 +110,10 @@ const ManagerDashboard = () => {
       const storeData = await fetchStoreByManagerId(userId);
       const ordersData = await fetchOrdersByStoreId(storeData.storeId);
       setOrders(Array.isArray(ordersData) ? ordersData : [ordersData]);
-      setLoading(false);
     } catch (err) {
       setError(err.message);
-      setLoading(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -175,14 +181,16 @@ const ManagerDashboard = () => {
             return true;
           })();
 
-        // Status filtering
+        // Status filtering - Fix: Handle null/undefined status
         const matchesStatus =
-          statusFilter === "all" || order.status === statusFilter;
+          statusFilter === "all" ||
+          (order?.status && order.status === statusFilter);
 
-        // Process status filtering
+        // Process status filtering - Fix: Handle null/undefined status
         const matchesProcessStatus =
           processStatusFilter === "all" ||
-          processingStatuses[order.orderId] === processStatusFilter;
+          (processingStatuses[order.orderId] &&
+            processingStatuses[order.orderId] === processStatusFilter);
 
         return (
           matchesSearch && matchesDate && matchesStatus && matchesProcessStatus
@@ -236,9 +244,13 @@ const ManagerDashboard = () => {
 
   useEffect(() => {
     const fetchUsersAndStores = async () => {
+      setIsFetchingDetails(true);
       const token = localStorage.getItem("token");
 
-      if (!Array.isArray(orders) || orders.length === 0) return;
+      if (!Array.isArray(orders) || orders.length === 0) {
+        setIsFetchingDetails(false);
+        return;
+      }
 
       const userIds = [
         ...new Set(
@@ -293,11 +305,13 @@ const ManagerDashboard = () => {
 
         setUsers(Object.fromEntries(userEntries));
         setStores(Object.fromEntries(storeEntries));
+        setIsFetchingDetails(false);
       } catch (error) {
         console.error("Error fetching users and stores:", error);
         setError(
           "Error fetching additional data. Some information may be missing."
         );
+        setIsFetchingDetails(false);
       }
     };
 
@@ -668,10 +682,28 @@ const ManagerDashboard = () => {
     </Box>
   );
 
+  useEffect(() => {
+    console.log("Current filters:", {
+      statusFilter,
+      processStatusFilter,
+      processingStatuses,
+      filteredOrdersLength: filteredOrders.length,
+    });
+  }, [statusFilter, processStatusFilter, processingStatuses, filteredOrders]);
+
   return (
-    <div className="manager-dashboard">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="manager-dashboard"
+    >
       <div className="flex">
-        <div className="sidebar">
+        <motion.div
+          initial={{ x: -50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="sidebar"
+        >
           <div className="logo">
             <img
               src={logo}
@@ -738,9 +770,27 @@ const ManagerDashboard = () => {
               </li>
             </ul>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="main-content">
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="main-content"
+        >
+          <Backdrop
+            sx={{
+              color: "#fff",
+              zIndex: (theme) => theme.zIndex.drawer + 1,
+              flexDirection: "column",
+              gap: 2,
+            }}
+            open={isLoading || isFetchingDetails}
+          >
+            <CircularProgress color="inherit" />
+            <div>{isLoading ? "Loading orders..." : "Fetching details..."}</div>
+          </Backdrop>
+
           <div className="header">
             <h1>Hi, Welcome back</h1>
             <div className="header-icons">
@@ -1088,23 +1138,49 @@ const ManagerDashboard = () => {
                   </DialogActions>
                 </Dialog>
                 {filteredOrders.length > ordersPerPage && (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      margin: "2rem 0",
-                      padding: "1rem",
-                    }}
-                  >
-                    <Pagination
-                      count={totalPages}
-                      page={page}
-                      onChange={handlePageChange}
-                      color="primary"
-                      size="large"
-                      showFirstButton
-                      showLastButton
-                    />
+                  <div className="pagination">
+                    <button
+                      className={`pagination-btn ${page === 1 ? "disabled" : ""}`}
+                      disabled={page === 1}
+                      onClick={(e) => handlePageChange(e, page - 1)}
+                    >
+                      <i className="fas fa-chevron-left"></i>
+                    </button>
+
+                    <div className="page-numbers">
+                      {Array.from(
+                        {
+                          length: Math.ceil(
+                            filteredOrders.length / ordersPerPage
+                          ),
+                        },
+                        (_, index) => (
+                          <button
+                            key={index + 1}
+                            className={`page-number ${page === index + 1 ? "active" : ""}`}
+                            onClick={(e) => handlePageChange(e, index + 1)}
+                          >
+                            {index + 1}
+                          </button>
+                        )
+                      )}
+                    </div>
+
+                    <button
+                      className={`pagination-btn ${
+                        page ===
+                        Math.ceil(filteredOrders.length / ordersPerPage)
+                          ? "disabled"
+                          : ""
+                      }`}
+                      disabled={
+                        page ===
+                        Math.ceil(filteredOrders.length / ordersPerPage)
+                      }
+                      onClick={(e) => handlePageChange(e, page + 1)}
+                    >
+                      <i className="fas fa-chevron-right"></i>
+                    </button>
                   </div>
                 )}
               </>
@@ -1112,9 +1188,9 @@ const ManagerDashboard = () => {
           )}
 
           <Outlet />
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
