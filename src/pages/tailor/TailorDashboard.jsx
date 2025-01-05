@@ -49,6 +49,8 @@ const TailorDashboard = () => {
   const [stageFilter, setStageFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage] = useState(10);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const STAGES = {
     MAKE_SAMPLE: "Make Sample",
     FIX: "Fix",
@@ -72,16 +74,50 @@ const TailorDashboard = () => {
     return date < today;
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  const [tailorPartnerId, setTailorPartnerId] = useState(null);
+  const userID = localStorage.getItem("userID");
 
-  const handleLogout = () => {
-    localStorage.removeItem("userID");
-    localStorage.removeItem("roleID");
-    localStorage.removeItem("token");
-    navigate("/signin");
+  const fetchTailorPartnerId = async () => {
+    try {
+      if (!userID) {
+        throw new Error("User ID not found");
+      }
+
+      const response = await fetch(
+        `https://localhost:7194/api/TailorPartner/get-by-user/${userID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success && data.data?.tailorPartnerId) {
+        setTailorPartnerId(data.data.tailorPartnerId);
+        return data.data.tailorPartnerId;
+      } else {
+        throw new Error("Failed to get tailor partner ID");
+      }
+    } catch (error) {
+      console.error("Error fetching tailor partner ID:", error);
+      setError("Error fetching tailor partner details");
+      return null;
+    }
   };
+
+  useEffect(() => {
+    if (userID) {
+      fetchTailorPartnerId().then(() => {
+        fetchOrders();
+      });
+    }
+  }, [userID]);
 
   const fetchStyleName = async (styleId) => {
     try {
@@ -272,9 +308,16 @@ const TailorDashboard = () => {
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
+
+      const currentTailorPartnerId =
+        tailorPartnerId || (await fetchTailorPartnerId());
+      if (!currentTailorPartnerId) {
+        throw new Error("Could not determine tailor partner ID");
+      }
+
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "https://localhost:7194/api/ProcessingTailor",
+        `https://localhost:7194/api/ProcessingTailor/assigned-to/${currentTailorPartnerId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -385,224 +428,223 @@ const TailorDashboard = () => {
   const handleUpdate = async (order) => {
     try {
       const token = localStorage.getItem("token");
+
+      // Don't allow updates if status is Due
+      if (order.status === "Due") {
+        return;
+      }
+
       const skipFixStage = !order.dateFix; // Check if dateFix is missing
 
-      // Initial "Not Start" to "Doing" transition remains the same
+      // Initial "Not Start" to "Doing" transition
       if (
         order.status === "Not Start" &&
         order.stageName === STAGES.MAKE_SAMPLE
       ) {
-        // Update order and stage status to "Doing"
-        const processingResponse = await fetch(
-          `https://localhost:7194/api/ProcessingTailor/process/status/${order.processingId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify("Doing"), // Send status "Doing"
-          }
+        // Optimistically update the local state
+        setOrders((prevOrders) =>
+          prevOrders.map((o) =>
+            o.processingId === order.processingId
+              ? { ...o, status: "Doing", stageStatus: "Doing" }
+              : o
+          )
         );
 
-        if (!processingResponse.ok) {
-          throw new Error(
-            `Failed to update processing status: ${processingResponse.status}`
-          );
-        }
-
-        // Update stage status to "Doing" for "Make Sample"
-        const stageStatusResponse = await fetch(
-          `https://localhost:7194/api/ProcessingTailor/sample/status/${order.processingId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify("Doing"), // Set stage status to "Doing"
-          }
-        );
-
-        if (!stageStatusResponse.ok) {
-          throw new Error(
-            `Failed to update stage status: ${stageStatusResponse.status}`
-          );
-        }
+        // Make API calls
+        await Promise.all([
+          fetch(
+            `https://localhost:7194/api/ProcessingTailor/process/status/${order.processingId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify("Doing"),
+            }
+          ),
+          fetch(
+            `https://localhost:7194/api/ProcessingTailor/sample/status/${order.processingId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify("Doing"),
+            }
+          ),
+        ]);
       }
-      // Modified logic for Make Sample to next stage transition
+      // Make Sample to next stage transition
       else if (
         order.stageName === STAGES.MAKE_SAMPLE &&
         order.status === "Doing"
       ) {
-        // Update Make Sample stage to "Finish"
-        const makeSampleFinishResponse = await fetch(
-          `https://localhost:7194/api/ProcessingTailor/sample/status/${order.processingId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify("Finish"),
-          }
-        );
-
-        if (!makeSampleFinishResponse.ok) {
-          throw new Error(
-            `Failed to update Make Sample stage status: ${makeSampleFinishResponse.status}`
-          );
-        }
-
-        // Change stage name to "Delivery" if skipFixStage is true, otherwise go to "Fix"
         const nextStage = skipFixStage ? STAGES.DELIVERY : STAGES.FIX;
-        const stageUpdateResponse = await fetch(
-          `https://localhost:7194/api/ProcessingTailor/stagename/${order.processingId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(nextStage),
-          }
+
+        // Optimistically update the local state
+        setOrders((prevOrders) =>
+          prevOrders.map((o) =>
+            o.processingId === order.processingId
+              ? {
+                  ...o,
+                  stageName: nextStage,
+                  stageStatus: "Doing",
+                  sampleStatus: "Finish",
+                }
+              : o
+          )
         );
 
-        if (!stageUpdateResponse.ok) {
-          throw new Error(
-            `Failed to update stage name to ${nextStage}: ${stageUpdateResponse.status}`
-          );
-        }
-
-        // Set stage status for next stage to "Doing"
-        const statusEndpoint = skipFixStage ? "delivery" : "fix";
-        const nextStageResponse = await fetch(
-          `https://localhost:7194/api/ProcessingTailor/${statusEndpoint}/status/${order.processingId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify("Doing"),
-          }
-        );
-
-        if (!nextStageResponse.ok) {
-          throw new Error(
-            `Failed to update ${nextStage} stage status: ${nextStageResponse.status}`
-          );
-        }
+        // Make API calls
+        await Promise.all([
+          fetch(
+            `https://localhost:7194/api/ProcessingTailor/sample/status/${order.processingId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify("Finish"),
+            }
+          ),
+          fetch(
+            `https://localhost:7194/api/ProcessingTailor/stagename/${order.processingId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(nextStage),
+            }
+          ),
+          fetch(
+            `https://localhost:7194/api/ProcessingTailor/${skipFixStage ? "delivery" : "fix"}/status/${order.processingId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify("Doing"),
+            }
+          ),
+        ]);
       }
-      // If the stage is "Fix" and order status is "Doing", move to "Delivery"
+      // Fix to Delivery transition
       else if (order.stageName === STAGES.FIX && order.status === "Doing") {
-        // Update the stage status of "Fix" to "Finish"
-        const fixFinishResponse = await fetch(
-          `https://localhost:7194/api/ProcessingTailor/fix/status/${order.processingId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify("Finish"), // Stage status "Finish"
-          }
+        // Optimistically update the local state
+        setOrders((prevOrders) =>
+          prevOrders.map((o) =>
+            o.processingId === order.processingId
+              ? {
+                  ...o,
+                  stageName: STAGES.DELIVERY,
+                  fixStatus: "Finish",
+                  deliveryStatus: "Doing",
+                }
+              : o
+          )
         );
 
-        if (!fixFinishResponse.ok) {
-          throw new Error(
-            `Failed to update Fix stage status: ${fixFinishResponse.status}`
-          );
-        }
-
-        // Change stage name to "Delivery"
-        const stageUpdateResponse = await fetch(
-          `https://localhost:7194/api/ProcessingTailor/stagename/${order.processingId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(STAGES.DELIVERY), // Update stage name to "Delivery"
-          }
-        );
-
-        if (!stageUpdateResponse.ok) {
-          throw new Error(
-            `Failed to update stage name to Delivery: ${stageUpdateResponse.status}`
-          );
-        }
-
-        // Set stage status for "Delivery" to "Doing"
-        const deliveryStatusResponse = await fetch(
-          `https://localhost:7194/api/ProcessingTailor/delivery/status/${order.processingId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify("Doing"), // Stage status "Doing"
-          }
-        );
-
-        if (!deliveryStatusResponse.ok) {
-          throw new Error(
-            `Failed to update Delivery stage status: ${deliveryStatusResponse.status}`
-          );
-        }
+        // Make API calls
+        await Promise.all([
+          fetch(
+            `https://localhost:7194/api/ProcessingTailor/fix/status/${order.processingId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify("Finish"),
+            }
+          ),
+          fetch(
+            `https://localhost:7194/api/ProcessingTailor/stagename/${order.processingId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(STAGES.DELIVERY),
+            }
+          ),
+          fetch(
+            `https://localhost:7194/api/ProcessingTailor/delivery/status/${order.processingId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify("Doing"),
+            }
+          ),
+        ]);
       }
-      // Final Update when Delivery is finished, change Stage Status and Order Status to "Finish"
+      // Final Delivery completion
       else if (
         order.stageName === STAGES.DELIVERY &&
         order.status === "Doing"
       ) {
-        // Update the stage status of "Delivery" to "Finish"
-        const deliveryFinishResponse = await fetch(
-          `https://localhost:7194/api/ProcessingTailor/delivery/status/${order.processingId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify("Finish"), // Stage status "Finish"
-          }
+        // Optimistically update the local state
+        setOrders((prevOrders) =>
+          prevOrders.map((o) =>
+            o.processingId === order.processingId
+              ? {
+                  ...o,
+                  status: "Finish",
+                  deliveryStatus: "Finish",
+                }
+              : o
+          )
         );
 
-        if (!deliveryFinishResponse.ok) {
-          throw new Error(
-            `Failed to update Delivery stage status: ${deliveryFinishResponse.status}`
-          );
-        }
-
-        // Update order status to "Finish"
-        const orderFinishResponse = await fetch(
-          `https://localhost:7194/api/ProcessingTailor/process/status/${order.processingId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify("Finish"), // Order status "Finish"
-          }
-        );
-
-        if (!orderFinishResponse.ok) {
-          throw new Error(
-            `Failed to update order status to Finish: ${orderFinishResponse.status}`
-          );
-        }
+        // Make API calls
+        await Promise.all([
+          fetch(
+            `https://localhost:7194/api/ProcessingTailor/delivery/status/${order.processingId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify("Finish"),
+            }
+          ),
+          fetch(
+            `https://localhost:7194/api/ProcessingTailor/process/status/${order.processingId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify("Finish"),
+            }
+          ),
+        ]);
       }
 
-      // After making the necessary updates, fetch the updated orders list
-      await fetchOrders();
+      // After successful update, show success message
+      setSuccessMessage("Order status successfully updated!");
+      setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        setSuccessMessage("");
+      }, 2000);
+
       setError(null);
     } catch (error) {
       console.error("Error updating order:", error);
       setError(error.message);
+      fetchOrders();
     }
   };
 
@@ -641,12 +683,53 @@ const TailorDashboard = () => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
+  const handleLogout = () => {
+    // Clear localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("userID");
+    // Any other auth items that need to be cleared...
+
+    // Redirect to login page
+    navigate("/signin");
+  };
+
   return (
     <div className="dashboard">
-      <aside className="sidebar">
-        <div className="logo">
-          <img src="/dappr-logo.png" alt="Dappr Logo" />
+      {showSuccessMessage && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(255, 255, 255, 0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            paddingTop: "20px",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#4caf50",
+              color: "white",
+              padding: "1rem 2rem",
+              borderRadius: "4px",
+              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+              width: "auto",
+              minWidth: "300px",
+              fontSize: "1.1rem",
+              textAlign: "center",
+            }}
+          >
+            {successMessage}
+          </div>
         </div>
+      )}
+
+      <aside className="sidebar">
         <nav>
           <button
             onClick={() => navigate("/tailor")}
@@ -852,7 +935,16 @@ const TailorDashboard = () => {
                             <td>
                               <button
                                 onClick={() => handleUpdate(order)}
-                                disabled={order.status === "Finish"}
+                                disabled={
+                                  order.status === "Due" ||
+                                  order.status === "Finish"
+                                }
+                                className={`${
+                                  order.status === "Due" ||
+                                  order.status === "Finish"
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : ""
+                                }`}
                               >
                                 Update Status
                               </button>

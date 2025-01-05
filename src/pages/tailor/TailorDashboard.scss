@@ -15,23 +15,12 @@
   padding: 20px 0;
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
 
-  .logo {
-    margin-bottom: 40px;
-    img {
-      width: 40px;
-      height: 40px;
-      transition: transform 0.2s ease;
-      &:hover {
-        transform: scale(1.05);
-      }
-    }
-  }
-
   nav {
     display: flex;
     flex-direction: column;
     gap: 20px;
     width: 100%;
+    margin-top: 20px;
 
     button {
       background: none;
@@ -121,6 +110,13 @@ header {
       height: 40px;
       border-radius: 50%;
       overflow: hidden;
+      padding: 0;
+      border: 2px solid #e5e7eb;
+      transition: border-color 0.2s ease;
+
+      &:hover {
+        border-color: #2563eb;
+      }
 
       img {
         width: 100%;
@@ -884,4 +880,35 @@ header {
       }
     }
   }
+}
+
+.update-button {
+  &.opacity-50 {
+    background-color: #ccc;
+    &:hover {
+      cursor: not-allowed;
+    }
+  }
+}
+
+.fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  z-index: 1000;
+}
+
+.flex {
+  display: flex;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.items-center {
+  align-items: center;
 }
