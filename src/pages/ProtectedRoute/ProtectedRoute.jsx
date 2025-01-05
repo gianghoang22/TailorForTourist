@@ -5,17 +5,20 @@ const ProtectedRoute = ({ element, allowedRoles, allowGuestAccess }) => {
   const roleID = localStorage.getItem("roleID");
 
   const isLoggedIn = !!userID;
-  const isAuthorized = allowedRoles.includes(roleID);
 
+  // If guest access is allowed, no need to check authorization
+  if (allowGuestAccess) {
+    return element;
+  }
+
+  // Check login status for non-guest routes
   if (!isLoggedIn) {
-    // Allow access if guest access is enabled
-    if (allowGuestAccess) {
-      return element;
-    }
     return <Navigate to="/signin" />;
   }
 
-  if (isLoggedIn && !isAuthorized) {
+  // Check authorization for logged-in users
+  const isAuthorized = allowedRoles.includes(roleID);
+  if (!isAuthorized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <h1 className="text-4xl font-bold">404 - Page Not Found</h1>
