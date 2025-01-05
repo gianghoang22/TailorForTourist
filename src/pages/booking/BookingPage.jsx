@@ -63,7 +63,7 @@ const BookingPage = () => {
   }, [date, selectedStoreInfo.openTime, selectedStoreInfo.closeTime]);
 
   useEffect(() => {
-    if (["Return", "Exchange", "Fix"].includes(formData.service)) {
+    if (["Return", "Exchange"].includes(formData.service)) {
       fetchUserOrders();
     }
   }, [formData.service]);
@@ -253,10 +253,7 @@ const BookingPage = () => {
     }
 
     // Validate product selection for specific services
-    if (
-      ["Return", "Exchange", "Fix"].includes(formData.service) &&
-      !productNote
-    ) {
+    if (["Return", "Exchange"].includes(formData.service) && !productNote) {
       setServiceError("Please select a product for the chosen service.");
       return;
     } else {
@@ -521,7 +518,7 @@ const BookingPage = () => {
   };
 
   const handleServiceSelection = (service) => {
-    if (!["Return", "Exchange", "Fix"].includes(service)) {
+    if (!["Return", "Exchange"].includes(service)) {
       setProductNote("");
       setFormData((prev) => ({
         ...prev,
@@ -686,7 +683,7 @@ const BookingPage = () => {
 
                 <div className="service-grid">
                   {(localStorage.getItem("token")
-                    ? ["Tailor", "Return", "Exchange", "Fix"]
+                    ? ["Tailor", "Return", "Exchange"]
                     : ["Tailor"]
                   ).map((service) => (
                     <motion.div
@@ -704,7 +701,7 @@ const BookingPage = () => {
                   ))}
                 </div>
 
-                {["Return", "Exchange", "Fix"].includes(formData.service) && (
+                {["Return", "Exchange"].includes(formData.service) && (
                   <div className="form-section">
                     <label htmlFor="productCode">Select Product:</label>
                     <select
@@ -764,7 +761,7 @@ const BookingPage = () => {
                   value={formData.description}
                   onChange={handleInputChange}
                   placeholder={
-                    ["Return", "Exchange", "Fix"].includes(formData.service)
+                    ["Return", "Exchange"].includes(formData.service)
                       ? "Please provide additional details about your request..."
                       : "Tell us about your requirements..."
                   }
