@@ -28,7 +28,7 @@ const CreateAccount = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('https://localhost:7194/api/User', formData);
+      const response = await axios.post('https://vesttour.xyz/api/User', formData);
       setMessage('Account created successfully!');
       setError('');
       // Reset form

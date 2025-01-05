@@ -57,10 +57,10 @@ const ProfitCalculation = () => {
 
     try {
       const [bookingsResponse, storeResponse] = await Promise.all([
-        fetch("https://localhost:7194/api/Booking", {
+        fetch("https://vesttour.xyz/api/Booking", {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`https://localhost:7194/api/Store/userId/${userId}`, {
+        fetch(`https://vesttour.xyz/api/Store/userId/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -76,7 +76,7 @@ const ProfitCalculation = () => {
       console.log("Fetched bookings data:", bookingsData);
       console.log("Fetched store data:", storeData);
 
-      const ordersResponse = await fetch(`https://localhost:7194/api/Orders/store/${storeId}`, {
+      const ordersResponse = await fetch(`https://vesttour.xyz/api/Orders/store/${storeId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
