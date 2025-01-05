@@ -65,7 +65,11 @@ export const routes = [
   {
     path: "/",
     element: (
-      <ProtectedRoute element={<HomePage />} allowedRoles={["customer"]} />
+      <ProtectedRoute
+        element={<HomePage />}
+        allowedRoles={["customer"]}
+        allowGuestAccess={true}
+      />
     ),
   },
   {
@@ -93,7 +97,8 @@ export const routes = [
       {
         path: "voucher-management",
         element: <VoucherManagement />,
-      },{
+      },
+      {
         path: "shipper-management",
         element: <ShipperManagement />,
       },
@@ -244,7 +249,9 @@ export const routes = [
   },
   {
     path: "/staff",
-    element: <StaffDashboard />,
+    element: (
+      <ProtectedRoute element={<StaffDashboard />} allowedRoles={["staff"]} />
+    ),
     children: [
       {
         path: "",
@@ -274,7 +281,13 @@ export const routes = [
   },
   {
     path: "/custom-suits",
-    element: <CustomSuit />,
+    element: (
+      <ProtectedRoute
+        element={<CustomSuit />}
+        allowedRoles={["customer"]}
+        allowGuestAccess={false}
+      />
+    ),
     children: [
       {
         path: "",

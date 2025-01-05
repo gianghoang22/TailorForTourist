@@ -518,14 +518,17 @@ const ManagerDashboard = () => {
     }
   };
 
-  const fetchOrderStatus = async (id) => {
+  const fetchOrderStatus = async (orderId) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`https://localhost:7194/api/Orders/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `https://localhost:7194/api/Orders/${orderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
