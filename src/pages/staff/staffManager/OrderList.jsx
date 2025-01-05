@@ -751,8 +751,10 @@ const OrderList = () => {
     const fetchStores = async () => {
       try {
         const response = await api.get('/Store');
-        setStores(response.data);
-        console.log('Stores fetched:', response.data);
+        // Filter out stores with status "Deactive"
+        const activeStores = response.data.filter(store => store.status !== 'Deactive');
+        setStores(activeStores);
+        console.log('Active Stores fetched:', activeStores);
       } catch (error) {
         console.error('Error fetching stores:', error);
         setSnackbarMessage('Error loading stores');

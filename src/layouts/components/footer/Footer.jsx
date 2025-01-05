@@ -18,19 +18,19 @@ export const Footer = () => {
                     <div className="menu-ft1-container">
                         <ul id='menu-ft1' className='menu'>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="">Term of use</a>
+                                <a>Term of use</a>
                             </li>
                             <li id='menu-item-58' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="">Privacy policy</a>
+                                <a>Privacy policy</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="">Shipping policy</a>
+                                <a>Shipping policy</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="">Payment policy</a>
+                                <a>Payment policy</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="">Warranty policy</a>
+                                <a>Warranty policy</a>
                             </li>
                         </ul>
                     </div>
@@ -42,16 +42,16 @@ export const Footer = () => {
                     <div className="menu-ft2-container">
                         <ul id='menu-ft2' className='menu'>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="">FAQS</a>
+                                <a>FAQS</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="">RESELLER</a>
+                                <a>RESELLER</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="">How to order</a>
+                                <a>How to order</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="">How to measure</a>
+                                <a>How to measure</a>
                             </li>
                         </ul>
                     </div>
@@ -64,10 +64,10 @@ export const Footer = () => {
                         <ul id='menu-ft3' className='menu'>
                             
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="">tip for custom tailor</a>
+                                <a>tip for custom tailor</a>
                             </li>
                             <li id='menu-item' className='menu-item menu-item-type-post_type menu-item-object-page menu-item'>
-                                <a href="">Customer Review</a>
+                                <a>Customer Review</a>
                             </li>
                         </ul>
                     </div>
@@ -75,12 +75,12 @@ export const Footer = () => {
             </article>
             <article className='info-item-ft'>
                 <div id="text-2" className="widget_text">
-                    <h3 className="ft-tt">RECEIVE OUR NEWSLETTER</h3>
+                    {/* <h3 className="ft-tt">RECEIVE OUR NEWSLETTER</h3> */}
                         <div className="textwidget">
                             <form action="/#wpcf7-f60-p5-o1" method="post" className="wpcf7-form" noValidate>
                                 <div className="nlt-ip">
                                     <span className="wpcf7-form-control-wrap email-452">
-            <input 
+            {/* <input 
                 type="email" 
                 name="email-452" 
                 size="40" 
@@ -88,7 +88,7 @@ export const Footer = () => {
                 aria-required="true" 
                 aria-invalid="false" 
                 placeholder="Your email" 
-            />
+            /> */}
         </span>
         {/* <label className="btn">
             <i className="fa fa-paper-plane-o"></i>
@@ -103,15 +103,15 @@ export const Footer = () => {
 </form>
 </div>
                 </div>
-                <div id="mona_social-2" className="social_info">
+                {/* <div id="mona_social-2" className="social_info">
                     <h3 className='ft-tt'>FOLLOW US</h3>
                     <div className="mona-social-info-widget-wrapper">
                         <ul className='sns-ul'>
-                            {/* cho nay gan logo */}
+                            cho nay gan logo
                             <li>
-                                {/* <a target="_blank" href='#'>
+                                <a target="_blank" href='#'>
                                 <FontAwesomeIcon icon={faTripadvisor} />
-                                </a> */}
+                                </a>
                             </li>
                             <li></li>
                             <li></li>
@@ -121,7 +121,7 @@ export const Footer = () => {
                             <li></li>
                         </ul>
                     </div>
-                </div>
+                </div> */}
             </article>
         </div>
     </div>
@@ -146,7 +146,7 @@ export const Footer = () => {
                                     <i className='fa fa-email'></i>
                                     EMAIL:
                                 </p>
-                                <p>infor@fpt.edu.vn</p>
+                                <p>matchavesttailor@gmail.com</p>
                             </div>
                             <div className="ft-right-it">
                                 <p className='lb'>

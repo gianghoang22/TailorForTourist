@@ -172,7 +172,8 @@ export const routes = [
   },
   {
     path: "/cart",
-    element: <Cart />,
+    element: (
+    <ProtectedRoute element={<Cart />} allowedRoles={["customer"]} />),
   },
   {
     path: "/booking-thanks",

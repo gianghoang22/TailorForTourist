@@ -377,9 +377,9 @@ const StoreManagement = () => {
     setSearchTerm(e.target.value);
   };
 
-  const filteredStores = storeData.filter((s) =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStores = storeData
+    .filter((s) => s.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => b.storeId - a.storeId);
 
   // Add this function to filter out assigned managers
   const getAvailableManagers = () => {

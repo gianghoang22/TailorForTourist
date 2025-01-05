@@ -146,7 +146,11 @@ const ShipperManagement = () => {
       await fetchShipperData();
     } catch (error) {
       console.error("Error updating shipper:", error);
-      setError(error.message);
+      if (error.message.includes("401")) {
+        setError("Unauthorized: Please log in again.");
+      } else {
+        setError(error.message);
+      }
     }
   };
 

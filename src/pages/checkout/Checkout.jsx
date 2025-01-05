@@ -487,11 +487,11 @@ const Checkout = () => {
         };
 
         const queryParams = new URLSearchParams({
-            guestName: guestName.trim(),
-            guestEmail: guestEmail.trim(),
-            guestAddress: guestAddress.trim(),
-            deposit: depositAmount.toString(),
-            shippingfee: finalShippingFee.toString(),
+            guestName: guestName,
+            guestEmail: guestEmail,
+            guestAddress: guestAddress,
+            deposit: depositAmount,
+            shippingfee: finalShippingFee,
             deliverymethod: deliveryMethod,
             storeId: storeId
         });

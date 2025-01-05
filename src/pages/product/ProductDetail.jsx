@@ -111,7 +111,13 @@ const ProductDetailPage = () => {
 
   const handleAddToCart = async () => {
     const token = localStorage.getItem('token');
-    
+    const userId = localStorage.getItem("userID");
+
+    if (!userId) {
+      toast.error('You must be logged in to add items to the cart.');
+      return;
+    }
+
     if (!token) {
       // Guest user - add to localStorage
       addToGuestCart(product, false);
@@ -121,11 +127,10 @@ const ProductDetailPage = () => {
 
     try {
       const productID = product.productID;
-      const userId = parseInt(localStorage.getItem("userID"));
       const isCustom = false;
-  
+
       const productToAdd = {
-        userId: userId, 
+        userId: parseInt(userId),
         isCustom: isCustom,
         productId: productID,
         customProduct: {
@@ -139,39 +144,39 @@ const ProductDetailPage = () => {
           ]
         }
       };
-  
+
       console.log("Sending product to add to cart:", productToAdd);
-// Gửi dữ liệu lên API
-const response = await fetch("https://localhost:7194/api/AddCart/addtocart", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  },
-  body: JSON.stringify(productToAdd),
-});
+      // Gửi dữ liệu lên API
+      const response = await fetch("https://localhost:7194/api/AddCart/addtocart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(productToAdd),
+      });
 
-// Kiểm tra mã trạng thái HTTP
-if (!response.ok) {
-  const errorText = await response.text(); // Đọc phản hồi dưới dạng văn bản
-  console.error("API returned error:", errorText); // Log lỗi ra console
-  throw new Error("Failed to add product to cart: " + errorText);
-}
+      // Kiểm tra mã trạng thái HTTP
+      if (!response.ok) {
+        const errorText = await response.text(); // Đọc phản hồi dưới dạng văn bản
+        console.error("API returned error:", errorText); // Log lỗi ra console
+        throw new Error("Failed to add product to cart: " + errorText);
+      }
 
-// Nếu API trả về thông báo chuỗi đơn giản (như 'Product added to cart.')
-const resultText = await response.text(); // Đọc phản hồi dưới dạng văn bản
-console.log("API response:", resultText); // Log thông báo trả về từ API
+      // Nếu API trả về thông báo chuỗi đơn giản (như 'Product added to cart.')
+      const resultText = await response.text(); // Đọc phản hồi dưới dạng văn bản
+      console.log("API response:", resultText); // Log thông báo trả về từ API
 
-if (resultText.includes("Product added to cart")) {
-  toast.success('Product added to cart.');
-} else {
-  toast.error('Failed to add product to cart.');
-}
-} catch (error) {
-// Xử lý lỗi nếu có
-console.log("error:", error);
-toast.error("Failed to add to cart. Please try again.");
-}
+      if (resultText.includes("Product added to cart")) {
+        toast.success('Product added to cart.');
+      } else {
+        toast.error('Failed to add product to cart.');
+      }
+    } catch (error) {
+      // Xử lý lỗi nếu có
+      console.log("error:", error);
+      toast.error("Failed to add to cart. Please try again.");
+    }
   };
   
   const handleSubmitFeedback = async (e) => {

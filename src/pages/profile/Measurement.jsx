@@ -6,22 +6,22 @@ const Measurement = () => {
   const [formData, setFormData] = useState({
     measurementId: 0,
     userId: 0,
-    weight: 0,
-    height: 0,
-    neck: 0,
-    chest: 0,
-    waist: 0,
-    hip: 0,
-    shoulder: 0,
-    sleeveLength: 0,
-    biceps: 0,
-    armhole: 0,
-    jacketLength: 0,
-    pantsWaist: 0,
-    crotch: 0,
-    thigh: 0,
-    pantsLength: 0,
-    age: 0,
+    weight: "",
+    height: "",
+    neck: "",
+    chest: "",
+    waist: "",
+    hip: "",
+    shoulder: "",
+    sleeveLength: "",
+    biceps: "",
+    armhole: "",
+    jacketLength: "",
+    pantsWaist: "",
+    crotch: "",
+    thigh: "",
+    pantsLength: "",
+    age: "",
   });
   const [isEditing, setIsEditing] = useState(false);
   const [measurementId, setMeasurementId] = useState(null);
@@ -95,7 +95,7 @@ const Measurement = () => {
     ];
 
     numberFields.forEach((field) => {
-      if (formData[field] === undefined || formData[field] === null) {
+      if (formData[field] === undefined || formData[field] === null || formData[field] === "") {
         newErrors[field] = "This field is required";
       } else if (
         isNaN(formData[field]) ||
@@ -108,7 +108,7 @@ const Measurement = () => {
     });
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0; // return true if no errors
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = () => {
@@ -169,12 +169,13 @@ const Measurement = () => {
         if (!measurementId) {
           const createdData = await response.json();
           setMeasurementId(createdData.measurementId);
-          console.log("Measurement data created successfully");
+          alert("Measurement added successfully!");
         } else {
-          console.log("Measurement data updated successfully");
+          alert("Measurement updated successfully!");
         }
       } catch (error) {
         console.error("Error saving measurement data:", error);
+        alert("An error occurred while saving the measurement data.");
       }
     }
 
