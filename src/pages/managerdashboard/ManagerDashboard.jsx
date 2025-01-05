@@ -80,7 +80,7 @@ const ManagerDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
 
-  const BASE_URL = "https://localhost:7194/api";
+  const BASE_URL = "https://vesttour.xyz/api";
 
   const fetchStoreByManagerId = async (userId) => {
     const response = await fetch(`${BASE_URL}/Store/userId/${userId}`);
@@ -266,7 +266,7 @@ const ManagerDashboard = () => {
       const userPromises = userIds.map(async (userId) => {
         try {
           const response = await fetch(
-            `https://localhost:7194/api/User/${userId}`,
+            `https://vesttour.xyz/api/User/${userId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -284,7 +284,7 @@ const ManagerDashboard = () => {
       const storePromises = storeIds.map(async (storeId) => {
         try {
           const response = await fetch(
-            `https://localhost:7194/api/Store/${storeId}`,
+            `https://vesttour.xyz/api/Store/${storeId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -325,7 +325,7 @@ const ManagerDashboard = () => {
       const statusPromises = orders.map(async (order) => {
         try {
           const response = await fetch(
-            `https://localhost:7194/api/ProcessingTailor/GetByOrderId/${order.orderId}`,
+            `https://vesttour.xyz/api/ProcessingTailor/GetByOrderId/${order.orderId}`,
             {
               method: "GET",
               headers: {
@@ -397,7 +397,7 @@ const ManagerDashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        "  https://localhost:7194/api/TailorPartner",
+        "  https://vesttour.xyz/api/TailorPartner",
         {
           method: "GET",
           headers: {
@@ -447,7 +447,7 @@ const ManagerDashboard = () => {
 
     try {
       const response = await fetch(
-        "https://localhost:7194/api/ProcessingTailor",
+        "https://vesttour.xyz/api/ProcessingTailor",
         {
           method: "POST",
           headers: {
@@ -488,7 +488,7 @@ const ManagerDashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Orders/updatestatus/${orderId}`,
+        `https://vesttour.xyz/api/Orders/updatestatus/${orderId}`,
         {
           method: "PATCH",
           headers: {
@@ -522,7 +522,7 @@ const ManagerDashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Orders/${orderId}`,
+        `https://vesttour.xyz/api/Orders/${orderId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

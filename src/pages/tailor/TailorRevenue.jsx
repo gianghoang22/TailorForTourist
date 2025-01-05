@@ -55,7 +55,7 @@ const TailorRevenue = () => {
         return;
       }
 
-      const storeResponse = await fetch(`https://localhost:7194/api/TailorPartner/get-by-user/${userId}`, {
+      const storeResponse = await fetch(`https://vesttour.xyz/api/TailorPartner/get-by-user/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -71,7 +71,7 @@ const TailorRevenue = () => {
 
       console.log("Store ID:", storeId);
 
-      const ordersResponse = await fetch(`https://localhost:7194/api/Orders/store/${storeId}`, {
+      const ordersResponse = await fetch(`https://vesttour.xyz/api/Orders/store/${storeId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

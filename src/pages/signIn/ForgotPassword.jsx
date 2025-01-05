@@ -16,7 +16,7 @@ function ForgotPassword({ open, handleClose }) {
 
     try {
       const response = await fetch(
-        "https://localhost:7194/api/User/forgot-password",
+        "https://vesttour.xyz/api/User/forgot-password",
         {
           method: "POST",
           headers: {

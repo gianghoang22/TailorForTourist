@@ -73,7 +73,7 @@ const BookingPage = () => {
     if (userID) {
       try {
         const response = await fetch(
-          `https://localhost:7194/api/User/${userID}`,
+          `https://vesttour.xyz/api/User/${userID}`,
           {
             method: "GET",
             headers: {
@@ -100,7 +100,7 @@ const BookingPage = () => {
 
   const fetchStores = async () => {
     try {
-      const response = await fetch("https://localhost:7194/api/Store");
+      const response = await fetch("https://vesttour.xyz/api/Store");
       const data = await response.json();
 
       const processedData = data.map((store) => ({
@@ -109,7 +109,7 @@ const BookingPage = () => {
           ? store.imgUrl
           : store.imgUrl.startsWith("/")
             ? `https://localhost:7194${store.imgUrl}`
-            : `https://localhost:7194/api/Store/image/${store.imgUrl}`,
+            : `https://vesttour.xyz/api/Store/image/${store.imgUrl}`,
       }));
 
       console.log("Store data received:", processedData);
@@ -314,8 +314,8 @@ const BookingPage = () => {
       }
 
       const endpoint = isLoggedIn
-        ? "https://localhost:7194/api/Booking/loggedin-user-booking"
-        : "https://localhost:7194/api/Booking/guest-booking";
+        ? "https://vesttour.xyz/api/Booking/loggedin-user-booking"
+        : "https://vesttour.xyz/api/Booking/guest-booking";
 
       const headers = {
         "Content-Type": "application/json",
@@ -376,7 +376,7 @@ const BookingPage = () => {
 
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Orders/user/${userID}`,
+        `https://vesttour.xyz/api/Orders/user/${userID}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -435,7 +435,7 @@ const BookingPage = () => {
   const fetchOrderDetails = async (orderId) => {
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Orders/${orderId}/details`,
+        `https://vesttour.xyz/api/Orders/${orderId}/details`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -455,7 +455,7 @@ const BookingPage = () => {
 
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Product/basic/${productId}`,
+        `https://vesttour.xyz/api/Product/basic/${productId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,

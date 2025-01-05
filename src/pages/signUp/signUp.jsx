@@ -154,7 +154,7 @@ export default function SignUp() {
     setIsOtpLoading(true);
     try {
       const response = await fetch(
-        "https://localhost:7194/api/Register/confirm-email",
+        "https://vesttour.xyz/api/Register/confirm-email",
         {
           method: "POST",
           headers: {
@@ -204,7 +204,7 @@ export default function SignUp() {
     };
 
     try {
-      const response = await fetch("https://localhost:7194/api/Register", {
+      const response = await fetch("https://vesttour.xyz/api/Register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
