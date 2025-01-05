@@ -8,6 +8,7 @@ import './ProductDetail.scss';
 import { addToGuestCart } from '../../utils/cartUtil';
 import { format } from 'date-fns';
 import { FaStar, FaRegStar, FaUser, FaCalendarAlt, FaPencilAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import measurementSizeChart from '../../assets/img/elements/measurement_size_chart.jpg'; // Adjust the path as necessary
 
 const StarRating = ({ rating, onRatingChange }) => {
   const [hover, setHover] = useState(0);
@@ -287,116 +288,121 @@ toast.error("Failed to add to cart. Please try again.");
 
             </div>
           </div>
-        </div>
 
-        {/* Related Products Section */}
-        
-        <div className="feedback-section">
-          <h2 className="feedback-title">
-            <FaStar className="title-icon" />
-            Customer Reviews ({feedbacks.length})
-          </h2>
-          
-          {/* Feedback submission form */}
-          <div className="feedback-form">
-            <h3>
-              <FaPencilAlt className="form-icon" />
-              Write Your Review
-            </h3>
-            <form onSubmit={handleSubmitFeedback}>
-              <div className="rating-select">
-                <label>Rating:</label>
-                <StarRating 
-                  rating={newFeedback.rating}
-                  onRatingChange={(value) => setNewFeedback(prev => ({
-                    ...prev,
-                    rating: value
-                  }))}
-                />
-              </div>
-              
-              <div className="comment-input">
-                <label>Comment:</label>
-                <textarea
-                  value={newFeedback.comment}
-                  onChange={(e) => setNewFeedback(prev => ({
-                    ...prev,
-                    comment: e.target.value
-                  }))}
-                  required
-                  placeholder="Write your review here..."
-                />
-              </div>
-              
-              <button type="submit" className="submit-feedback">
-                Submit Review
-              </button>
-            </form>
+          {/* Add the size chart image here */}
+          <div className="size-chart">
+            <img src={measurementSizeChart} alt="Cloth Size Chart" />
           </div>
 
-          {/* Existing feedback display */}
-          {feedbacks.length === 0 ? (
-            <p className="no-feedback">No reviews yet for this product.</p>
-          ) : (
-            <>
-              <div className="feedback-list">
-                {currentFeedbacks.map(feedback => (
-                  <div key={feedback.feedbackId} className="feedback-item">
-                    <div className="feedback-header">
-                      <div className="user-info">
-                        <FaUser className="user-icon" />
-                        <span className="user-name">{userNames[feedback.userId] || 'Anonymous'}</span>
-                      </div>
-                      <div className="rating-date">
-                        <span className="rating">
-                          {[...Array(5)].map((_, index) => (
-                            <span key={index}>
-                              {index < feedback.rating ? <FaStar className="star-filled" /> : <FaRegStar className="star-empty" />}
-                            </span>
-                          ))}
-                        </span>
-                        <span className="date">
-                          <FaCalendarAlt className="calendar-icon" />
-                          {format(new Date(feedback.dateSubmitted), 'MMM dd, yyyy')}
-                        </span>
-                      </div>
-                    </div>
-                    <p className="comment">{feedback.comment}</p>
-                  </div>
-                ))}
-              </div>
-              
-              {totalPages > 1 && (
-                <div className="pagination">
-                  <button 
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="pagination-btn"
-                  >
-                    <FaChevronLeft />
-                  </button>
-                  
-                  {[...Array(totalPages)].map((_, index) => (
-                    <button
-                      key={index + 1}
-                      onClick={() => handlePageChange(index + 1)}
-                      className={`pagination-btn ${currentPage === index + 1 ? 'active' : ''}`}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
-                  
-                  <button 
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="pagination-btn"
-                  >
-                    <FaChevronRight />
-                  </button>
+          {/* Related Products Section */}
+          
+          <div className="feedback-section">
+            <h2 className="feedback-title">
+              <FaStar className="title-icon" />
+              Customer Reviews ({feedbacks.length})
+            </h2>
+            
+            {/* Feedback submission form */}
+            <div className="feedback-form">
+              <h3>
+                <FaPencilAlt className="form-icon" />
+                Write Your Review
+              </h3>
+              <form onSubmit={handleSubmitFeedback}>
+                <div className="rating-select">
+                  <label>Rating:</label>
+                  <StarRating 
+                    rating={newFeedback.rating}
+                    onRatingChange={(value) => setNewFeedback(prev => ({
+                      ...prev,
+                      rating: value
+                    }))}
+                  />
                 </div>
-              )}
-            </>
-          )}
+                
+                <div className="comment-input">
+                  <label>Comment:</label>
+                  <textarea
+                    value={newFeedback.comment}
+                    onChange={(e) => setNewFeedback(prev => ({
+                      ...prev,
+                      comment: e.target.value
+                    }))}
+                    required
+                    placeholder="Write your review here..."
+                  />
+                </div>
+                
+                <button type="submit" className="submit-feedback">
+                  Submit Review
+                </button>
+              </form>
+            </div>
+
+            {/* Existing feedback display */}
+            {feedbacks.length === 0 ? (
+              <p className="no-feedback">No reviews yet for this product.</p>
+            ) : (
+              <>
+                <div className="feedback-list">
+                  {currentFeedbacks.map(feedback => (
+                    <div key={feedback.feedbackId} className="feedback-item">
+                      <div className="feedback-header">
+                        <div className="user-info">
+                          <FaUser className="user-icon" />
+                          <span className="user-name">{userNames[feedback.userId] || 'Anonymous'}</span>
+                        </div>
+                        <div className="rating-date">
+                          <span className="rating">
+                            {[...Array(5)].map((_, index) => (
+                              <span key={index}>
+                                {index < feedback.rating ? <FaStar className="star-filled" /> : <FaRegStar className="star-empty" />}
+                              </span>
+                            ))}
+                          </span>
+                          <span className="date">
+                            <FaCalendarAlt className="calendar-icon" />
+                            {format(new Date(feedback.dateSubmitted), 'MMM dd, yyyy')}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="comment">{feedback.comment}</p>
+                    </div>
+                  ))}
+                </div>
+                
+                {totalPages > 1 && (
+                  <div className="pagination">
+                    <button 
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="pagination-btn"
+                    >
+                      <FaChevronLeft />
+                    </button>
+                    
+                    {[...Array(totalPages)].map((_, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => handlePageChange(index + 1)}
+                        className={`pagination-btn ${currentPage === index + 1 ? 'active' : ''}`}
+                      >
+                        {index + 1}
+                      </button>
+                    ))}
+                    
+                    <button 
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="pagination-btn"
+                    >
+                      <FaChevronRight />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </main>
       <Footer />

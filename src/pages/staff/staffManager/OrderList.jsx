@@ -199,6 +199,7 @@ const OrderList = () => {
   const [method, setMethod] = useState(''); // State cho payment method
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]); // Tự động chọn ngày hiện tại
   const [paymentDetails, setPaymentDetails] = useState('Paid full'); // Mặc định là "Paid full"
+  const [resetAddress, setResetAddress] = useState(false); // Add this state
 
   const handleDateFilterChange = (event) => {
     setDateFilter(event.target.value);
@@ -827,6 +828,9 @@ const OrderList = () => {
         setSnackbarMessage('Payment created successfully');
         setSnackbarSeverity('success');
 
+        // Cập nhật trạng thái thanh toán cho đơn hàng
+        await api.put(`/Orders/SetPaidTrue/${createdOrderId}`); // Gọi API để cập nhật trạng thái thanh toán
+
         // Cập nhật payment method cho đơn hàng mà không cần reload trang
         setPayments(prevPayments => ({
             ...prevPayments,
@@ -875,6 +879,14 @@ const OrderList = () => {
         fetchOrderDetails(orderId); // Gọi hàm để lấy thông tin đơn hàng
     }
   }, []);
+
+  const handleStoreSelect = (store) => {
+    setNearestStore(store);
+    setStoreId(store.storeId);
+    setGuestAddress(''); // Clear the address when store changes
+    setResetAddress(true); // Set resetAddress to true
+    console.log("Updated storeId:", store.storeId);
+  };
 
   if (loading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;

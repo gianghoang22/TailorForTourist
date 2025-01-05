@@ -148,7 +148,7 @@ div.wpcf7 .screen-reader-response {
     padding: 5px;
     line-height: 20px;
     margin-right: 5px;
-    float: left;
+    display: inline-block;
     margin-top: -5px;
     margin-left: -35px;
 }
@@ -215,11 +215,9 @@ div.wpcf7 .screen-reader-response {
 }
 
 .imgs-uploaded .item {
-    float: left;
+    display: inline-block;
     overflow: hidden;
     margin: 5px;
-    display: inline-block;
-    vertical-align: bottom;
     width: 100px;
     height: 100px;
     position: relative;
@@ -640,4 +638,10 @@ textarea.fcontrol {
       opacity: 0.5;
     }
   }
+}
+
+.size-chart {
+    width: 50%;
+    margin: 0 auto;
+    text-align: center;
 }

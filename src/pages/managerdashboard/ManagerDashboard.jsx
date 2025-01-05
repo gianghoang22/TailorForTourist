@@ -518,14 +518,17 @@ const ManagerDashboard = () => {
     }
   };
 
-  const fetchOrderStatus = async (id) => {
+  const fetchOrderStatus = async (orderId) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`https://localhost:7194/api/Orders/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `https://localhost:7194/api/Orders/${orderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -642,7 +645,7 @@ const ManagerDashboard = () => {
       processingOrders: orders.filter((o) => o.status === "Processing").length,
       completedOrders: orders.filter((o) => o.status === "Finish").length,
       revenue: orders
-        .filter((o) => o.status === "Finish")
+        .filter((o) => o.shipStatus === "Finished")
         .reduce((sum, order) => sum + (order.totalPrice || 0), 0),
     };
     setDashboardStats(stats);

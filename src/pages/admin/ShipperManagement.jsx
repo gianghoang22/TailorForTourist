@@ -128,7 +128,7 @@ const ShipperManagement = () => {
         return;
       }
 
-      const response = await fetch(`https://localhost:7194/api/ShipperPartner/${newShipper.id}`, {
+      const response = await fetch(`https://localhost:7194/api/ShipperPartner/${newShipper.shipperPartnerId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -138,7 +138,7 @@ const ShipperManagement = () => {
       });
 
       if (!response.ok) throw new Error("Error updating shipper");
-      setShipperData((prevData) => prevData.map((s) => (s.id === newShipper.id ? newShipper : s)));
+      setShipperData((prevData) => prevData.map((s) => (s.shipperPartnerId === newShipper.shipperPartnerId ? newShipper : s)));
       setError(null);
       setShowSuccessMessage(true);
       setNewShipper({ phone: "", company: "", status: "Active" });
@@ -151,34 +151,49 @@ const ShipperManagement = () => {
   };
 
   const handleToggleStatus = async (shipper) => {
-    const updatedStatus = shipper.status === "Active" ? "Inactive" : "Active";
-    const updatedShipper = { ...shipper, status: updatedStatus };
+    console.log("Current shipper:", shipper);
+    
+    if (!shipper || !shipper.shipperPartnerId) {
+        console.error("Shipper ID is undefined");
+        setError("Shipper ID is required.");
+        return;
+    }
+
+    const updatedStatus = shipper.status === "Active" ? "Deactive" : "Active";
+    const updatedShipper = { 
+      shipperPartnerId: shipper.shipperPartnerId,
+      phone: shipper.phone,
+      company: shipper.company,
+      status: updatedStatus 
+    };
+
+    console.log("Payload to be sent:", updatedShipper);
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("You need to log in first!");
-        return;
-      }
+        const token = localStorage.getItem("token");
+        if (!token) {
+            setError("You need to log in first!");
+            return;
+        }
 
-      const response = await fetch(`https://localhost:7194/api/ShipperPartner/${shipper.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updatedShipper),
-      });
+        const response = await fetch(`https://localhost:7194/api/ShipperPartner/${shipper.shipperPartnerId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(updatedShipper),
+        });
 
-      if (!response.ok) throw new Error("Error updating shipper status");
-      setShipperData((prevData) =>
-        prevData.map((s) => (s.id === shipper.id ? updatedShipper : s))
-      );
-      setError(null);
-      setShowSuccessMessage(true);
+        if (!response.ok) throw new Error("Error updating shipper status");
+        setShipperData((prevData) =>
+            prevData.map((s) => (s.shipperPartnerId === shipper.shipperPartnerId ? updatedShipper : s))
+        );
+        setError(null);
+        setShowSuccessMessage(true);
     } catch (error) {
-      console.error("Error updating shipper status:", error);
-      setError(error.message);
+        console.error("Error updating shipper status:", error);
+        setError(error.message);
     }
   };
 
@@ -229,7 +244,7 @@ const ShipperManagement = () => {
                 style={{ marginRight: "1rem" }}
               >
                 <MenuItem value="Active">Active</MenuItem>
-                <MenuItem value="Inactive">Inactive</MenuItem>
+                <MenuItem value="Deactive">Deactive</MenuItem>
               </TextField>
               {editIndex !== null ? (
                 <Button variant="contained" color="primary" onClick={handleUpdate}>
@@ -288,7 +303,7 @@ const ShipperManagement = () => {
                         style={{ width: "120px" }}
                       >
                         <MenuItem value="Active">Active</MenuItem>
-                        <MenuItem value="Inactive">Inactive</MenuItem>
+                        <MenuItem value="Deactive">Deactive</MenuItem>
                       </TextField>
                     </TableCell>
                   </TableRow>

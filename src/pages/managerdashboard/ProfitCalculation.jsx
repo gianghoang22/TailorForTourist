@@ -53,26 +53,38 @@ const ProfitCalculation = () => {
   const fetchData = async () => {
     setLoading(true);
     const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userID");
 
     try {
-      const [ordersResponse, bookingsResponse] = await Promise.all([
-        fetch("https://localhost:7194/api/Orders", {
+      const [bookingsResponse, storeResponse] = await Promise.all([
+        fetch("https://localhost:7194/api/Booking", {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("https://localhost:7194/api/Booking", {
+        fetch(`https://localhost:7194/api/Store/userId/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
 
-      if (!ordersResponse.ok || !bookingsResponse.ok) {
+      if (!bookingsResponse.ok || !storeResponse.ok) {
         throw new Error("Failed to fetch data");
       }
 
-      const ordersData = await ordersResponse.json();
       const bookingsData = await bookingsResponse.json();
+      const storeData = await storeResponse.json();
+      const storeId = storeData.storeId;
 
       console.log("Fetched bookings data:", bookingsData);
+      console.log("Fetched store data:", storeData);
 
+      const ordersResponse = await fetch(`https://localhost:7194/api/Orders/store/${storeId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!ordersResponse.ok) {
+        throw new Error("Failed to fetch orders");
+      }
+
+      const ordersData = await ordersResponse.json();
       setOrders(Array.isArray(ordersData) ? ordersData : []);
       setBookings(Array.isArray(bookingsData.data) ? bookingsData.data : []);
     } catch (err) {
@@ -117,7 +129,7 @@ const ProfitCalculation = () => {
 
     // Process orders with year filter
     orders.forEach((order) => {
-      if (order.status === "Finish" && filterByMonthAndYear(order.orderDate)) {
+      if (order.shipStatus === "Finished" && filterByMonthAndYear(order.orderDate)) {
         const date = new Date(order.orderDate);
         const month = date.getMonth();
         monthlyRevenue[month] += order.totalPrice || 0;
@@ -161,7 +173,7 @@ const ProfitCalculation = () => {
     return orders
       .filter((order) => {
         const orderYear = new Date(order.orderDate).getFullYear();
-        return order.status === "Finish" && orderYear === selectedYear;
+        return order.shipStatus === "Finished" && orderYear === selectedYear;
       })
       .reduce((sum, order) => sum + (order.totalPrice || 0), 0);
   };
@@ -281,7 +293,7 @@ const ProfitCalculation = () => {
       {
         title: "Total Revenue",
         value: `$${totalRevenue.toFixed(2)}`,
-        subtext: `for ${new Date().getFullYear()}`,
+        subtext: `for ${selectedYear}`,
         icon: <DollarSignIcon />,
         className: "revenue",
       },
@@ -305,9 +317,9 @@ const ProfitCalculation = () => {
     ],
     middleRow: [
       {
-        title: "Total Profit",
+        title: "Revenue Share",
         value: `$${totalProfit.toFixed(2)}`,
-        subtext: `for ${new Date().getFullYear()}`,
+        subtext: `for ${selectedYear}`,
         icon: <DollarSignIcon />,
         className: "profit",
       },

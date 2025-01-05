@@ -13,6 +13,7 @@ import {
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "./TailorRevenue.scss";
+import { useNavigate } from "react-router-dom";
 
 const LoadingSpinner = () => (
   <div className="fixed inset-0 flex justify-center items-center">
@@ -35,6 +36,7 @@ const TailorRevenue = () => {
   });
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchRevenueData();
@@ -43,21 +45,49 @@ const TailorRevenue = () => {
   const fetchRevenueData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("https://localhost:7194/api/Orders", {
+      const userId = localStorage.getItem("userID");
+      const token = localStorage.getItem("token");
+
+      if (!userId) {
+        console.error("User ID is not found in localStorage.");
+        alert("Please log in again.");
+        navigate("/signin");
+        return;
+      }
+
+      const storeResponse = await fetch(`https://localhost:7194/api/TailorPartner/get-by-user/${userId}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      if (!storeResponse.ok) {
+        throw new Error(`HTTP error! Status: ${storeResponse.status}`);
       }
 
-      const data = await response.json();
+      const storeData = await storeResponse.json();
+      const storeId = storeData.data.storeId;
+
+      console.log("Store ID:", storeId);
+
+      const ordersResponse = await fetch(`https://localhost:7194/api/Orders/store/${storeId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!ordersResponse.ok) {
+        throw new Error(`HTTP error! Status: ${ordersResponse.status}`);
+      }
+
+      const data = await ordersResponse.json();
+      
       const finishedOrders = data.filter(
         (order) => order.shipStatus === "Finished"
       );
+
       const totalRevenue = finishedOrders.reduce((sum, order) => {
         return sum + order.totalPrice * 0.7;
       }, 0);

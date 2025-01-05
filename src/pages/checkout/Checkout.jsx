@@ -349,26 +349,42 @@ const Checkout = () => {
     }
   };
 
+  const setOrderPaid = async (orderId) => {
+    try {
+      const response = await axios.put(`https://localhost:7194/api/Orders/SetPaidTrue/${orderId}`);
+      if (response.status === 200) {
+        console.log('Order marked as paid successfully');
+      } else {
+        console.error('Failed to mark order as paid:', response.data);
+      }
+    } catch (error) {
+      console.error('Error setting order as paid:', error);
+      // toast.error('Failed to update order status. Please try again.');
+    }
+  };
+
   const handleCreatePayment = async (orderId, userId, method, paymentDetails, amount) => {
     try {
-        const response = await axios.post('https://localhost:7194/api/Payments', {
-            orderId: orderId,
-            userId: userId,
-            method: method,
-            paymentDate: new Date().toISOString().split('T')[0],
-            paymentDetails: paymentDetails,
-            status: "Success",
-            amount: amount
-        });
+      const response = await axios.post('https://localhost:7194/api/Payments', {
+        orderId: orderId,
+        userId: userId,
+        method: method,
+        paymentDate: new Date().toISOString().split('T')[0],
+        paymentDetails: paymentDetails,
+        status: "Success",
+        amount: amount
+      });
 
-        if (response.status === 201) {
-            console.log('Payment created successfully:', response.data);
-        } else {
-            console.error('Payment creation failed:', response.data);
-        }
+      if (response.status === 201) {
+        console.log('Payment created successfully:', response.data);
+        // Call setOrderPaid after successful payment
+        await setOrderPaid(orderId);
+      } else {
+        console.error('Payment creation failed:', response.data);
+      }
     } catch (error) {
-        console.error("Error creating payment:", error.response ? error.response.data : error);
-        toast.error('Payment creation failed. Please try again.');
+      console.error("Error creating payment:", error.response ? error.response.data : error);
+      toast.error('Please fill in all required fields and try again.');
     }
   };
 
