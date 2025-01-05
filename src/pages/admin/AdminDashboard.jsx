@@ -17,11 +17,13 @@ import {
   TextField,
   InputAdornment,
   IconButton,
+  Button,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 
 const AdminDashboard = () => {
   const location = useLocation();
@@ -136,7 +138,9 @@ const AdminDashboard = () => {
         totalFabrics: Array.isArray(fabricsData) ? fabricsData.length : 0,
         totalStores: Array.isArray(storesData) ? storesData.length : 0,
         activeVouchers: Array.isArray(vouchersData)
-          ? vouchersData.filter((v) => v.status === "Active" || v.status === "OnGoing").length
+          ? vouchersData.filter(
+              (v) => v.status === "Active" || v.status === "OnGoing"
+            ).length
           : 0,
       });
     } catch (error) {
@@ -272,6 +276,46 @@ const AdminDashboard = () => {
     setPage(0);
   };
 
+  // Add this function after the other function declarations
+  const exportToCSV = () => {
+    // Convert transactions data to CSV format
+    const headers = [
+      "Payment ID",
+      "Date",
+      "Method",
+      "Details",
+      "Amount",
+      "Status",
+    ];
+    const csvData = transactions.map((transaction) => [
+      transaction.paymentId,
+      new Date(transaction.paymentDate).toLocaleDateString("en-US"),
+      transaction.method,
+      transaction.paymentDetails,
+      transaction.amount.toFixed(2),
+      transaction.status,
+    ]);
+
+    // Combine headers and data
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map((row) => row.join(",")),
+    ].join("\n");
+
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `transactions_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Update the renderTransactionsSection function
   const renderTransactionsSection = () => (
     <Box sx={{ flex: "1 1 70%" }}>
@@ -283,18 +327,40 @@ const AdminDashboard = () => {
           background: "white",
         }}
       >
-        <Typography
-          variant="h6"
+        <Box
           sx={{
             display: "flex",
+            justifyContent: "space-between",
             alignItems: "center",
-            gap: 1,
             mb: 3,
-            color: "#1a237e",
           }}
         >
-          <i className="fas fa-money-bill-wave"></i> Recent Transactions
-        </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              mb: 3,
+              color: "#1a237e",
+            }}
+          >
+            <i className="fas fa-money-bill-wave"></i> Recent Transactions
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<FileDownloadIcon />}
+            onClick={exportToCSV}
+            sx={{
+              backgroundColor: "#4caf50",
+              "&:hover": {
+                backgroundColor: "#45a049",
+              },
+            }}
+          >
+            Export to CSV
+          </Button>
+        </Box>
 
         <TableContainer>
           <Table sx={{ minWidth: 650 }}>
@@ -427,9 +493,12 @@ const AdminDashboard = () => {
 
       const data = await response.json();
       // Filter orders with status "Finish" and calculate total price
-      const finishedOrders = data.filter(order => order.status === "Finish");
-      const total = finishedOrders.reduce((acc, order) => acc + order.totalPrice, 0);
-      
+      const finishedOrders = data.filter((order) => order.status === "Finish");
+      const total = finishedOrders.reduce(
+        (acc, order) => acc + order.totalPrice,
+        0
+      );
+
       setTotalRevenue(total); // Update the total revenue state
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -621,7 +690,9 @@ const AdminDashboard = () => {
               {/* Total Revenue Section */}
               <div className="total-revenue">
                 <h2>Total Revenue: ${totalRevenue.toFixed(2)}</h2>
-                <p>This is the total revenue generated from all finished orders.</p>
+                <p>
+                  This is the total revenue generated from all finished orders.
+                </p>
               </div>
 
               {/* Recent Transactions Section */}

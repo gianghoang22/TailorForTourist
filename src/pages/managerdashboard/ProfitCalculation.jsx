@@ -281,7 +281,7 @@ const ProfitCalculation = () => {
       {
         title: "Total Revenue",
         value: `$${totalRevenue.toFixed(2)}`,
-        subtext: `for ${new Date().getFullYear()}`,
+        subtext: `for ${selectedYear}`,
         icon: <DollarSignIcon />,
         className: "revenue",
       },
@@ -307,7 +307,7 @@ const ProfitCalculation = () => {
       {
         title: "Total Profit",
         value: `$${totalProfit.toFixed(2)}`,
-        subtext: `for ${new Date().getFullYear()}`,
+        subtext: `for ${selectedYear}`,
         icon: <DollarSignIcon />,
         className: "profit",
       },
