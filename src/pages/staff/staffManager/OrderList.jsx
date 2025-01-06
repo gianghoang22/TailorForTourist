@@ -124,6 +124,18 @@ const calculateFinalShippingFee = (originalFee, selectedVoucher) => {
   return originalFee;
 };
 
+// Add this validation function near the top with other utility functions
+const validateShippedDate = (date) => {
+  const selectedDate = new Date(date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time to start of day for fair comparison
+  
+  if (selectedDate < today) {
+    return 'Delivery date cannot be in the past';
+  }
+  return '';
+};
+
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -592,6 +604,15 @@ const OrderList = () => {
   };
 
   const handleCreateFormChange = (field, value) => {
+    if (field === 'shippedDate') {
+      const dateError = validateShippedDate(value);
+      setValidationErrors(prev => ({
+        ...prev,
+        shippedDate: dateError
+      }));
+      if (dateError) return; // Don't update if date is invalid
+    }
+    
     setCreateOrderForm(prev => ({
       ...prev,
       [field]: value
@@ -1478,7 +1499,7 @@ const OrderList = () => {
                 noOptionsText="No stores found"
               /> */}
               <Autocomplete
-                options={vouchers}
+                options={vouchers.filter(voucher => voucher.status === "OnGoing")}
                 getOptionLabel={(option) => `${option.voucherCode} - ${option.description}` || ''}
                 value={vouchers.find(voucher => voucher.voucherId === createOrderForm.voucherId) || null}
                 onChange={(_, newValue) => {
@@ -1669,6 +1690,9 @@ const OrderList = () => {
                 error={!!validationErrors.shippedDate}
                 helperText={validationErrors.shippedDate}
                 required
+                inputProps={{
+                  min: new Date().toISOString().split('T')[0] // Set minimum date to today
+                }}
               />
               <TextField
                 label="Note"
@@ -2071,16 +2095,12 @@ const OrderList = () => {
             />
             <TextField
               label="Amount"
-              type="number"
-              value={amount}
-              onChange={handleAmountChange}
+              value={amount.toFixed(2)} // Format to 2 decimal places
               fullWidth
               margin="normal"
-              error={!!validationErrors.amount}
-              helperText={validationErrors.amount}
+              disabled // Make it read-only
               InputProps={{
-                inputProps: { min: 0 },
-                startAdornment: <InputAdornment position="start">$</InputAdornment>
+                startAdornment: <InputAdornment position="start">$</InputAdornment>,
               }}
             />
             <TextField
@@ -2092,7 +2112,7 @@ const OrderList = () => {
               margin="normal"
             >
               <MenuItem value="Cash">Cash</MenuItem>
-              <MenuItem value="Paypal">Banking Payment</MenuItem>
+              <MenuItem value="Banking">Banking Payment</MenuItem>
             </TextField>
             {method === 'Paypal' && (
               <div>

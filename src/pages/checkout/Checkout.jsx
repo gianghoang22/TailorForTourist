@@ -654,11 +654,13 @@ const Checkout = () => {
                           required
                         >
                           <option value="">Select a store</option>
-                          {stores.map((store) => (
-                            <option key={store.storeId} value={store.storeId}>
-                              {store.name} - {store.address}
-                            </option>
-                          ))}
+                          {stores
+                            .filter(store => store.status === "Active")
+                            .map((store) => (
+                              <option key={store.storeId} value={store.storeId}>
+                                {store.name} - {store.address}
+                              </option>
+                            ))}
                         </select>
                       </div>
                     ) : (
@@ -676,11 +678,13 @@ const Checkout = () => {
                             required
                           >
                             <option value="">Select nearest store</option>
-                            {stores.map((store) => (
-                              <option key={store.storeId} value={store.storeId}>
-                                {store.name} - {store.address}
-                              </option>
-                            ))}
+                            {stores
+                              .filter(store => store.status === "Active")
+                              .map((store) => (
+                                <option key={store.storeId} value={store.storeId}>
+                                  {store.name} - {store.address}
+                                </option>
+                              ))}
                           </select>
                         </div>
 

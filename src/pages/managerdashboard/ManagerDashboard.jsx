@@ -29,6 +29,7 @@ import {
   Checkbox,
   Backdrop,
   Fade,
+  Tooltip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -676,6 +677,31 @@ const ManagerDashboard = () => {
     });
   }, [statusFilter, processStatusFilter, processingStatuses, filteredOrders]);
 
+  useEffect(() => {
+    const fetchProcessingStatuses = async () => {
+      try {
+        const response = await fetch('https://vesttour.xyz/api/ProcessingTailor', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const { data } = await response.json();
+        
+        // Tạo object mapping từ orderId sang status
+        const statusMap = data.reduce((acc, processing) => {
+          acc[processing.orderId] = processing.status;
+          return acc;
+        }, {});
+        
+        setProcessingStatuses(statusMap);
+      } catch (error) {
+        console.error('Error fetching processing statuses:', error);
+      }
+    };
+
+    fetchProcessingStatuses();
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -900,20 +926,20 @@ const ManagerDashboard = () => {
                             ${order.totalPrice?.toFixed(2) || "0.00"}
                           </TableCell>
                           <TableCell>
-                            <span
-                              style={{
-                                backgroundColor: getProcessingStatusColor(
-                                  processingStatuses[order.orderId]
-                                ),
-                                color: "white",
-                                padding: "4px 8px",
-                                borderRadius: "5px",
-                                fontSize: "12px",
-                              }}
-                            >
-                              {processingStatuses[order.orderId] ||
-                                "Loading..."}
-                            </span>
+                            <Tooltip title={`Processing Status: ${processingStatuses[order.orderId] || 'Not Started'}`}>
+                              <span
+                                style={{
+                                  backgroundColor: getProcessingStatusColor(processingStatuses[order.orderId]),
+                                  color: "white",
+                                  padding: "4px 8px",
+                                  borderRadius: "5px",
+                                  fontSize: "12px",
+                                  cursor: "help"
+                                }}
+                              >
+                                {processingStatuses[order.orderId] || "Not Started"}
+                              </span>
+                            </Tooltip>
                           </TableCell>
                           <TableCell>
                             <Button
