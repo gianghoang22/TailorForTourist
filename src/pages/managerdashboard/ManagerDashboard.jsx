@@ -37,6 +37,48 @@ import logo from "./../../assets/img/icon/matcha.png";
 import Pagination from "@mui/material/Pagination";
 import { motion } from "framer-motion";
 
+const getStatusColor = (status) => {
+  switch (status) {
+    case "Pending":
+      return "#FFA500"; // Orange
+    case "Processing":
+      return "#3498db"; // Blue
+    case "Finish":
+      return "#2ecc71"; // Green
+    case "Cancel":
+      return "#e74c3c"; // Red
+    case "Due":
+      return "#e67e22"; // Dark Orange
+    case "Not Start":
+      return "#95a5a6"; // Gray
+    case "Doing":
+      return "#9b59b6"; // Purple
+    default:
+      return "#bdc3c7"; // Light Gray
+  }
+};
+
+const getProcessingStatusColor = (status) => {
+  switch (status) {
+    case "Not Start":
+      return "#95a5a6"; // Gray
+    case "Doing":
+      return "#3498db"; // Blue
+    case "Due":
+      return "#e67e22"; // Dark Orange
+    case "Finish":
+      return "#2ecc71"; // Green
+    case "Cancel":
+      return "#e74c3c"; // Red
+    case "Pending":
+      return "#FFA500"; // Orange
+    case "Processing":
+      return "#9b59b6"; // Purple
+    default:
+      return "#bdc3c7"; // Light Gray
+  }
+};
+
 const ManagerDashboard = () => {
   const location = useLocation();
   const [orders, setOrders] = useState([]);
@@ -79,6 +121,8 @@ const ManagerDashboard = () => {
   const [includeFixStage, setIncludeFixStage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
+  const [storeInfo, setStoreInfo] = useState(null);
+  const userID = localStorage.getItem("userID");
 
   const BASE_URL = "https://vesttour.xyz/api";
 
@@ -98,18 +142,74 @@ const ManagerDashboard = () => {
     return response.json();
   };
 
+  const fetchUserDetails = async (userId) => {
+    try {
+      const response = await fetch(`${BASE_URL}/User/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch user details');
+      return response.json();
+    } catch (error) {
+      console.error(`Error fetching user ${userId}:`, error);
+      return null;
+    }
+  };
+
+  const fetchStoreDetails = async (storeId) => {
+    try {
+      const response = await fetch(`${BASE_URL}/Store/${storeId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch store details');
+      return response.json();
+    } catch (error) {
+      console.error(`Error fetching store ${storeId}:`, error);
+      return null;
+    }
+  };
+
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
       const userId = localStorage.getItem("userID");
-      console.log("Retrieved userId from localStorage:", userId);
-
       if (!userId) {
         throw new Error("User ID not found");
       }
+
+      // Fetch store và orders như cũ
       const storeData = await fetchStoreByManagerId(userId);
       const ordersData = await fetchOrdersByStoreId(storeData.storeId);
-      setOrders(Array.isArray(ordersData) ? ordersData : [ordersData]);
+      const orders = Array.isArray(ordersData) ? ordersData : [ordersData];
+
+      // Fetch thông tin user và store cho mỗi order
+      const userPromises = orders.map(order => fetchUserDetails(order.userID));
+      const storePromises = orders.map(order => fetchStoreDetails(order.storeId));
+
+      const users = await Promise.all(userPromises);
+      const stores = await Promise.all(storePromises);
+
+      // Tạo map để lưu trữ thông tin user và store
+      const userMap = {};
+      const storeMap = {};
+
+      orders.forEach((order, index) => {
+        if (users[index]) {
+          userMap[order.userID] = users[index].name || 'Unknown';
+        }
+        if (stores[index]) {
+          storeMap[order.storeId] = stores[index].name || 'Unknown';
+        }
+      });
+
+      // Cập nhật state
+      setOrders(orders);
+      setUsers(userMap);
+      setStores(storeMap);
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -237,192 +337,74 @@ const ManagerDashboard = () => {
     // Redirect to the login page
     navigate("/signin");
   };
-  useEffect(() => {
-    fetchOrders();
-    fetchTailorPartners();
-  }, []);
 
-  useEffect(() => {
-    const fetchUsersAndStores = async () => {
-      setIsFetchingDetails(true);
-      const token = localStorage.getItem("token");
+  const fetchStoreInfo = async () => {
+    try {
+      const userId = localStorage.getItem("userID");
+      const response = await fetch(
+        `https://vesttour.xyz/api/Store/manager-userId/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-      if (!Array.isArray(orders) || orders.length === 0) {
-        setIsFetchingDetails(false);
-        return;
+      if (!response.ok) {
+        throw new Error("Failed to fetch store info");
       }
 
-      const userIds = [
-        ...new Set(
-          orders.filter((order) => order?.userID).map((order) => order.userID)
-        ),
-      ];
-      const storeIds = [
-        ...new Set(
-          orders.filter((order) => order?.storeId).map((order) => order.storeId)
-        ),
-      ];
-
-      const userPromises = userIds.map(async (userId) => {
-        try {
-          const response = await fetch(
-            `https://vesttour.xyz/api/User/${userId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          const userData = await response.json();
-          return [userId, userData.name];
-        } catch (error) {
-          console.error(`Error fetching user ${userId}:`, error);
-          return [userId, "Unknown User"];
-        }
-      });
-
-      const storePromises = storeIds.map(async (storeId) => {
-        try {
-          const response = await fetch(
-            `https://vesttour.xyz/api/Store/${storeId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          const storeData = await response.json();
-          return [storeId, storeData.name];
-        } catch (error) {
-          console.error(`Error fetching store ${storeId}:`, error);
-          return [storeId, "Unknown Store"];
-        }
-      });
-
-      try {
-        const userEntries = await Promise.all(userPromises);
-        const storeEntries = await Promise.all(storePromises);
-
-        setUsers(Object.fromEntries(userEntries));
-        setStores(Object.fromEntries(storeEntries));
-        setIsFetchingDetails(false);
-      } catch (error) {
-        console.error("Error fetching users and stores:", error);
-        setError(
-          "Error fetching additional data. Some information may be missing."
-        );
-        setIsFetchingDetails(false);
-      }
-    };
-
-    fetchUsersAndStores();
-  }, [orders]);
-
-  useEffect(() => {
-    const fetchProcessingStatuses = async () => {
-      const token = localStorage.getItem("token");
-
-      const statusPromises = orders.map(async (order) => {
-        try {
-          const response = await fetch(
-            `https://vesttour.xyz/api/ProcessingTailor/GetByOrderId/${order.orderId}`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          if (!response.ok) {
-            throw new Error(
-              `Failed to fetch status for order ${order.orderId}`
-            );
-          }
-          const data = await response.json();
-          return [order.orderId, data.status];
-        } catch (error) {
-          console.error(
-            `Error fetching processing status for ${order.orderId}:`,
-            error
-          );
-          return [order.orderId, "Unknown"];
-        }
-      });
-
-      const statuses = await Promise.all(statusPromises);
-      setProcessingStatuses(Object.fromEntries(statuses));
-    };
-
-    if (orders.length > 0) {
-      fetchProcessingStatuses();
-    }
-  }, [orders]);
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Pending":
-        return "brown";
-      case "Processing":
-        return "blue";
-      case "Finish":
-        return "green";
-      case "Cancel":
-        return "red";
-      default:
-        return "gray";
-    }
-  };
-
-  const getProcessingStatusColor = (status) => {
-    switch (status) {
-      case "Pending":
-        return "brown";
-      case "Doing":
-        return "blue";
-      case "Due":
-        return "Orange";
-      case "Finish":
-        return "green";
-      case "Not Start":
-        return "Pink";
-      case "Cancel":
-        return "red";
-      default:
-        return "gray";
+      const data = await response.json();
+      setStoreInfo(data);
+      return data;
+    } catch (error) {
+      console.error("Error fetching store info:", error);
+      setError("Error fetching store information");
     }
   };
 
   const fetchTailorPartners = async () => {
+    if (!storeInfo) return;
+
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(
-        "  https://vesttour.xyz/api/TailorPartner",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      // Nếu có tailorPartner trong storeInfo, chỉ lấy tailor đó
+      if (storeInfo.tailorPartner) {
+        setTailorPartners([storeInfo.tailorPartner]);
+      } else {
+        setError("No tailor partner found for this store");
       }
-      const result = await response.json();
-      console.log("Fetched tailor partners:", result);
-      setTailorPartners(result.data || []);
     } catch (error) {
       console.error("Error fetching tailor partners:", error);
       setError("Error fetching tailor partners. Please try again later.");
     }
   };
 
+  useEffect(() => {
+    const initializeData = async () => {
+      await fetchStoreInfo();
+      fetchOrders();
+    };
+
+    if (userID) {
+      initializeData();
+    }
+  }, [userID]);
+
+  useEffect(() => {
+    if (storeInfo) {
+      fetchTailorPartners();
+    }
+  }, [storeInfo]);
+
   const handleProcessTailor = (order) => {
     if (!order) return;
+    
+    // Set tailorPartnerId mặc định từ storeInfo
     setProcessingData({
       ...processingData,
       orderId: order.orderId || 0,
+      tailorPartnerId: storeInfo?.tailorPartner?.tailorPartnerId || '',
     });
     setProcessingDialogOpen(true);
   };
@@ -884,7 +866,7 @@ const ManagerDashboard = () => {
                         <TableRow key={order.orderId}>
                           <TableCell>{order.orderId}</TableCell>
                           <TableCell>
-                            {users[order.userID] || "Unknown"}
+                            {users[order.userID] || order.guestName || "Unknown"}
                           </TableCell>
                           <TableCell>
                             {stores[order.storeId] || "Unknown"}
@@ -995,18 +977,20 @@ const ManagerDashboard = () => {
                       onChange={handleProcessingChange}
                       fullWidth
                       margin="dense"
+                      disabled={true}
+                      SelectProps={{
+                        IconComponent: () => null,
+                      }}
                     >
-                      <MenuItem value="">
-                        <em>Select a location</em>
-                      </MenuItem>
-                      {tailorPartners.map((partner) => (
-                        <MenuItem
-                          key={partner.tailorPartnerId}
-                          value={partner.tailorPartnerId}
-                        >
-                          {partner.location}
+                      {storeInfo?.tailorPartner ? (
+                        <MenuItem value={storeInfo.tailorPartner.tailorPartnerId}>
+                          {storeInfo.tailorPartner.location}
                         </MenuItem>
-                      ))}
+                      ) : (
+                        <MenuItem value="">
+                          <em>No tailor partner available</em>
+                        </MenuItem>
+                      )}
                     </TextField>
                     <TextField
                       label="Note"
@@ -1134,7 +1118,7 @@ const ManagerDashboard = () => {
                     <Button
                       onClick={handleProcessingSubmit}
                       color="primary"
-                      disabled={loading}
+                      disabled={!processingData.tailorPartnerId || loading}
                     >
                       {loading ? <CircularProgress size={24} /> : "Submit"}
                     </Button>

@@ -2,14 +2,34 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMapMarkerAlt, faEnvelope, faUser, faMobileAlt, faPhone } from '@fortawesome/free-solid-svg-icons';
 import './ContactUs.scss';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { Footer } from '../../layouts/components/footer/Footer';
 import { Navigation } from '../../layouts/components/navigation/Navigation';
+
+const StoreInfo = ({ store }) => (
+  <div className="store-info-card">
+    <h3 className="store-name">{store.name}</h3>
+    <div className="store-details">
+      <div className="info-item">
+        <FontAwesomeIcon icon={faMapMarkerAlt} className="info-icon" />
+        <div className="info-content">
+          <span className="info-label">Address</span>
+          <p>{store.address}</p>
+        </div>
+      </div>
+      <div className="info-item">
+        <FontAwesomeIcon icon={faMobileAlt} className="info-icon" />
+        <div className="info-content">
+          <span className="info-label">Contact Number</span>
+          <p>{store.contactNumber}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 const ContactUs = () => {
   const formRef = useRef(null);
   const mapRef = useRef(null);
-  const [captchaValue, setCaptchaValue] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -26,7 +46,8 @@ const ContactUs = () => {
         const response = await fetch('https://vesttour.xyz/api/Store');
         if (response.ok) {
           const data = await response.json();
-          setStores(data);
+          const activeStores = data.filter(store => store.status === "Active");
+          setStores(activeStores);
         } else {
           console.error('Failed to fetch stores');
         }
@@ -49,11 +70,6 @@ const ContactUs = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!captchaValue) {
-      setResponseMessage('Please complete the reCAPTCHA.');
-      return;
-    }
-
     setIsSubmitting(true);
     setResponseMessage('');
 
@@ -70,7 +86,6 @@ const ContactUs = () => {
         setResponseMessage('Your message has been sent successfully.');
         formRef.current.reset();
         setFormData({ name: '', email: '', subject: '', message: '' });
-        setCaptchaValue(null);
       } else {
         setResponseMessage('Failed to send the message. Please try again later.');
       }
@@ -100,24 +115,13 @@ const ContactUs = () => {
                 <p><strong>Matcha Vest</strong> is devoted to serving the needs of its current and prospective clients and will respond to any questions, comments, or concerns within 24 hours.</p>
               </div>
             </div>
-            <div className="contact-col">
-              <dl className="conactInfo-dl">
+            <div className="contact-col stores-container">
+              <h2 className="stores-title">Our Locations</h2>
+              <div className="stores-grid">
                 {stores.map(store => (
-                  <React.Fragment key={store.storeId}>
-                    <dt><FontAwesomeIcon icon={faMapMarkerAlt} /></dt>
-                    <dd>
-                      <p className="lb">Address</p>
-                      <strong>{store.name}</strong>
-                      <p>{store.address}</p>
-                    </dd>
-                    <dt><FontAwesomeIcon icon={faMobileAlt} /></dt>
-                    <dd>
-                      <p className="lb">Contact Number</p>
-                      <p>{store.contactNumber}</p>
-                    </dd>
-                  </React.Fragment>
+                  <StoreInfo key={store.storeId} store={store} />
                 ))}
-              </dl>
+              </div>
             </div>
             <div className="contact-col">
               <form ref={formRef} onSubmit={handleSubmit} className="wpcf7-form">
@@ -170,16 +174,12 @@ const ContactUs = () => {
                       required
                     />
                   </div>
-                  <ReCAPTCHA
-                    sitekey="6LfAlXgqAAAAABF4BSCze2KfCXIY3PPBcVjZWqzu"
-                    onChange={(val) => setCaptchaValue(val)}
-                  />
                   <p>
                     <input 
                       type="submit" 
                       value={isSubmitting ? "Sending..." : "Send"} 
                       className="btn primary-btn w170-btn" 
-                      disabled={!captchaValue || isSubmitting} 
+                      disabled={isSubmitting} 
                     />
                   </p>
                   {responseMessage && <p className="response-message">{responseMessage}</p>}
@@ -187,7 +187,6 @@ const ContactUs = () => {
               </form>
             </div>
           </div>
-          
         </div>
       </div>
       <Footer />

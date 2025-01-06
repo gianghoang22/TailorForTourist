@@ -257,7 +257,7 @@ const OrderHistory = () => {
                     <th>Shipping Status</th>
                     <th>Total Price</th>
                     <th>Deposit</th>
-                    <th>Balance</th>
+                    <th>Shipping Fee</th>
                     <th>Payment</th>
                     <th>Actions</th>
                   </tr>
@@ -295,7 +295,7 @@ const OrderHistory = () => {
                           </td>
                           <td>${order.totalPrice?.toFixed(2) || ""}</td>
                           <td>${order.deposit?.toFixed(2) || ""}</td>
-                          <td>${(order.totalPrice - order.deposit)?.toFixed(2) || "N/A"}</td>
+                          <td>${order.shippingFee?.toFixed(2) || "N/A"}</td>
                           <td>
                             {paymentMethod ? paymentMethod.method : "Paypal"}
                           </td>

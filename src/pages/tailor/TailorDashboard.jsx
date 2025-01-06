@@ -905,7 +905,7 @@ const TailorDashboard = () => {
                     <tr>
                       <th>Order ID</th>
                       <th>Stage Name</th>
-                      <th>Order Status</th>
+                      <th>Stage Status</th>
                       <th>Note</th>
                       <th>Date Sample</th>
                       <th>Date Fix</th>

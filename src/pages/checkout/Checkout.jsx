@@ -802,11 +802,14 @@ const Checkout = () => {
                             value={selectedVoucher?.voucherId || ''}
                           >
                             <option value="">Select a voucher</option>
-                            {vouchers.map((voucher) => (
-                              <option key={voucher.voucherId} value={voucher.voucherId}>
-                                {voucher.voucherCode} - {voucher.description}
-                              </option>
-                            ))}
+                            {vouchers
+                              .filter(voucher => voucher.status === "OnGoing")
+                              .map((voucher) => (
+                                <option key={voucher.voucherId} value={voucher.voucherId}>
+                                  {voucher.voucherCode} - {voucher.description}
+                                </option>
+                              ))
+                            }
                           </select>
                         </div>
                         {deliveryMethod !== 'Delivery' && (

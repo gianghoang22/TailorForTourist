@@ -212,6 +212,13 @@ const OrderList = () => {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]); // Tự động chọn ngày hiện tại
   const [paymentDetails, setPaymentDetails] = useState('Paid full'); // Mặc định là "Paid full"
   const [resetAddress, setResetAddress] = useState(false); // Add this state
+  const [validationErrors, setValidationErrors] = useState({
+    productQuantity: '',
+    customQuantity: '',
+    deposit: '',
+    amount: '',
+    shippedDate: ''
+  });
 
   const handleDateFilterChange = (event) => {
     setDateFilter(event.target.value);
@@ -314,23 +321,32 @@ const OrderList = () => {
       try {
         // Fetch fabrics
         const fabricsResponse = await api.get('/Fabrics');
-        setFabrics(fabricsResponse.data);
-
+        setFabrics(Array.isArray(fabricsResponse.data) ? fabricsResponse.data : []);
+        console.log('Fabrics data:', fabricsResponse.data); // Thêm log để debug
+  
         // Fetch linings
-        const liningsResponse = await api.get('/Linings');
-        setLinings(liningsResponse.data);
-
+        const liningsResponse = await api.get('/linings');
+        const liningsData = liningsResponse.data?.data || [];
+        console.log('Linings data:', liningsData);
+        setLinings(liningsData);
+  
         // Fetch style options
         const styleOptionsResponse = await api.get('/StyleOption');
-        setStyleOptions(styleOptionsResponse.data);
+        setStyleOptions(Array.isArray(styleOptionsResponse.data) ? styleOptionsResponse.data : []);
+        console.log('Style options data:', styleOptionsResponse.data); // Thêm log để debug
+  
       } catch (error) {
         console.error('Error fetching custom data:', error);
+        // Đặt giá trị mặc định là mảng rỗng khi có lỗi
+        setFabrics([]);
+        setLinings([]);
+        setStyleOptions([]);
         setSnackbarMessage('Error loading custom data');
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
       }
     };
-
+  
     fetchCustomData();
   }, []);
 
@@ -700,54 +716,61 @@ const OrderList = () => {
   };
 
   const handleAddCustomProduct = () => {
-    // Kiểm tra xem measurementId có tồn tại không
-    if (!measurementId) {
-        console.error('No measurementId found');
-        setSnackbarMessage('Please select a measurement ID');
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
-        return;
-    }
+    try {
+      // Validate required fields
+      if (!selectedFabric) {
+        throw new Error('Please select a fabric');
+      }
+      if (!selectedLining) {
+        throw new Error('Please select a lining');
+      }
+      if (selectedStyleOptions.length === 0) {
+        throw new Error('Please select at least one style option');
+      }
+      if (!measurementId) {
+        throw new Error('Please select a measurement');
+      }
+      if (customQuantity < 1) {
+        throw new Error('Quantity must be greater than 0');
+      }
 
-    // Kiểm tra xem các trường bắt buộc đã được điền đầy đủ chưa
-    if (!selectedFabric || !selectedLining || selectedStyleOptions.length === 0 || customQuantity <= 0) {
-        console.log('Error: Please fill all required fields. Missing fields:', {
-            selectedFabric,
-            selectedLining,
-            selectedStyleOptions,
-            customQuantity
-        });
-
-        setSnackbarMessage('Please fill all required fields');
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
-        return;
-    }
-
-    // Nếu tất cả các điều kiện đều hợp lệ, thêm sản phẩm tùy chỉnh
-    const newCustomProduct = {
+      // Create new custom product
+      const newCustomProduct = {
         productCode: `CUSTOM-${Date.now()}`,
-        categoryID: 5,
+        categoryID: 5, // Assuming 5 is for custom products
         fabricID: selectedFabric.fabricID,
         liningID: selectedLining.liningId,
         measurementID: parseInt(measurementId),
         quantity: customQuantity,
         pickedStyleOptions: selectedStyleOptions.map(option => ({
-            styleOptionID: option.styleOptionId
+          styleOptionID: option.styleOptionId
         }))
-    };
+      };
 
-    setCreateOrderForm(prev => ({
+      // Update form state
+      setCreateOrderForm(prev => ({
         ...prev,
         customProducts: [...prev.customProducts, newCustomProduct]
-    }));
+      }));
 
-    // Reset form
-    setSelectedFabric(null);
-    setSelectedLining(null);
-    setSelectedStyleOptions([]);
-    setCustomQuantity(1);
-    setOpenCustomDialog(false);
+      // Reset selections
+      setSelectedFabric(null);
+      setSelectedLining(null);
+      setSelectedStyleOptions([]);
+      setCustomQuantity(1);
+      setOpenCustomDialog(false);
+
+      // Show success message
+      setSnackbarMessage('Custom product added successfully');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+
+    } catch (error) {
+      console.error('Error adding custom product:', error);
+      setSnackbarMessage(error.message);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
   };
 
   useEffect(() => {
@@ -819,6 +842,19 @@ const OrderList = () => {
   const handlePaymentSubmit = async (event) => {
     event.preventDefault();
     
+    // Validate payment date
+    const dateError = validatePaymentDate(paymentDate);
+    if (dateError) {
+      setValidationErrors(prev => ({
+        ...prev,
+        paymentDate: dateError
+      }));
+      setSnackbarMessage('Please fill in all required fields correctly');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+      return;
+    }
+
     // Calculate total amount including shipping fee
     const totalAmount = amount + (createOrderForm.shippingFee || 0);
     
@@ -900,6 +936,84 @@ const OrderList = () => {
     setGuestAddress(''); // Clear the address when store changes
     setResetAddress(true); // Set resetAddress to true
     console.log("Updated storeId:", store.storeId);
+  };
+
+  const handleQuantityChange = (e) => {
+    const value = parseInt(e.target.value);
+    if (value < 1) {
+      setValidationErrors(prev => ({
+        ...prev,
+        productQuantity: 'Quantity must be greater than 0'
+      }));
+      setProductQuantity(1);
+    } else {
+      setValidationErrors(prev => ({
+        ...prev,
+        productQuantity: ''
+      }));
+      setProductQuantity(value);
+    }
+  };
+
+  const handleCustomQuantityChange = (e) => {
+    const value = parseInt(e.target.value);
+    if (value < 1) {
+      setValidationErrors(prev => ({
+        ...prev,
+        customQuantity: 'Quantity must be greater than 0'
+      }));
+      setCustomQuantity(1);
+    } else {
+      setValidationErrors(prev => ({
+        ...prev,
+        customQuantity: ''
+      }));
+      setCustomQuantity(value);
+    }
+  };
+
+  const handleDepositChange = (e) => {
+    // Convert to number and ensure it's not negative
+    const value = Math.max(0, parseFloat(e.target.value) || 0);
+    
+    if (value < 0) {
+      setValidationErrors(prev => ({
+        ...prev,
+        deposit: 'Deposit cannot be negative'
+      }));
+    } else {
+      setValidationErrors(prev => ({
+        ...prev,
+        deposit: ''
+      }));
+    }
+    
+    handleCreateFormChange('deposit', value);
+  };
+
+  const handleAmountChange = (e) => {
+    const value = parseFloat(e.target.value);
+    if (value < 0) {
+      setValidationErrors(prev => ({
+        ...prev,
+        amount: 'Amount cannot be negative'
+      }));
+      setAmount(0);
+    } else {
+      setValidationErrors(prev => ({
+        ...prev,
+        amount: ''
+      }));
+      setAmount(value);
+    }
+  };
+
+  // Thêm validation cho payment date
+  const validatePaymentDate = (date) => {
+    if (!date) {
+      return 'Payment date is required';
+    }
+    return '';
   };
 
   if (loading) return <CircularProgress />;
@@ -1552,6 +1666,9 @@ const OrderList = () => {
                 fullWidth
                 margin="normal"
                 InputLabelProps={{ shrink: true }}
+                error={!!validationErrors.shippedDate}
+                helperText={validationErrors.shippedDate}
+                required
               />
               <TextField
                 label="Note"
@@ -1567,9 +1684,23 @@ const OrderList = () => {
                     label="Deposit"
                     type="number"
                     value={createOrderForm.deposit}
-                    onChange={(e) => handleCreateFormChange('deposit', parseFloat(e.target.value))}
+                    onChange={handleDepositChange}
                     fullWidth
                     margin="normal"
+                    error={!!validationErrors.deposit}
+                    helperText={validationErrors.deposit}
+                    InputProps={{
+                      inputProps: { 
+                        min: 0,
+                        step: "0.01",
+                        onKeyDown: (e) => {
+                          if (e.key === '-') {
+                            e.preventDefault();
+                          }
+                        }
+                      },
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>
+                    }}
                 />
               )}
               
@@ -1673,9 +1804,11 @@ const OrderList = () => {
                     label="Quantity"
                     type="number"
                     value={productQuantity}
-                    onChange={(e) => setProductQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={handleQuantityChange}
                     fullWidth
                     margin="normal"
+                    error={!!validationErrors.productQuantity}
+                    helperText={validationErrors.productQuantity}
                     InputProps={{
                       inputProps: { min: 1 }
                     }}
@@ -1778,9 +1911,9 @@ const OrderList = () => {
 
                   {/* Lining Selection */}
                   <Autocomplete
-                    options={linings}
+                    options={Array.isArray(linings) ? linings.filter(lining => lining.status === "Available") : []}
                     getOptionLabel={(option) => 
-                      option ? option.liningName : ''
+                      option ? `${option.liningName}` : ''
                     }
                     value={selectedLining}
                     onChange={(_, newValue) => setSelectedLining(newValue)}
@@ -1793,6 +1926,23 @@ const OrderList = () => {
                         required
                       />
                     )}
+                    renderOption={(props, option) => (
+                      <li {...props}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <img 
+                            src={option.imageUrl}
+                            alt={option.liningName}
+                            style={{ width: '20px', height: '20px', objectFit: 'cover', marginRight: '8px' }}
+                          />
+                          <Typography variant="body1">
+                            {option.liningName} 
+                          </Typography>
+                        </div>
+                      </li>
+                    )}
+                    isOptionEqualToValue={(option, value) => 
+                      option.liningId === value?.liningId
+                    }
                   />
 
                   {/* Style Options Selection */}
@@ -1832,9 +1982,11 @@ const OrderList = () => {
                     label="Quantity"
                     type="number"
                     value={customQuantity}
-                    onChange={(e) => setCustomQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={handleCustomQuantityChange}
                     fullWidth
                     margin="normal"
+                    error={!!validationErrors.customQuantity}
+                    helperText={validationErrors.customQuantity}
                     required
                     InputProps={{
                       inputProps: { min: 1 }
@@ -1875,7 +2027,12 @@ const OrderList = () => {
                 </DialogContent>
                 <DialogActions>
                   <Button onClick={() => setOpenCustomDialog(false)}>Cancel</Button>
-                  <Button onClick={handleAddCustomProduct} color="primary" variant="contained">
+                  <Button 
+                    onClick={handleAddCustomProduct} 
+                    color="primary" 
+                    variant="contained"
+                    disabled={!selectedFabric || !selectedLining || selectedStyleOptions.length === 0 || !measurementId || customQuantity < 1}
+                  >
                     Add Custom Product
                   </Button>
                 </DialogActions>
@@ -1914,10 +2071,17 @@ const OrderList = () => {
             />
             <TextField
               label="Amount"
-              value={amount || ''} 
+              type="number"
+              value={amount}
+              onChange={handleAmountChange}
               fullWidth
               margin="normal"
-              disabled 
+              error={!!validationErrors.amount}
+              helperText={validationErrors.amount}
+              InputProps={{
+                inputProps: { min: 0 },
+                startAdornment: <InputAdornment position="start">$</InputAdornment>
+              }}
             />
             <TextField
               label="Payment Method"
@@ -1938,10 +2102,20 @@ const OrderList = () => {
             <TextField
               label="Payment Date"
               type="date"
-              value={paymentDate} // Sử dụng paymentDate từ state
-              onChange={(e) => setPaymentDate(e.target.value)} // Cập nhật paymentDate
+              value={paymentDate}
+              onChange={(e) => {
+                const dateError = validatePaymentDate(e.target.value);
+                setValidationErrors(prev => ({
+                  ...prev,
+                  paymentDate: dateError
+                }));
+                setPaymentDate(e.target.value);
+              }}
               fullWidth
               margin="normal"
+              error={!!validationErrors.paymentDate}
+              helperText={validationErrors.paymentDate}
+              required
             />
             <TextField
               label="Payment Details"
