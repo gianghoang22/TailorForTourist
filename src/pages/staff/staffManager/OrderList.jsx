@@ -112,6 +112,18 @@ const fetchUserDetails = async (userId) => {
   }
 };
 
+const calculateFinalShippingFee = (originalFee, selectedVoucher) => {
+  // Nếu không có voucher, trả về phí gốc
+  if (!selectedVoucher) return originalFee;
+  
+  // Kiểm tra xem có phải voucher shipping không (bắt đầu bằng FREESHIP)
+  if (selectedVoucher.voucherCode?.substring(0, 8) === 'FREESHIP') {
+    const discountAmount = originalFee * selectedVoucher.discountNumber;
+    return Math.max(0, originalFee - discountAmount);
+  }
+  return originalFee;
+};
+
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -485,16 +497,17 @@ const OrderList = () => {
   const handleCreateOrder = async () => {
     setIsCreatingOrder(true);
     try {
-      // Log form data trước khi format
-      console.log('Original Form Data:', createOrderForm);
+      // Calculate total amount including shipping fee
+      const totalOrderAmount = selectedProducts.reduce((sum, product) => 
+        sum + (product.price * product.quantity), 0) + (createOrderForm.shippingFee || 0);
+
+      // Calculate deposit based on payment details
+      const depositAmount = totalOrderAmount; // This will be the same as the payment amount
 
       const formattedShippedDate = createOrderForm.shippedDate 
         ? new Date(createOrderForm.shippedDate).toISOString().split('T')[0]
         : null;
       console.log('Formatted Shipped Date:', formattedShippedDate);
-
-      // Log products trước khi format
-      console.log('Original Products:', createOrderForm.products);
 
       const formattedProducts = createOrderForm.products.map(product => {
         const formatted = {
@@ -510,61 +523,51 @@ const OrderList = () => {
         userId: selectedUser?.userId || null,
         storeId: createOrderForm.storeId,
         voucherId: createOrderForm.voucherId || null,
-        // shipperPartnerId: null,
-        shippedDate: formattedShippedDate,
+        shippedDate: createOrderForm.shippedDate,
         note: createOrderForm.note || '',
         paid: createOrderForm.paid || false,
         guestName: createOrderForm.guestName,
         guestEmail: createOrderForm.guestEmail,
         guestAddress: createOrderForm.guestAddress,
-        deposit: createOrderForm.deposit || 0,
+        deposit: depositAmount, // Set deposit to match the payment amount
         shippingFee: createOrderForm.shippingFee || 0,
         deliveryMethod: createOrderForm.deliveryMethod,
         products: formattedProducts,
         customProducts: createOrderForm.customProducts || []
       };
 
-      // Log payload cuối cùng
+      // Log payload for verification
       console.log('Final API Request Payload:', orderPayload);
-      console.log('Selected User:', selectedUser);
-      console.log('Products Array:', formattedProducts);
-      console.log('Custom Products Array:', orderPayload.customProducts);
 
-      try {
-        const response = await api.post('/Orders/staffcreateorder', orderPayload);
-        console.log('API Response Success:', response.data);
-        
-        const orderId = response.data.orderId; // Lưu orderId
-        setCreatedOrderId(orderId);
-        localStorage.setItem('orderId', orderId);
-        
-        // Gọi hàm để lấy thông tin đơn hàng
-        await fetchOrderDetails(orderId); // Đảm bảo orderId được truyền đúng
-        
-        // Mở dialog createPayment
-        setOpenPaymentDialog(true);
-        
-        setSnackbarMessage('Order created successfully');
-        setSnackbarSeverity('success');
-        setOpen(false);
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          console.error('Axios Error:', error);
-          console.error('Error Response:', error.response); // Thông tin phản hồi từ máy chủ
-          console.error('Error Message:', error.message); // Thông điệp lỗi
-        } else {
-          console.error('Unexpected Error:', error); // Lỗi không phải từ Axios
-        }
-        
-        setSnackbarMessage(
-          error.response?.data?.message || 
-          'Failed to create order'
-        );
-        setSnackbarSeverity('error');
-      }
+      const response = await api.post('/Orders/staffcreateorder', orderPayload);
+      console.log('API Response Success:', response.data);
+      
+      const orderId = response.data.orderId; // Lưu orderId
+      setCreatedOrderId(orderId);
+      localStorage.setItem('orderId', orderId);
+      
+      // Gọi hàm để lấy thông tin đơn hàng
+      await fetchOrderDetails(orderId); // Đảm bảo orderId được truyền đúng
+      
+      // Mở dialog createPayment
+      setOpenPaymentDialog(true);
+      
+      setSnackbarMessage('Order created successfully');
+      setSnackbarSeverity('success');
+      setOpen(false);
     } catch (error) {
-      console.error('Error in form processing:', error);
-      setSnackbarMessage('Error processing form data');
+      if (axios.isAxiosError(error)) {
+        console.error('Axios Error:', error);
+        console.error('Error Response:', error.response); // Thông tin phản hồi từ máy chủ
+        console.error('Error Message:', error.message); // Thông điệp lỗi
+      } else {
+        console.error('Unexpected Error:', error); // Lỗi không phải từ Axios
+      }
+      
+      setSnackbarMessage(
+        error.response?.data?.message || 
+        'Failed to create order'
+      );
       setSnackbarSeverity('error');
     } finally {
       setIsCreatingOrder(false);
@@ -815,13 +818,20 @@ const OrderList = () => {
   // Function to handle payment form submission
   const handlePaymentSubmit = async (event) => {
     event.preventDefault();
+    
+    // Calculate total amount including shipping fee
+    const totalAmount = amount + (createOrderForm.shippingFee || 0);
+    
+    // Calculate deposit amount based on payment details
+    const finalAmount = paymentDetails === "Make deposit 50%" ? totalAmount * 0.5 : totalAmount;
+
     const paymentPayload = {
         orderId: createdOrderId,
         userId: userId,
         method: method, 
         paymentDate: paymentDate,
         paymentDetails: paymentDetails,
-        amount: amount
+        amount: finalAmount // Use the calculated amount
     };
 
     try {
@@ -830,13 +840,15 @@ const OrderList = () => {
         setSnackbarMessage('Payment created successfully');
         setSnackbarSeverity('success');
 
-        // Cập nhật trạng thái thanh toán cho đơn hàng
-        await api.put(`/Orders/SetPaidTrue/${createdOrderId}`); // Gọi API để cập nhật trạng thái thanh toán
+        // Update order payment status if full payment
+        if (paymentDetails === "Paid full") {
+            await api.put(`/Orders/SetPaidTrue/${createdOrderId}`);
+        }
 
-        // Cập nhật payment method cho đơn hàng mà không cần reload trang
+        // Update payments state
         setPayments(prevPayments => ({
             ...prevPayments,
-            [createdOrderId]: method // Cập nhật phương thức thanh toán cho orderId
+            [createdOrderId]: method
         }));
     } catch (error) {
         console.error('Error creating payment:', error);
@@ -865,9 +877,9 @@ const OrderList = () => {
             console.error('userId not found in order data');
         }
 
-        // Cộng thêm shippingFee vào amount
-        const totalAmount = orderData.totalPrice + (orderData.shippingFee || 0); // Cộng shippingFee vào totalPrice
-        setAmount(totalAmount); // Lưu amount
+        // Calculate total amount including shipping fee
+        const totalAmount = orderData.totalPrice + (orderData.shippingFee || 0);
+        setAmount(totalAmount);
     } catch (error) {
         console.error('Error fetching order details:', error);
     }
@@ -1353,13 +1365,26 @@ const OrderList = () => {
               /> */}
               <Autocomplete
                 options={vouchers}
-                getOptionLabel={(option) => option.voucherCode || ''}
+                getOptionLabel={(option) => `${option.voucherCode} - ${option.description}` || ''}
                 value={vouchers.find(voucher => voucher.voucherId === createOrderForm.voucherId) || null}
                 onChange={(_, newValue) => {
-                  setCreateOrderForm(prev => ({
-                    ...prev,
-                    voucherId: newValue ? newValue.voucherId : null
-                  }));
+                  console.log('Selected Voucher:', newValue);
+                  setCreateOrderForm(prev => {
+                    const updatedForm = {
+                      ...prev,
+                      voucherId: newValue ? newValue.voucherId : null
+                    };
+
+                    // Tính toán lại shipping fee với voucher mới
+                    if (prev.shippingFee) {
+                      const newShippingFee = calculateFinalShippingFee(prev.shippingFee, newValue);
+                      console.log('Original Shipping Fee:', prev.shippingFee);
+                      console.log('New Shipping Fee:', newShippingFee);
+                      updatedForm.shippingFee = newShippingFee;
+                    }
+
+                    return updatedForm;
+                  });
                 }}
                 renderInput={(params) => (
                   <TextField
@@ -1368,24 +1393,8 @@ const OrderList = () => {
                     margin="normal"
                     variant="outlined"
                     fullWidth
-                    helperText="Select a valid voucher"
                   />
                 )}
-                renderOption={(props, option) => (
-                  <li {...props}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="body1">{option.voucherCode}</Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        Discount: {option.discountAmount || option.discountPercent}
-                        {option.discountPercent ? '%' : '$'}
-                      </Typography>
-                    </div>
-                  </li>
-                )}
-                isOptionEqualToValue={(option, value) => option.voucherId === value.voucherId}
-                loading={vouchers.length === 0}
-                loadingText="Loading vouchers..."
-                noOptionsText="No valid vouchers found"
               />
               {/* <TextField
                 label="Shipper Partner ID"

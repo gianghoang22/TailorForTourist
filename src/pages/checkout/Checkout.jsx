@@ -490,10 +490,12 @@ const Checkout = () => {
             guestName: guestName,
             guestEmail: guestEmail,
             guestAddress: guestAddress,
+            guestPhone: guestPhone,
             deposit: depositAmount,
             shippingfee: finalShippingFee,
             deliverymethod: deliveryMethod,
-            storeId: storeId
+            storeId: storeId,
+            voucherId: selectedVoucher?.voucherId || ''
         });
 
         if (selectedVoucher && selectedVoucher.voucherId) {

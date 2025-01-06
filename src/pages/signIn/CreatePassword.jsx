@@ -1,11 +1,11 @@
 import * as React from "react";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import CssBaseline from "@mui/material/CssBaseline";
-import FormLabel from "@mui/material/FormLabel";
-import FormControl from "@mui/material/FormControl";
-import Link from "@mui/material/Link";
-import TextField from "@mui/material/TextField";
+import { Box } from "@mui/material";
+import { Button } from "@mui/material";
+import { CssBaseline } from "@mui/material";
+import { FormLabel } from "@mui/material";
+import { FormControl } from "@mui/material";
+import { Link } from "@mui/material";
+import { TextField } from "@mui/material";
 import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
