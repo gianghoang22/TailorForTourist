@@ -389,12 +389,19 @@ const Checkout = () => {
   };
 
   const handlePaymentSuccess = async (details, data) => {
-    var paymentId = sessionStorage.getItem('paymentId');
     try {
         setIsLoading(true);
         
-        // Tính toán depositAmount bao gồm shippingFee
-        const depositAmount = isDeposit ? (apiCart.cartTotal * 0.5 ) : (apiCart.cartTotal + shippingFee);
+        // Tính toán lại tổng tiền sau khi áp dụng voucher
+        const finalShippingFee = selectedVoucher?.voucherCode?.substring(0, 8) === 'FREESHIP' 
+            ? discountedShippingFee 
+            : shippingFee;
+        
+        // Tính tổng cuối cùng bao gồm cả shipping fee đã giảm giá
+        const finalTotal = apiCart.cartTotal + finalShippingFee;
+        
+        // Tính depositAmount dựa trên tổng đã giảm giá
+        const depositAmount = isDeposit ? (finalTotal * 0.5) : finalTotal;
 
         // Validation checks
         const errors = [];
@@ -444,83 +451,39 @@ const Checkout = () => {
             return;
         }
 
-        const finalShippingFee = selectedVoucher?.voucherCode?.substring(0, 8) === 'FREESHIP' 
-            ? discountedShippingFee 
-            : shippingFee;
-
-        const cartItems = apiCart?.cartItems || [];
-        
-        const requestBody = {
-            cartItems: cartItems.map(item => {
-                if (item.isCustom) {
-                    return {
-                        quantity: parseInt(item.quantity),
-                        price: parseFloat(item.price) || 0,
-                        isCustom: true,
-                        customProduct: {
-                            productCode: item.customProduct.productCode,
-                            categoryID: parseInt(item.customProduct.categoryID),
-                            fabricID: parseInt(item.customProduct.fabricID),
-                            liningID: parseInt(item.customProduct.liningID),
-                            measurementID: parseInt(item.customProduct.measurementID),
-                            pickedStyleOptions: item.customProduct.pickedStyleOptions.map(opt => ({
-                                styleOptionID: parseInt(opt.styleOptionID)
-                            }))
-                        },
-                    };
-                } else {
-                    return {
-                        quantity: parseInt(item.quantity),
-                        price: parseFloat(item.price) || 0,
-                        isCustom: false,
-                        product: {
-                            productID: parseInt(item.product.productID),
-                            productCode: item.product.productCode,
-                            categoryID: parseInt(item.product.categoryID),
-                            size: item.product.size,
-                            price: parseFloat(item.product.price) || 0,
-                            imgURL: item.product.imgURL
-                        }
-                    };
-                }
-            })
-        };
-
         const queryParams = new URLSearchParams({
             guestName: guestName,
             guestEmail: guestEmail,
             guestAddress: guestAddress,
             guestPhone: guestPhone,
-            deposit: depositAmount,
-            shippingfee: finalShippingFee,
+            deposit: depositAmount.toString(),
+            shippingfee: finalShippingFee.toString(),
             deliverymethod: deliveryMethod,
             storeId: storeId,
             voucherId: selectedVoucher?.voucherId || ''
         });
 
-        if (selectedVoucher && selectedVoucher.voucherId) {
-            queryParams.append('voucherId', selectedVoucher.voucherId.toString());
-        }
-
         const token = localStorage.getItem('token');
         const url = `${CHECKOUT_API.confirmOrder}?${queryParams.toString()}`;
 
-        // Tính toán giá trị tổng cho đơn hàng
-        const payAmount = isDeposit ? (apiCart.cartTotal * 0.5 + shippingFee) : (apiCart.cartTotal + shippingFee); // Tính toán payAmount bao gồm shippingFee
-
-        // Call confirmOrder API
-        const response = await axios.post(url, requestBody, {
+        // Call confirmOrder API - không cần requestBody, tất cả params đã ở trong URL
+        const response = await axios.post(url, null, {
             headers: { Authorization: `Bearer ${token}` },
         });
 
         if (response.status === 200 || response.status === 201) {
-            const orderId = response.data.orderId; // Get orderId from response
-            const userId = localStorage.getItem('userID'); // Get userId from localStorage
-            const method = "Paypal"; // Payment method
-            const paymentDetails = isDeposit ? "Make deposit 50%" : "Paid full"; // Update payment details
+            const orderId = response.data.orderId;
+            const userId = localStorage.getItem('userID');
+            const paymentDetails = isDeposit ? "Make deposit 50%" : "Paid full";
 
             // Call the new payment API
-            await handleCreatePayment(orderId, userId, method, paymentDetails, payAmount);
+            await handleCreatePayment(
+                orderId, 
+                userId, 
+                "Paypal", 
+                paymentDetails, 
+                finalTotal
+            );
 
             setIsPaid(true);
             setPaymentDetails(details);
