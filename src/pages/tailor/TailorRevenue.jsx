@@ -13,7 +13,6 @@ import {
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "./TailorRevenue.scss";
-import { useNavigate } from "react-router-dom";
 
 const LoadingSpinner = () => (
   <div className="fixed inset-0 flex justify-center items-center">
@@ -28,15 +27,14 @@ const TailorRevenue = () => {
     orders: [],
   });
   const [searchTerm, setSearchTerm] = useState("");
-  const [dateRange, setDateRange] = useState([null, null]);
-  const [startDate, endDate] = dateRange;
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [sortConfig, setSortConfig] = useState({
     key: "orderDate",
     direction: "desc",
   });
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchRevenueData();
@@ -45,49 +43,21 @@ const TailorRevenue = () => {
   const fetchRevenueData = async () => {
     try {
       setIsLoading(true);
-      const userId = localStorage.getItem("userID");
-      const token = localStorage.getItem("token");
-
-      if (!userId) {
-        console.error("User ID is not found in localStorage.");
-        alert("Please log in again.");
-        navigate("/signin");
-        return;
-      }
-
-      const storeResponse = await fetch(`https://localhost:7194/api/TailorPartner/get-by-user/${userId}`, {
+      const response = await fetch("https://localhost:7194/api/api/Orders", {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "application/json",
         },
       });
 
-      if (!storeResponse.ok) {
-        throw new Error(`HTTP error! Status: ${storeResponse.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const storeData = await storeResponse.json();
-      const storeId = storeData.data.storeId;
-
-      console.log("Store ID:", storeId);
-
-      const ordersResponse = await fetch(`https://localhost:7194/api/Orders/store/${storeId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!ordersResponse.ok) {
-        throw new Error(`HTTP error! Status: ${ordersResponse.status}`);
-      }
-
-      const data = await ordersResponse.json();
-      
+      const data = await response.json();
       const finishedOrders = data.filter(
         (order) => order.shipStatus === "Finished"
       );
-
       const totalRevenue = finishedOrders.reduce((sum, order) => {
         return sum + order.totalPrice * 0.7;
       }, 0);
@@ -116,20 +86,24 @@ const TailorRevenue = () => {
   const filterOrders = () => {
     return revenueData.orders
       .filter((order) => {
+        const orderDate = new Date(order.orderDate);
+        const orderYear = orderDate.getFullYear();
+        const orderMonth = orderDate.getMonth();
+
         const matchesSearch = order.orderId
           .toString()
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
-        const matchesDateRange =
-          !startDate ||
-          !endDate ||
-          (new Date(order.orderDate) >= startDate &&
-            new Date(order.orderDate) <= endDate);
+
+        const matchesDate =
+          orderYear === selectedYear &&
+          (selectedMonth === "all" || orderMonth === parseInt(selectedMonth));
+
         const matchesAmount =
           (!minAmount || order.totalPrice >= parseFloat(minAmount)) &&
           (!maxAmount || order.totalPrice <= parseFloat(maxAmount));
 
-        return matchesSearch && matchesDateRange && matchesAmount;
+        return matchesSearch && matchesDate && matchesAmount;
       })
       .sort((a, b) => {
         if (sortConfig.key === "orderDate") {
@@ -173,12 +147,29 @@ const TailorRevenue = () => {
 
   const clearFilters = () => {
     setSearchTerm("");
-    setDateRange([null, null]);
+    setSelectedMonth("all");
+    setSelectedYear(new Date().getFullYear());
     setMinAmount("");
     setMaxAmount("");
   };
 
-  const filteredOrders = filterOrders();
+  const calculateStats = () => {
+    const filteredOrders = filterOrders();
+    const totalRevenue = filteredOrders.reduce(
+      (sum, order) => sum + order.totalPrice * 0.7,
+      0
+    );
+    const averageOrderValue =
+      filteredOrders.length > 0 ? totalRevenue / filteredOrders.length : 0;
+
+    return {
+      totalRevenue,
+      averageOrderValue,
+      totalOrders: filteredOrders.length,
+    };
+  };
+
+  const stats = calculateStats();
 
   return (
     <div className="revenue-container">
@@ -199,8 +190,8 @@ const TailorRevenue = () => {
           </div>
           <div className="stat-content">
             <h3>Total Revenue</h3>
-            <p className="stat-value">${revenueData.totalRevenue.toFixed(2)}</p>
-            <p className="stat-label">From all completed orders</p>
+            <p className="stat-value">${stats.totalRevenue.toFixed(2)}</p>
+            <p className="stat-label">From filtered orders</p>
           </div>
         </div>
 
@@ -210,12 +201,7 @@ const TailorRevenue = () => {
           </div>
           <div className="stat-content">
             <h3>Average Order Value</h3>
-            <p className="stat-value">
-              $
-              {(
-                revenueData.totalRevenue / revenueData.orders.length || 0
-              ).toFixed(2)}
-            </p>
+            <p className="stat-value">${stats.averageOrderValue.toFixed(2)}</p>
             <p className="stat-label">Per completed order</p>
           </div>
         </div>
@@ -226,7 +212,7 @@ const TailorRevenue = () => {
           </div>
           <div className="stat-content">
             <h3>Total Orders</h3>
-            <p className="stat-value">{revenueData.orders.length}</p>
+            <p className="stat-value">{stats.totalOrders}</p>
             <p className="stat-label">Completed orders</p>
           </div>
         </div>
@@ -245,16 +231,40 @@ const TailorRevenue = () => {
         </div>
 
         <div className="filter-group">
-          <div className="date-picker">
-            <Calendar className="calendar-icon" size={20} />
-            <DatePicker
-              selectsRange={true}
-              startDate={startDate}
-              endDate={endDate}
-              onChange={(update) => setDateRange(update)}
-              placeholderText="Select date range"
-            />
-          </div>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            className="year-filter"
+          >
+            <option value={2024}>2024</option>
+            <option value={2025}>2025</option>
+          </select>
+
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="month-filter"
+          >
+            <option value="all">All Months</option>
+            {[
+              "Jan",
+              "Feb",
+              "Mar",
+              "Apr",
+              "May",
+              "Jun",
+              "Jul",
+              "Aug",
+              "Sep",
+              "Oct",
+              "Nov",
+              "Dec",
+            ].map((month, index) => (
+              <option key={month} value={index}>
+                {month}
+              </option>
+            ))}
+          </select>
 
           <div className="amount-range">
             <input
@@ -320,7 +330,7 @@ const TailorRevenue = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredOrders.map((order) => (
+            {filterOrders().map((order) => (
               <tr key={order.orderId}>
                 <td>#{order.orderId}</td>
                 <td>{new Date(order.orderDate).toLocaleDateString()}</td>
@@ -333,7 +343,7 @@ const TailorRevenue = () => {
           </tbody>
         </table>
 
-        {filteredOrders.length === 0 && (
+        {filterOrders().length === 0 && (
           <div className="empty-state">
             <p>No orders found matching your filters</p>
             <button onClick={clearFilters}>Clear all filters</button>

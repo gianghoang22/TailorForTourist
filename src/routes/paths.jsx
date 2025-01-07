@@ -60,6 +60,7 @@ import Feedback from "../pages/profile/Feedback";
 import VoucherAvailable from "../pages/managerdashboard/VoucherAvailable";
 import TailorRevenue from "../pages/tailor/TailorRevenue.jsx";
 import ProfitCalculation from "../pages/managerdashboard/ProfitCalculation";
+import StoreRevenue from "../pages/admin/StoreRevenue.jsx";
 
 export const routes = [
   {
@@ -97,6 +98,10 @@ export const routes = [
       {
         path: "voucher-management",
         element: <VoucherManagement />,
+      },
+      {
+        path: "store-revenue",
+        element: <StoreRevenue />,
       },
       {
         path: "shipper-management",
@@ -172,8 +177,7 @@ export const routes = [
   },
   {
     path: "/cart",
-    element: (
-    <ProtectedRoute element={<Cart />} allowedRoles={["customer"]} />),
+    element: <Cart />,
   },
   {
     path: "/booking-thanks",

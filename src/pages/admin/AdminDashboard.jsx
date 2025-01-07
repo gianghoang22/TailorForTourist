@@ -138,7 +138,9 @@ const AdminDashboard = () => {
         totalFabrics: Array.isArray(fabricsData) ? fabricsData.length : 0,
         totalStores: Array.isArray(storesData) ? storesData.length : 0,
         activeVouchers: Array.isArray(vouchersData)
-          ? vouchersData.filter((v) => v.status === "Active" || v.status === "OnGoing").length
+          ? vouchersData.filter(
+              (v) => v.status === "Active" || v.status === "OnGoing"
+            ).length
           : 0,
       });
     } catch (error) {
@@ -278,26 +280,26 @@ const AdminDashboard = () => {
   const exportToCSV = () => {
     // Convert transactions data to CSV format
     const headers = [
-        "Payment ID",
-        "Date",
-        "Method",
-        "Details",
-        "Amount",
-        "Status",
+      "Payment ID",
+      "Date",
+      "Method",
+      "Details",
+      "Amount",
+      "Status",
     ];
     const csvData = transactions.map((transaction) => [
-        transaction.paymentId,
-        new Date(transaction.paymentDate).toLocaleDateString("en-US"),
-        transaction.method,
-        transaction.paymentDetails,
-        transaction.amount.toFixed(2),
-        transaction.status,
+      transaction.paymentId,
+      new Date(transaction.paymentDate).toLocaleDateString("en-US"),
+      transaction.method,
+      transaction.paymentDetails,
+      transaction.amount.toFixed(2),
+      transaction.status,
     ]);
 
     // Combine headers and data
     const csvContent = [
-        headers.join(","),
-        ...csvData.map((row) => row.join(",")),
+      headers.join(","),
+      ...csvData.map((row) => row.join(",")),
     ].join("\n");
 
     // Create and trigger download
@@ -306,8 +308,8 @@ const AdminDashboard = () => {
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
     link.setAttribute(
-        "download",
-        `transactions_${new Date().toISOString().split("T")[0]}.csv`
+      "download",
+      `transactions_${new Date().toISOString().split("T")[0]}.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -491,9 +493,14 @@ const AdminDashboard = () => {
 
       const data = await response.json();
       // Filter orders with status "Finish" and calculate total price
-      const finishedOrders = data.filter(order => order.shipStatus === "Finished");
-      const total = finishedOrders.reduce((acc, order) => acc + order.totalPrice, 0);
-      
+      const finishedOrders = data.filter(
+        (order) => order.shipStatus === "Finished"
+      );
+      const total = finishedOrders.reduce(
+        (acc, order) => acc + order.totalPrice,
+        0
+      );
+
       setTotalRevenue(total); // Update the total revenue state
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -577,6 +584,14 @@ const AdminDashboard = () => {
                   <i className="fas fa-truck"></i> Shipper Partner
                 </Link>
               </li>
+              <li>
+                <Link
+                  className={`${location.pathname === "/admin/store-revenue" ? "active" : ""}`}
+                  to="/admin/store-revenue"
+                >
+                  <i className="fas fa-chart-line"></i> Store Revenue
+                </Link>
+              </li>
 
               <li>
                 <Link
@@ -656,7 +671,8 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {isMainDashboard && (
+          {/* Conditional rendering based on route */}
+          {isMainDashboard ? (
             <>
               {/* Dashboard Stats */}
               <div className="stats">
@@ -774,9 +790,9 @@ const AdminDashboard = () => {
                 </Paper>
               </Box>
             </>
+          ) : (
+            <Outlet />
           )}
-
-          <Outlet />
         </div>
       </div>
     </div>

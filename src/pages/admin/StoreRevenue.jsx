@@ -144,33 +144,7 @@ const StoreRevenue = () => {
     };
   };
 
-  const calculateStats = () => {
-    let totalRevenue = 0;
-    let totalOrders = 0;
-
-    orders.forEach((order) => {
-      if (order.shipStatus === "Finished") {
-        const date = new Date(order.orderDate);
-        const orderYear = date.getFullYear();
-        const orderMonth = date.getMonth();
-
-        if (
-          orderYear === selectedYear &&
-          (selectedMonth === "all" || orderMonth === parseInt(selectedMonth))
-        ) {
-          totalRevenue += order.totalPrice || 0;
-          totalOrders++;
-        }
-      }
-    });
-
-    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-
-    return { totalRevenue, totalOrders, avgOrderValue };
-  };
-
   const monthlyData = processMonthlyData();
-  const stats = calculateStats();
 
   // Chart configurations
   const revenueData = {
@@ -209,6 +183,17 @@ const StoreRevenue = () => {
       y: { beginAtZero: true },
     },
   };
+
+  // Calculate statistics
+  const calculateStats = () => {
+    const totalRevenue = monthlyData.revenue.reduce((a, b) => a + b, 0);
+    const totalOrders = monthlyData.orders.reduce((a, b) => a + b, 0);
+    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    return { totalRevenue, totalOrders, avgOrderValue };
+  };
+
+  const stats = calculateStats();
 
   const generatePDF = () => {
     const element = document.getElementById("store-revenue-content");
