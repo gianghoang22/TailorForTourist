@@ -51,7 +51,7 @@ const LiningManagement = () => {
         setIsLoading(true);
         const token = getAuthToken();
 
-        const response = await fetch("https://vesttour.xyz/api/Linings", {
+        const response = await fetch("https://localhost:7194/api/Linings", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -102,7 +102,7 @@ const LiningManagement = () => {
         status: "Available",
       };
 
-      await fetch("https://vesttour.xyz/api/Linings", {
+      await fetch("https://localhost:7194/api/Linings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -112,7 +112,7 @@ const LiningManagement = () => {
       });
 
       // Fetch updated data
-      const fetchResponse = await fetch("https://vesttour.xyz/api/Linings", {
+      const fetchResponse = await fetch("https://localhost:7194/api/Linings", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -163,7 +163,7 @@ const LiningManagement = () => {
       const { liningId, ...updateData } = newLining;
 
       const response = await fetch(
-        `https://vesttour.xyz/api/Linings/${editIndex}`,
+        `https://localhost:7194/api/Linings/${editIndex}`,
         {
           method: "PUT",
           headers: {
@@ -214,7 +214,7 @@ const LiningManagement = () => {
       console.log("Sending status:", newStatus); // Debug log
 
       const response = await fetch(
-        `https://vesttour.xyz/api/Linings/${liningId}/status`,
+        `https://localhost:7194/api/Linings/${liningId}/status`,
         {
           method: "PATCH",
           headers: {

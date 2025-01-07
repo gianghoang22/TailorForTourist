@@ -50,7 +50,7 @@ const StoreManagement = () => {
     const fetchStoreData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("https://vesttour.xyz/api/Store");
+        const response = await fetch("https://localhost:7194/api/Store");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
@@ -79,9 +79,9 @@ const StoreManagement = () => {
         console.log("Token:", token);
 
         const [managersRes, staffRes, provincesRes] = await Promise.all([
-          fetch("https://vesttour.xyz/api/User/role/4", { headers }),
-          fetch("https://vesttour.xyz/api/User/role/2", { headers }),
-          fetch("https://vesttour.xyz/api/Shipping/provinces", { headers }),
+          fetch("https://localhost:7194/api/User/role/4", { headers }),
+          fetch("https://localhost:7194/api/User/role/2", { headers }),
+          fetch("https://localhost:7194/api/Shipping/provinces", { headers }),
         ]);
 
         // Log response status to check if requests are successful
@@ -145,7 +145,7 @@ const StoreManagement = () => {
         return;
       }
 
-      const response = await fetch("https://vesttour.xyz/api/Store", {
+      const response = await fetch("https://localhost:7194/api/Store", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -252,7 +252,7 @@ const StoreManagement = () => {
       console.log("Updating store with data:", updateData); // Debug log
 
       const response = await fetch(
-        `https://vesttour.xyz/api/Store/${editIndex}`,
+        `https://localhost:7194/api/Store/${editIndex}`,
         {
           method: "PUT",
           headers: {
@@ -336,7 +336,7 @@ const StoreManagement = () => {
       console.log("Sending update request:", updateData);
 
       const response = await fetch(
-        `https://vesttour.xyz/api/Store/${storeId}`,
+        `https://localhost:7194/api/Store/${storeId}`,
         {
           method: "PUT",
           headers: {

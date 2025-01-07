@@ -84,7 +84,7 @@ const TailorDashboard = () => {
       }
 
       const response = await fetch(
-        `https://vesttour.xyz/api/TailorPartner/get-by-user/${userID}`,
+        `https://localhost:7194/api/TailorPartner/get-by-user/${userID}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -122,7 +122,7 @@ const TailorDashboard = () => {
   const fetchStyleName = async (styleId) => {
     try {
       const response = await fetch(
-        `https://vesttour.xyz/api/Style/${styleId}`,
+        `https://localhost:7194/api/Style/${styleId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -148,7 +148,7 @@ const TailorDashboard = () => {
       console.log(`Fetching order details for orderId: ${orderId}`);
       // Step 1: Fetch order details to get productId
       const orderResponse = await fetch(
-        `https://vesttour.xyz/api/Orders/${orderId}/details`,
+        `https://localhost:7194/api/Orders/${orderId}/details`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -178,7 +178,7 @@ const TailorDashboard = () => {
 
       // Step 2: Fetch product details to get measurementId
       const productResponse = await fetch(
-        `https://vesttour.xyz/api/Product/details/${productId}`,
+        `https://localhost:7194/api/Product/details/${productId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -226,7 +226,7 @@ const TailorDashboard = () => {
             `Fetching measurement data for measurementId: ${productData.measurementID}`
           );
           const measurementResponse = await fetch(
-            `https://vesttour.xyz/api/Measurement/${productData.measurementID}`,
+            `https://localhost:7194/api/Measurement/${productData.measurementID}`,
             {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -281,7 +281,7 @@ const TailorDashboard = () => {
   const fetchProcessingStatus = async (processingId) => {
     try {
       const response = await fetch(
-        `https://vesttour.xyz/api/ProcessingTailor/${processingId}`,
+        `https://localhost:7194/api/ProcessingTailor/${processingId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -317,7 +317,7 @@ const TailorDashboard = () => {
 
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `https://vesttour.xyz/api/ProcessingTailor/assigned-to/${currentTailorPartnerId}`,
+        `https://localhost:7194/api/ProcessingTailor/assigned-to/${currentTailorPartnerId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -361,7 +361,7 @@ const TailorDashboard = () => {
             if (isDue && status !== "Due") {
               try {
                 const dueUpdateResponse = await fetch(
-                  `https://vesttour.xyz/api/ProcessingTailor/process/status/${order.processingId}`,
+                  `https://localhost:7194/api/ProcessingTailor/process/status/${order.processingId}`,
                   {
                     method: "PATCH",
                     headers: {
@@ -453,7 +453,7 @@ const TailorDashboard = () => {
         // Make API calls
         await Promise.all([
           fetch(
-            `https://vesttour.xyz/api/ProcessingTailor/process/status/${order.processingId}`,
+            `https://localhost:7194/api/ProcessingTailor/process/status/${order.processingId}`,
             {
               method: "PATCH",
               headers: {
@@ -464,7 +464,7 @@ const TailorDashboard = () => {
             }
           ),
           fetch(
-            `https://vesttour.xyz/api/ProcessingTailor/sample/status/${order.processingId}`,
+            `https://localhost:7194/api/ProcessingTailor/sample/status/${order.processingId}`,
             {
               method: "PATCH",
               headers: {
@@ -500,7 +500,7 @@ const TailorDashboard = () => {
         // Make API calls
         await Promise.all([
           fetch(
-            `https://vesttour.xyz/api/ProcessingTailor/sample/status/${order.processingId}`,
+            `https://localhost:7194/api/ProcessingTailor/sample/status/${order.processingId}`,
             {
               method: "PATCH",
               headers: {
@@ -511,7 +511,7 @@ const TailorDashboard = () => {
             }
           ),
           fetch(
-            `https://vesttour.xyz/api/ProcessingTailor/stagename/${order.processingId}`,
+            `https://localhost:7194/api/ProcessingTailor/stagename/${order.processingId}`,
             {
               method: "PATCH",
               headers: {
@@ -522,7 +522,7 @@ const TailorDashboard = () => {
             }
           ),
           fetch(
-            `https://vesttour.xyz/api/ProcessingTailor/${skipFixStage ? "delivery" : "fix"}/status/${order.processingId}`,
+            `https://localhost:7194/api/ProcessingTailor/${skipFixStage ? "delivery" : "fix"}/status/${order.processingId}`,
             {
               method: "PATCH",
               headers: {
@@ -553,7 +553,7 @@ const TailorDashboard = () => {
         // Make API calls
         await Promise.all([
           fetch(
-            `https://vesttour.xyz/api/ProcessingTailor/fix/status/${order.processingId}`,
+            `https://localhost:7194/api/ProcessingTailor/fix/status/${order.processingId}`,
             {
               method: "PATCH",
               headers: {
@@ -564,7 +564,7 @@ const TailorDashboard = () => {
             }
           ),
           fetch(
-            `https://vesttour.xyz/api/ProcessingTailor/stagename/${order.processingId}`,
+            `https://localhost:7194/api/ProcessingTailor/stagename/${order.processingId}`,
             {
               method: "PATCH",
               headers: {
@@ -575,7 +575,7 @@ const TailorDashboard = () => {
             }
           ),
           fetch(
-            `https://vesttour.xyz/api/ProcessingTailor/delivery/status/${order.processingId}`,
+            `https://localhost:7194/api/ProcessingTailor/delivery/status/${order.processingId}`,
             {
               method: "PATCH",
               headers: {
@@ -608,7 +608,7 @@ const TailorDashboard = () => {
         // Make API calls
         await Promise.all([
           fetch(
-            `https://vesttour.xyz/api/ProcessingTailor/delivery/status/${order.processingId}`,
+            `https://localhost:7194/api/ProcessingTailor/delivery/status/${order.processingId}`,
             {
               method: "PATCH",
               headers: {
@@ -619,7 +619,7 @@ const TailorDashboard = () => {
             }
           ),
           fetch(
-            `https://vesttour.xyz/api/ProcessingTailor/process/status/${order.processingId}`,
+            `https://localhost:7194/api/ProcessingTailor/process/status/${order.processingId}`,
             {
               method: "PATCH",
               headers: {

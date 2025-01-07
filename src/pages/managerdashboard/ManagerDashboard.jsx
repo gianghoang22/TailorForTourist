@@ -125,7 +125,7 @@ const ManagerDashboard = () => {
   const [storeInfo, setStoreInfo] = useState(null);
   const userID = localStorage.getItem("userID");
 
-  const BASE_URL = "https://vesttour.xyz/api";
+  const BASE_URL = "https://localhost:7194/api";
 
   const fetchStoreByManagerId = async (userId) => {
     const response = await fetch(`${BASE_URL}/Store/userId/${userId}`);
@@ -343,7 +343,7 @@ const ManagerDashboard = () => {
     try {
       const userId = localStorage.getItem("userID");
       const response = await fetch(
-        `https://vesttour.xyz/api/Store/manager-userId/${userId}`,
+        `https://localhost:7194/api/Store/manager-userId/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -430,7 +430,7 @@ const ManagerDashboard = () => {
 
     try {
       const response = await fetch(
-        "https://vesttour.xyz/api/ProcessingTailor",
+        "https://localhost:7194/api/ProcessingTailor",
         {
           method: "POST",
           headers: {
@@ -471,7 +471,7 @@ const ManagerDashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `https://vesttour.xyz/api/Orders/updatestatus/${orderId}`,
+        `https://localhost:7194/api/Orders/updatestatus/${orderId}`,
         {
           method: "PATCH",
           headers: {
@@ -505,7 +505,7 @@ const ManagerDashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `https://vesttour.xyz/api/Orders/${orderId}`,
+        `https://localhost:7194/api/Orders/${orderId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -680,7 +680,7 @@ const ManagerDashboard = () => {
   useEffect(() => {
     const fetchProcessingStatuses = async () => {
       try {
-        const response = await fetch('https://vesttour.xyz/api/ProcessingTailor', {
+        const response = await fetch('https://localhost:7194/api/ProcessingTailor', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
