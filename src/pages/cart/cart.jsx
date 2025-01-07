@@ -57,8 +57,8 @@ const Cart = () => {
                   imageUrl: fabricRes.data.imageUrl,
                 },
                 lining: {
-                  name: liningRes.data.liningName,
-                  imageUrl: liningRes.data.imageUrl,
+                  name: liningRes.data.data.liningName,
+                  imageUrl: liningRes.data.data.imageUrl,
                 },
                 styleOptions: styleOptionResponses.map((res) => ({
                   type: res.data.optionType,
@@ -116,8 +116,8 @@ const Cart = () => {
                   imageUrl: fabricRes.data.imageUrl,
                 },
                 lining: {
-                  name: liningRes.data.liningName,
-                  imageUrl: liningRes.data.imageUrl,
+                  name: liningRes.data.data.liningName,
+                  imageUrl: liningRes.data.data.imageUrl,
                 },
                 styleOptions: styleOptionResponses.map((res) => ({
                   type: res.data.optionType,

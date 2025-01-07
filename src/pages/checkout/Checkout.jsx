@@ -107,7 +107,7 @@ const Checkout = () => {
                   price: fabricRes.data.price
                 },
                 lining: {
-                  name: liningRes.data.liningName
+                  name: liningRes.data.data.liningName
                 },
                 styleOptions: styleOptionResponses.map(res => ({
                   type: res.data.optionType,
@@ -153,7 +153,7 @@ const Checkout = () => {
                   price: fabricRes.data.price
                 },
                 lining: {
-                  name: liningRes.data.liningName
+                  name: liningRes.data.data.liningName
                 },
                 styleOptions: styleOptionResponses.map(res => ({
                   type: res.data.optionType,
