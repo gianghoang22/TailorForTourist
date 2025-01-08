@@ -1303,26 +1303,17 @@ const OrderList = () => {
       const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
       console.log('Selected Voucher:', voucher);
       
-      if (voucher) {
-        // Kiểm tra loại voucher và áp dụng giảm giá
-        if (voucher.voucherCode?.includes('BIGSALE')) {
-          const discount = totalBeforeVoucher * voucher.discountNumber;
-          totalAfterVoucher = totalBeforeVoucher - discount;
-          console.log('Discount Amount:', discount);
-        } else if (voucher.voucherCode?.includes('FREESHIP')) {
-          // Xử lý FREESHIP riêng
-          createOrderForm.shippingFee = 0;
-        }
+      if (voucher?.voucherCode?.includes('BIGSALE')) {
+        totalAfterVoucher = totalBeforeVoucher * (1 - voucher.discountNumber);
+        console.log('Total after BIGSALE discount:', totalAfterVoucher);
       }
     }
-    console.log('Total After Voucher:', totalAfterVoucher);
 
-    // Cộng phí ship
+    // Cộng phí ship vào tổng tiền
     const shippingFee = createOrderForm.shippingFee || 0;
-    console.log('Shipping Fee:', shippingFee);
-    
     const finalTotal = totalAfterVoucher + shippingFee;
-    console.log('Final Total:', finalTotal);
+    console.log('Shipping Fee:', shippingFee);
+    console.log('Final Total (including shipping):', finalTotal);
 
     return finalTotal;
   };
