@@ -146,7 +146,7 @@ const TailorDashboard = () => {
   const fetchOrderDetails = async (orderId) => {
     try {
       console.log(`Fetching order details for orderId: ${orderId}`);
-      // Step 1: Fetch order details to get productId
+      // Step 1: Fetch order details to get productId and quantity
       const orderResponse = await fetch(
         `https://localhost:7194/api/Orders/${orderId}/details`,
         {
@@ -168,70 +168,25 @@ const TailorDashboard = () => {
         return { error: `No order details found for order ${orderId}` };
       }
 
-      // Find the SUIT product in the order details
-      const suitProduct = orderData.orderDetails.find((detail) =>
+      // Find all SUIT products in the order details
+      const suitProducts = orderData.orderDetails.filter((detail) =>
         detail.productCode.startsWith("SUIT")
       );
 
-      if (!suitProduct) {
-        console.log(`No SUIT product found in order ${orderId}`);
-        return { error: `No SUIT product found in order ${orderId}` };
+      if (suitProducts.length === 0) {
+        console.log(`No SUIT products found in order ${orderId}`);
+        return { error: `No SUIT products found in order ${orderId}` };
       }
 
-      const productId = suitProduct.productId;
-      console.log(`SUIT product found. ProductId: ${productId}`);
+      // Fetch details for all SUIT products
+      const productsDetails = await Promise.all(
+        suitProducts.map(async (suitProduct) => {
+          const productId = suitProduct.productId;
+          console.log(`SUIT product found. ProductId: ${productId}`);
 
-      // Step 2: Fetch product details to get measurementId
-      const productResponse = await fetch(
-        `https://localhost:7194/api/Product/details/${productId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!productResponse.ok) {
-        throw new Error(`HTTP error! Status: ${productResponse.status}`);
-      }
-
-      const productData = await productResponse.json();
-      if (!productData || !productData.productID) {
-        console.log(`No product data found for productId ${productId}`);
-        return { error: `No product data found for productId ${productId}` };
-      }
-
-      console.log(
-        `Product details fetched. MeasurementId: ${productData.measurementID}`
-      );
-
-      // Fetch style name for each style option
-      const styleOptionsWithNames = await Promise.all(
-        productData.styleOptions.map(async (option) => {
-          try {
-            const styleName = await fetchStyleName(option.styleId);
-            return { ...option, styleName };
-          } catch (error) {
-            console.error(
-              `Error fetching style name for styleId ${option.styleId}:`,
-              error
-            );
-            return { ...option, styleName: "N/A" };
-          }
-        })
-      );
-
-      // Step 3: Fetch measurement data
-      let measurementData = null;
-      let measurementError = null;
-      if (productData.measurementID) {
-        try {
-          console.log(
-            `Fetching measurement data for measurementId: ${productData.measurementID}`
-          );
-          const measurementResponse = await fetch(
-            `https://localhost:7194/api/Measurement/${productData.measurementID}`,
+          // Step 2: Fetch product details
+          const productResponse = await fetch(
+            `https://localhost:7194/api/Product/details/${productId}`,
             {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -240,37 +195,72 @@ const TailorDashboard = () => {
             }
           );
 
-          if (measurementResponse.ok) {
-            measurementData = await measurementResponse.json();
-            console.log(
-              "Measurement data fetched successfully:",
-              measurementData
-            );
-          } else {
-            measurementError = `Error fetching measurement data: ${measurementResponse.status}`;
-            console.error(measurementError);
+          if (!productResponse.ok) {
+            throw new Error(`HTTP error! Status: ${productResponse.status}`);
           }
-        } catch (error) {
-          measurementError = `Error fetching measurement data: ${error.message}`;
-          console.error(measurementError);
-        }
-      } else {
-        measurementError = "No measurementId found in product data";
-        console.log(measurementError);
-      }
+
+          const productData = await productResponse.json();
+          if (!productData || !productData.productID) {
+            console.log(`No product data found for productId ${productId}`);
+            return null;
+          }
+
+          // Fetch style names for the product
+          const styleOptionsWithNames = await Promise.all(
+            productData.styleOptions.map(async (option) => {
+              const styleName = await fetchStyleName(option.styleId);
+              return { ...option, styleName };
+            })
+          );
+
+          // Fetch measurement data if available
+          let measurementData = null;
+          let measurementError = null;
+          if (productData.measurementID) {
+            try {
+              const measurementResponse = await fetch(
+                `https://localhost:7194/api/Measurement/${productData.measurementID}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
+
+              if (measurementResponse.ok) {
+                measurementData = await measurementResponse.json();
+              } else {
+                measurementError = `Error fetching measurement data: ${measurementResponse.status}`;
+              }
+            } catch (error) {
+              measurementError = `Error fetching measurement data: ${error.message}`;
+            }
+          }
+
+          return {
+            productId,
+            productCode: suitProduct.productCode,
+            quantity: suitProduct.quantity,
+            price: suitProduct.price,
+            fabricName: productData.fabricName,
+            liningName: productData.liningName,
+            styleOptions: styleOptionsWithNames,
+            measurement: measurementData,
+            measurementError: measurementError,
+          };
+        })
+      );
 
       return {
-        productId,
-        fabricName: productData.fabricName,
-        liningName: productData.liningName,
-        styleOptions: styleOptionsWithNames,
+        products: productsDetails.filter(Boolean),
         orderInfo: {
           status: orderData.status,
           guestName: orderData.guestName,
           orderDate: orderData.orderDate,
+          totalPrice: orderData.totalPrice,
+          deposit: orderData.deposit,
         },
-        measurement: measurementData,
-        measurementError: measurementError,
       };
     } catch (error) {
       console.error(
@@ -995,80 +985,111 @@ const TailorDashboard = () => {
                                             "N/A"}
                                         </p>
                                       </div>
-                                      <h5 className="text-lg font-semibold mt-4 mb-2 flex items-center">
-                                        <Scissors className="mr-2" /> Product
-                                        Details
-                                      </h5>
-                                      <div className="bg-gray-100 p-4 rounded-md">
-                                        <p className="mb-2">
-                                          <span className="font-semibold">
-                                            Fabric:
-                                          </span>{" "}
-                                          {details.fabricName || "N/A"}
-                                        </p>
-                                        <p className="mb-2">
-                                          <span className="font-semibold">
-                                            Lining:
-                                          </span>{" "}
-                                          {details.liningName || "N/A"}
-                                        </p>
-                                      </div>
-                                      <h6 className="text-md font-semibold mt-4 mb-2">
-                                        Style Options
-                                      </h6>
-                                      <div className="bg-gray-100 p-4 rounded-md">
-                                        {details.styleOptions &&
-                                          details.styleOptions.map(
-                                            (option, index) => (
-                                              <div key={index} className="mb-2">
-                                                <p>
-                                                  <span className="font-semibold">
-                                                    Style:
-                                                  </span>{" "}
-                                                  {option.styleName || "N/A"}
+
+                                      {details.products?.map(
+                                        (product, productIndex) => (
+                                          <div
+                                            key={product.productId}
+                                            className="mt-4"
+                                          >
+                                            <h5 className="text-lg font-semibold mb-2 flex items-center">
+                                              <Scissors className="mr-2" />{" "}
+                                              Product {productIndex + 1} -{" "}
+                                              {product.productCode}
+                                            </h5>
+                                            <div className="bg-gray-100 p-4 rounded-md">
+                                              <p className="mb-2">
+                                                <span className="font-semibold">
+                                                  Quantity:
+                                                </span>{" "}
+                                                {product.quantity}
+                                              </p>
+                                              <p className="mb-2">
+                                                <span className="font-semibold">
+                                                  Price:
+                                                </span>{" "}
+                                                ${product.price}
+                                              </p>
+                                              <p className="mb-2">
+                                                <span className="font-semibold">
+                                                  Fabric:
+                                                </span>{" "}
+                                                {product.fabricName || "N/A"}
+                                              </p>
+                                              <p className="mb-2">
+                                                <span className="font-semibold">
+                                                  Lining:
+                                                </span>{" "}
+                                                {product.liningName || "N/A"}
+                                              </p>
+
+                                              <h6 className="text-md font-semibold mt-4 mb-2">
+                                                Style Options
+                                              </h6>
+                                              {product.styleOptions?.map(
+                                                (option, index) => (
+                                                  <div
+                                                    key={index}
+                                                    className="mb-2"
+                                                  >
+                                                    <p>
+                                                      <span className="font-semibold">
+                                                        Style:
+                                                      </span>{" "}
+                                                      {option.styleName ||
+                                                        "N/A"}
+                                                    </p>
+                                                    <p>
+                                                      <span className="font-semibold">
+                                                        Type:
+                                                      </span>{" "}
+                                                      {option.optionType ||
+                                                        "N/A"}
+                                                    </p>
+                                                    <p>
+                                                      <span className="font-semibold">
+                                                        Value:
+                                                      </span>{" "}
+                                                      {option.optionValue ||
+                                                        "N/A"}
+                                                    </p>
+                                                  </div>
+                                                )
+                                              )}
+                                            </div>
+
+                                            <div className="measurements mt-4">
+                                              <h6 className="text-md font-semibold mb-2">
+                                                Measurements
+                                              </h6>
+                                              {product.measurementError ? (
+                                                <p className="text-red-500 bg-red-100 p-4 rounded-md">
+                                                  {product.measurementError}
                                                 </p>
-                                                <p>
-                                                  <span className="font-semibold">
-                                                    Type:
-                                                  </span>{" "}
-                                                  {option.optionType || "N/A"}
+                                              ) : product.measurement ? (
+                                                <div className="grid grid-cols-2 gap-4 bg-gray-100 p-4 rounded-md">
+                                                  {Object.entries(
+                                                    product.measurement
+                                                  ).map(([key, value]) => (
+                                                    <p
+                                                      key={key}
+                                                      className="capitalize"
+                                                    >
+                                                      <span className="font-semibold">
+                                                        {key}:
+                                                      </span>{" "}
+                                                      {value || "N/A"}
+                                                    </p>
+                                                  ))}
+                                                </div>
+                                              ) : (
+                                                <p className="bg-yellow-100 p-4 rounded-md text-yellow-700">
+                                                  No measurement data available.
                                                 </p>
-                                                <p>
-                                                  <span className="font-semibold">
-                                                    Value:
-                                                  </span>{" "}
-                                                  {option.optionValue || "N/A"}
-                                                </p>
-                                              </div>
-                                            )
-                                          )}
-                                      </div>
-                                    </div>
-                                    <div className="measurements">
-                                      <h4 className="text-xl font-semibold mb-4 flex items-center">
-                                        <Ruler className="mr-2" /> Measurements
-                                      </h4>
-                                      {details.measurementError ? (
-                                        <p className="text-red-500 bg-red-100 p-4 rounded-md">
-                                          {details.measurementError}
-                                        </p>
-                                      ) : details.measurement ? (
-                                        <div className="grid grid-cols-2 gap-4 bg-gray-100 p-4 rounded-md">
-                                          {Object.entries(
-                                            details.measurement
-                                          ).map(([key, value]) => (
-                                            <p key={key} className="capitalize">
-                                              <span className="font-semibold">
-                                                {key}:
-                                              </span>{" "}
-                                              {value || "N/A"}
-                                            </p>
-                                          ))}
-                                        </div>
-                                      ) : (
-                                        <p className="bg-yellow-100 p-4 rounded-md text-yellow-700">
-                                          No measurement data available.
-                                        </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )
                                       )}
                                     </div>
                                   </div>

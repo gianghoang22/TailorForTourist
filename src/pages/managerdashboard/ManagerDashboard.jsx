@@ -205,31 +205,36 @@ const ManagerDashboard = () => {
       // Track orders with SUIT products
       const ordersWithSuitsSet = new Set();
 
-      // Fetch order details and calculate revenues using the same logic as ProfitCalculation
+      // Fetch order details and calculate revenues
       const ordersWithDetails = await Promise.all(
         orders.map(async (order) => {
           const details = await fetchOrderDetails(order.orderId);
           const revenueData = await calculateStoreRevenue(order.orderId);
 
-          if (details) {
-            const hasSuitProducts = details.orderDetails.some((detail) =>
-              detail.productCode.startsWith("SUIT")
-            );
-            if (hasSuitProducts) {
-              ordersWithSuitsSet.add(order.orderId);
-            }
+          // Calculate SUIT products total
+          let suitTotal = 0;
+
+          if (details && details.orderDetails) {
+            details.orderDetails.forEach((detail) => {
+              if (detail.productCode.startsWith("SUIT")) {
+                suitTotal += detail.price * detail.quantity;
+                ordersWithSuitsSet.add(order.orderId);
+              }
+            });
           }
 
           return {
             ...order,
-            calculatedRevenue: revenueData.storeRevenue,
-            revenueShare: revenueData.suitTotal * 0.3,
-            suitTotal: revenueData.suitTotal,
+            suitTotal: suitTotal,
+            totalPrice: order.totalPrice || 0,
+            calculatedRevenue: revenueData.storeRevenue, // Add store revenue calculation
+            revenueShare: revenueData.suitTotal * 0.3, // Store's share of SUIT products (30%)
           };
         })
       );
 
       setOrdersWithSuits(ordersWithSuitsSet);
+      setOrders(ordersWithDetails);
 
       // Fetch user and store details as before
       const userPromises = ordersWithDetails.map((order) =>
@@ -254,7 +259,6 @@ const ManagerDashboard = () => {
         }
       });
 
-      setOrders(ordersWithDetails);
       setUsers(userMap);
       setStores(storeMap);
     } catch (err) {
@@ -499,23 +503,9 @@ const ManagerDashboard = () => {
     const token = localStorage.getItem("token");
     setLoading(true);
 
-    // Prepare the data to match the tailor workflow
-    const dataToSubmit = {
-      processingId: 0,
-      stageName: "Make Sample", // Always starts with Make Sample
-      tailorPartnerId: processingData.tailorPartnerId,
-      status: "Not Start", // Overall process starts as Not Start
-      orderId: processingData.orderId,
-      note: processingData.note || "",
-      dateSample: processingData.dateSample,
-      dateFix: includeFixStage ? processingData.dateFix : null, // Only include if Fix stage is needed
-      dateDelivery: processingData.dateDelivery,
-    };
-
-    console.log("Submitting data:", dataToSubmit);
-
     try {
-      const response = await fetch(
+      // First, submit the processing data
+      const processingResponse = await fetch(
         "https://localhost:7194/api/ProcessingTailor",
         {
           method: "POST",
@@ -523,21 +513,61 @@ const ManagerDashboard = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(dataToSubmit),
+          body: JSON.stringify({
+            processingId: 0,
+            stageName: "Make Sample",
+            tailorPartnerId: processingData.tailorPartnerId,
+            status: "Not Start",
+            orderId: processingData.orderId,
+            note: processingData.note || "",
+            dateSample: processingData.dateSample,
+            dateFix: includeFixStage ? processingData.dateFix : null,
+            dateDelivery: processingData.dateDelivery,
+          }),
         }
       );
 
-      const rawResponse = await response.text();
-      console.log("Raw server response:", rawResponse);
-
-      if (!response.ok) {
-        throw new Error(rawResponse || "Failed to process tailor");
+      if (!processingResponse.ok) {
+        throw new Error("Failed to process tailor");
       }
 
-      await fetchOrders();
+      // After successful processing, update the order status to "Processing"
+      const statusUpdateResponse = await fetch(
+        `https://localhost:7194/api/Orders/updatestatus/${processingData.orderId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify("Processing"),
+        }
+      );
+
+      if (!statusUpdateResponse.ok) {
+        throw new Error("Failed to update order status");
+      }
+
+      // Update local state
+      setProcessingStatuses((prev) => ({
+        ...prev,
+        [processingData.orderId]: "Not Start",
+      }));
+
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.orderId === processingData.orderId
+            ? { ...order, status: "Processing" }
+            : order
+        )
+      );
+
       setProcessingDialogOpen(false);
       setError(null);
       alert("Successfully transferred!");
+
+      // Refresh the orders to ensure everything is in sync
+      await fetchOrders();
     } catch (error) {
       console.error("Error processing tailor:", error);
       setError(error.message);
@@ -705,16 +735,21 @@ const ManagerDashboard = () => {
   );
 
   useEffect(() => {
-    const stats = {
-      totalOrders: orders.length,
-      pendingOrders: orders.filter((o) => o.status === "Pending").length,
-      processingOrders: orders.filter((o) => o.status === "Processing").length,
-      completedOrders: orders.filter((o) => o.status === "Finish").length,
-      revenue: orders
-        .filter((o) => o.shipStatus === "Finished")
-        .reduce((sum, order) => sum + (order.calculatedRevenue || 0), 0),
+    const calculateStats = async () => {
+      const stats = {
+        totalOrders: orders.length,
+        pendingOrders: orders.filter((o) => o.status === "Pending").length,
+        processingOrders: orders.filter((o) => o.status === "Processing")
+          .length,
+        completedOrders: orders.filter((o) => o.status === "Finish").length,
+        revenue: orders
+          .filter((o) => o.shipStatus === "Finished") // Only count finished orders
+          .reduce((sum, order) => sum + (order.calculatedRevenue || 0), 0), // Use calculatedRevenue instead of raw totalPrice
+      };
+      setDashboardStats(stats);
     };
-    setDashboardStats(stats);
+
+    calculateStats();
   }, [orders]);
 
   const StatisticsSummary = () => (
@@ -746,7 +781,7 @@ const ManagerDashboard = () => {
         <Typography variant="h6">
           ${dashboardStats.revenue.toFixed(2)}
         </Typography>
-        <Typography color="textSecondary">Total Revenue</Typography>
+        <Typography color="textSecondary">Store Revenue</Typography>
       </Paper>
     </Box>
   );
@@ -760,32 +795,39 @@ const ManagerDashboard = () => {
     });
   }, [statusFilter, processStatusFilter, processingStatuses, filteredOrders]);
 
+  const fetchProcessingStatuses = async () => {
+    try {
+      const response = await fetch(
+        "https://localhost:7194/api/ProcessingTailor",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      const { data } = await response.json();
+
+      // Create object mapping from orderId to status
+      const statusMap = data.reduce((acc, processing) => {
+        acc[processing.orderId] = processing.status;
+        return acc;
+      }, {});
+
+      setProcessingStatuses(statusMap);
+    } catch (error) {
+      console.error("Error fetching processing statuses:", error);
+    }
+  };
+
+  // Add this useEffect to handle real-time updates
   useEffect(() => {
-    const fetchProcessingStatuses = async () => {
-      try {
-        const response = await fetch(
-          "https://localhost:7194/api/ProcessingTailor",
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        const { data } = await response.json();
+    // Set up polling interval for status updates
+    const intervalId = setInterval(() => {
+      fetchProcessingStatuses();
+    }, 30000); // Poll every 30 seconds
 
-        // Tạo object mapping từ orderId sang status
-        const statusMap = data.reduce((acc, processing) => {
-          acc[processing.orderId] = processing.status;
-          return acc;
-        }, {});
-
-        setProcessingStatuses(statusMap);
-      } catch (error) {
-        console.error("Error fetching processing statuses:", error);
-      }
-    };
-
-    fetchProcessingStatuses();
+    // Cleanup on component unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   // Add this validation function
@@ -1019,19 +1061,22 @@ const ManagerDashboard = () => {
                             </span>
                           </TableCell>
                           <TableCell>
-                            ${order.suitTotalPrice?.toFixed(2) || "0.00"}
-                            {order.totalPrice !== order.suitTotalPrice && (
-                              <Tooltip title="Total includes non-suit products">
-                                <span
-                                  style={{
-                                    marginLeft: "4px",
-                                    color: "gray",
-                                    fontSize: "12px",
-                                  }}
+                            {ordersWithSuits.has(order.orderId) ? (
+                              <div>
+                                <div>
+                                  Suit: ${order.suitTotal?.toFixed(2) || "0.00"}
+                                </div>
+                                <div
+                                  style={{ color: "gray", fontSize: "0.9em" }}
                                 >
-                                  (Total: ${order.totalPrice?.toFixed(2)})
-                                </span>
-                              </Tooltip>
+                                  Total: $
+                                  {order.totalPrice?.toFixed(2) || "0.00"}
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                Total: ${order.totalPrice?.toFixed(2) || "0.00"}
+                              </div>
                             )}
                           </TableCell>
                           <TableCell>
