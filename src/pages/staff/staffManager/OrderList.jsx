@@ -51,7 +51,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import BankingPayment from '../../../assets/img/elements/bankingPayment.jpg'
 
-const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
+const BASE_URL = "https://vesttour.xyz/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
 
 const fetchStoreByStaffId = async (staffId) => {
@@ -540,13 +540,16 @@ const OrderList = () => {
   const handleCreateOrder = async () => {
     setIsCreatingOrder(true);
     try {
-      // Format products...
+      // Validation checks...
+
+      // Format regular products
       const formattedProducts = selectedProducts.map(product => ({
         productID: product.productID,
         quantity: product.quantity,
         price: product.price
       }));
 
+      // Format custom products
       const formattedCustomProducts = createOrderForm.customProducts.map(product => ({
         fabricID: product.fabricID,
         liningID: product.liningID,
@@ -555,36 +558,45 @@ const OrderList = () => {
         pickedStyleOptions: product.pickedStyleOptions
       }));
 
-      // Calculate initial totals
+      // Calculate totals with voucher discount
       const productTotal = selectedProducts.reduce((sum, product) => 
         sum + (product.price * product.quantity), 0);
       
       const customProductTotal = createOrderForm.customProducts.reduce((sum, product) => 
         sum + (product.price * product.quantity), 0);
 
+      // Calculate total before voucher
       let totalBeforeVoucher = productTotal + customProductTotal;
-      let finalShippingFee = createOrderForm.shippingFee || 0;
-      let finalProductTotal = totalBeforeVoucher;
+      console.log('Total before voucher:', totalBeforeVoucher);
 
-      // Apply voucher discounts
+      // Apply voucher discount
+      let finalTotal = totalBeforeVoucher;
       if (createOrderForm.voucherId) {
         const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
+        console.log('Applied voucher:', voucher);
         
-        if (voucher) {
-          if (voucher.voucherCode?.includes('FREESHIP')) {
-            finalShippingFee = finalShippingFee * (1 - voucher.discountNumber);
-          } 
-          else if (voucher.voucherCode?.includes('BIGSALE')) {
-            finalProductTotal = totalBeforeVoucher * (1 - voucher.discountNumber);
-          }
+        if (voucher?.voucherCode?.includes('BIGSALE')) {
+          const discount = totalBeforeVoucher * voucher.discountNumber;
+          finalTotal = totalBeforeVoucher - discount;
+          console.log('Total after BIGSALE discount:', finalTotal);
         }
       }
 
-      // Calculate final total including shipping fee
-      const finalTotal = finalProductTotal + finalShippingFee;
+      // Add shipping fee (after voucher discount)
+      let finalShippingFee = createOrderForm.shippingFee || 0;
+      if (createOrderForm.voucherId) {
+        const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
+        if (voucher?.voucherCode?.includes('FREESHIP')) {
+          finalShippingFee = 0;
+        }
+      }
+      
+      finalTotal += finalShippingFee;
+      console.log('Final total with shipping:', finalTotal);
 
       // Calculate deposit
       const depositAmount = isDeposit ? finalTotal * 0.5 : finalTotal;
+      console.log('Deposit amount:', depositAmount);
 
       const orderPayload = {
         userId: selectedUser?.userId || null,
@@ -602,7 +614,7 @@ const OrderList = () => {
         deliveryMethod: createOrderForm.deliveryMethod,
         products: formattedProducts,
         customProducts: formattedCustomProducts,
-        totalPrice: finalTotal  // Sử dụng finalTotal đã được tính toán với voucher
+        totalPrice: finalTotal // Sử dụng giá đã được tính với voucher
       };
 
       console.log('Final order payload:', orderPayload);
@@ -690,7 +702,7 @@ const OrderList = () => {
         console.log('Shipping Fee Payload:', shippingPayload);
 
         const response = await axios.post(
-            'https://localhost:7194/api/Shipping/calculate-fee',
+            'https://vesttour.xyz/api/Shipping/calculate-fee',
             shippingPayload
         );
 
@@ -927,47 +939,41 @@ const OrderList = () => {
       return;
     }
 
-    // Calculate total amount including shipping fee
-    const totalAmount = amount + (createOrderForm.shippingFee || 0);
-    
-    // Calculate deposit amount based on payment details
-    const finalAmount = paymentDetails === "Make deposit 50%" ? totalAmount * 0.5 : totalAmount;
-
     const paymentPayload = {
-        orderId: createdOrderId,
-        userId: userId,
-        method: method, 
-        paymentDate: paymentDate,
-        paymentDetails: paymentDetails,
-        amount: finalAmount // Use the calculated amount
+      orderId: createdOrderId,
+      userId: userId,
+      method: method, 
+      paymentDate: paymentDate,
+      paymentDetails: paymentDetails,
+      amount: amount // Sử dụng amount trực tiếp, không tính lại
     };
 
     try {
-        const response = await api.post('/Payments', paymentPayload);
-        console.log('Payment created successfully:', response.data);
-        setSnackbarMessage('Payment created successfully');
-        setSnackbarSeverity('success');
+      const response = await api.post('/Payments', paymentPayload);
+      console.log('Payment created successfully:', response.data);
+      setSnackbarMessage('Payment created successfully');
+      setSnackbarSeverity('success');
 
-        // Update order payment status if full payment
-        if (paymentDetails === "Paid full") {
-            await api.put(`/Orders/SetPaidTrue/${createdOrderId}`);
-        }
+      // Update order payment status if full payment
+      if (paymentDetails === "Paid full") {
+        await api.put(`/Orders/SetPaidTrue/${createdOrderId}`);
+      }
 
-        // Update payments state
-        setPayments(prevPayments => ({
-            ...prevPayments,
-            [createdOrderId]: method
-        }));
+      // Update payments state
+      setPayments(prevPayments => ({
+        ...prevPayments,
+        [createdOrderId]: method
+      }));
 
-        // Trigger data refresh
-        setRefreshData(prev => !prev);
-        
-        // Reset form
-        resetForm();
+      // Trigger data refresh
+      setRefreshData(prev => !prev);
+      
+      // Reset form
+      resetForm();
     } catch (error) {
-        console.error('Error creating payment:', error);
-        setSnackbarMessage('Failed to create payment');
-        setSnackbarSeverity('error');
+      console.error('Error creating payment:', error);
+      setSnackbarMessage('Failed to create payment');
+      setSnackbarSeverity('error');
     }
     setSnackbarOpen(true);
     setOpenPaymentDialog(false);
@@ -1230,7 +1236,7 @@ const OrderList = () => {
       shippedDate: "",
       note: "",
       paid: false,
-      totalPrice: "",
+      totalPrice: 0,
     });
     
     // Reset các state khác
@@ -1247,7 +1253,8 @@ const OrderList = () => {
       deliveryMethod: "Pick up",
       shippingFee: 0,
       products: [],
-      customProducts: []
+      customProducts: [],
+      totalPrice: 0,
     });
     setSelectedProducts([]);
     setMethod("Cash");
@@ -1292,17 +1299,26 @@ const OrderList = () => {
       const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
       console.log('Selected Voucher:', voucher);
       
-      if (voucher?.voucherCode?.includes('BIGSALE')) {
-        totalAfterVoucher = totalBeforeVoucher * (1 - voucher.discountNumber);
-        console.log('Total after BIGSALE discount:', totalAfterVoucher);
+      if (voucher) {
+        // Kiểm tra loại voucher và áp dụng giảm giá
+        if (voucher.voucherCode?.includes('BIGSALE')) {
+          const discount = totalBeforeVoucher * voucher.discountNumber;
+          totalAfterVoucher = totalBeforeVoucher - discount;
+          console.log('Discount Amount:', discount);
+        } else if (voucher.voucherCode?.includes('FREESHIP')) {
+          // Xử lý FREESHIP riêng
+          createOrderForm.shippingFee = 0;
+        }
       }
     }
+    console.log('Total After Voucher:', totalAfterVoucher);
 
-    // Cộng phí ship vào tổng tiền
+    // Cộng phí ship
     const shippingFee = createOrderForm.shippingFee || 0;
-    const finalTotal = totalAfterVoucher + shippingFee;
     console.log('Shipping Fee:', shippingFee);
-    console.log('Final Total (including shipping):', finalTotal);
+    
+    const finalTotal = totalAfterVoucher + shippingFee;
+    console.log('Final Total:', finalTotal);
 
     return finalTotal;
   };

@@ -43,7 +43,7 @@ const ContactUs = () => {
   useEffect(() => {
     const fetchStores = async () => {
       try {
-        const response = await fetch('https://localhost:7194/api/Store');
+        const response = await fetch('https://vesttour.xyz/api/Store');
         if (response.ok) {
           const data = await response.json();
           const activeStores = data.filter(store => store.status === "Active");
@@ -74,7 +74,7 @@ const ContactUs = () => {
     setResponseMessage('');
 
     try {
-      const response = await fetch('https://localhost:7194/api/Contact/send', {
+      const response = await fetch('https://vesttour.xyz/api/Contact/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

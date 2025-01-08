@@ -41,7 +41,7 @@ const StaffManagement = () => {
       try {
         // Get store data which includes staffIDs
         const storeResponse = await fetch(
-          `https://localhost:7194/api/Store/userId/${userID}`,
+          `https://vesttour.xyz/api/Store/userId/${userID}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -64,7 +64,7 @@ const StaffManagement = () => {
 
           // Fetch details for each staff member
           const staffPromises = staffIds.map((staffId) =>
-            fetch(`https://localhost:7194/api/User/${staffId}`, {
+            fetch(`https://vesttour.xyz/api/User/${staffId}`, {
               headers: {
                 Authorization: `Bearer ${token}`,
               },

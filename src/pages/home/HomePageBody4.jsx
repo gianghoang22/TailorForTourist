@@ -25,13 +25,13 @@ export const HomePageBody4 = () => {
     const fetchFeedbackData = async () => {
       try {
         // Fetch feedback data
-        const feedbackResponse = await fetch('https://localhost:7194/api/Feedback/all');
+        const feedbackResponse = await fetch('https://vesttour.xyz/api/Feedback/all');
         const feedbackData = await feedbackResponse.json();
 
         // Fetch user data for each feedback
         const feedbacksWithUser = await Promise.all(
           feedbackData.map(async (feedback) => {
-            const userResponse = await fetch(`https://localhost:7194/api/User/${feedback.userId}`);
+            const userResponse = await fetch(`https://vesttour.xyz/api/User/${feedback.userId}`);
             const userData = await userResponse.json();
             return {
               ...feedback,

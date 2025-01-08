@@ -28,7 +28,7 @@ const VoucherAvailable = () => {
     const fetchVoucherData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("https://localhost:7194/api/Voucher");
+        const response = await fetch("https://vesttour.xyz/api/Voucher");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
