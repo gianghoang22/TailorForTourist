@@ -27,34 +27,34 @@ const CustomSuit = () => {
           <nav>
             <ul className="customMenu">
               <li>
-                <Link
+                {/* <Link
                   to="/custom-suits/fabric"
                   className={`toggle-side-menu ${location.pathname === "/custom-suits/fabric" ? "active" : ""}`}
-                >
+                > */}
                   FABRIC
-                </Link>
+                {/* </Link> */}
               </li>
               <li>
                 <FaAngleRight />
               </li>
               <li>
-                <Link
+                {/* <Link
                   to="/custom-suits/style"
                   className={`toggle-side-menu ${location.pathname === "/custom-suits/style" ? "active" : ""}`}
-                >
+                > */}
                   STYLE
-                </Link>
+                {/* </Link> */}
               </li>
               <li>
                 <FaAngleRight />
               </li>
               <li>
-                <Link
+                {/* <Link
                   to="/custom-suits/lining"
                   className={`toggle-side-menu ${location.pathname === "/custom-suits/lining" ? "active" : ""}`}
-                >
+                > */}
                   LINING
-                </Link>
+                {/* </Link> */}
               </li>
             </ul>
           </nav>

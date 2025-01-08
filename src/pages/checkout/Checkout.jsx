@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import PayPalCheckoutButton from './paypalCheckout.jsx';
 import { useNavigate } from 'react-router-dom';
@@ -9,9 +9,9 @@ import './Checkout.scss';
 import Address from '../../layouts/components/Address/Address.jsx';
 
 const CHECKOUT_API = {
-  confirmOrder: "https://localhost:7194/api/AddCart/confirmorder",
-  fetchCart: "https://localhost:7194/api/AddCart/mycart",
-  fetchStores: "https://localhost:7194/api/Store",
+  confirmOrder: "https://vesttour.xyz/api/AddCart/confirmorder",
+  fetchCart: "https://vesttour.xyz/api/AddCart/mycart",
+  fetchStores: "https://vesttour.xyz/api/Store",
 };
 
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
@@ -32,6 +32,27 @@ const convertVNDToUSD = async (amountInVND) => {
     return Number((amountInVND * fallbackRate).toFixed(2));
   }
 };
+
+const useCart = () => {
+  // Logic xử lý cart
+};
+
+const useShipping = () => {
+  // Logic xử lý shipping
+};
+
+const validateCheckoutForm = (formData) => {
+  const errors = [];
+  // Validation logic
+  return errors;
+};
+
+const usePayment = () => {
+  // Payment processing logic
+};
+
+// const finalTotal = useMemo(() => calculateFinalTotal(), 
+//   [apiCart, selectedVoucher, shippingFee]);
 
 const Checkout = () => {
   const [apiCart, setApiCart] = useState(null);
@@ -61,6 +82,7 @@ const Checkout = () => {
   const [isDeposit, setIsDeposit] = useState(false);
   const [guestPhone, setGuestPhone] = useState('');
   const [resetAddress, setResetAddress] = useState(false);
+  const [orderNote, setOrderNote] = useState('');
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -92,12 +114,12 @@ const Checkout = () => {
           if (item.isCustom) {
             try {
               const [fabricRes, liningRes] = await Promise.all([
-                axios.get(`https://localhost:7194/api/Fabrics/${item.customProduct.fabricID}`),
-                axios.get(`https://localhost:7194/api/Linings/${item.customProduct.liningID}`)
+                axios.get(`https://vesttour.xyz/api/Fabrics/${item.customProduct.fabricID}`),
+                axios.get(`https://vesttour.xyz/api/Linings/${item.customProduct.liningID}`)
               ]);
 
               const styleOptionPromises = item.customProduct.styleOptionIds.map(id =>
-                axios.get(`https://localhost:7194/api/StyleOption/${id}`)
+                axios.get(`https://vesttour.xyz/api/StyleOption/${id}`)
               );
               const styleOptionResponses = await Promise.all(styleOptionPromises);
 
@@ -130,41 +152,76 @@ const Checkout = () => {
         });
 
         if (response.status === 200) {
-          setApiCart(response.data);
+          const cartData = response.data;
+          console.log('Cart Items:', cartData.cartItems); // Log toàn bộ cart items
+
+          setApiCart(cartData);
 
           // Fetch details for custom products
           const details = {};
-          for (const item of response.data.cartItems) {
-            if (item.customProduct) {
-              const [fabricRes, liningRes] = await Promise.all([
-                axios.get(`https://localhost:7194/api/Fabrics/${item.customProduct.fabricID}`),
-                axios.get(`https://localhost:7194/api/Linings/${item.customProduct.liningID}`)
-              ]);
+          for (const item of cartData.cartItems) {
+            if (item.isCustom && item.customProduct) {
+              // Log thông tin của từng item để debug
+              console.log('Processing custom item:', {
+                cartItemId: item.cartItemId,
+                customProduct: item.customProduct
+              });
 
-              // Fetch style options details
-              const styleOptionPromises = item.customProduct.pickedStyleOptions.map(option =>
-                axios.get(`https://localhost:7194/api/StyleOption/${option.styleOptionID}`)
-              );
-              const styleOptionResponses = await Promise.all(styleOptionPromises);
+              try {
+                // Fetch fabric details
+                const fabricRes = await axios.get(
+                  `https://vesttour.xyz/api/Fabrics/${item.customProduct.fabricID}`
+                );
 
-              details[item.cartItemId] = {
-                fabric: {
-                  name: fabricRes.data.fabricName,
-                  price: fabricRes.data.price
-                },
-                lining: {
-                  name: liningRes.data.data.liningName
-                },
-                styleOptions: styleOptionResponses.map(res => ({
-                  type: res.data.optionType,
-                  value: res.data.optionValue
-                }))
-              };
+                // Fetch lining details
+                const liningRes = await axios.get(
+                  `https://vesttour.xyz/api/Linings/${item.customProduct.liningID}`
+                );
+
+                // Fetch style options details
+                const styleOptionPromises = item.customProduct.pickedStyleOptions.map(option =>
+                  axios.get(`https://vesttour.xyz/api/StyleOption/${option.styleOptionID}`)
+                );
+                const styleOptionResponses = await Promise.all(styleOptionPromises);
+
+                // Đảm bảo cartItemId là một giá trị hợp lệ
+                const productCode = item.customProduct.productCode;
+                
+                details[productCode] = {
+                  productCode: productCode,
+                  fabric: {
+                    name: fabricRes.data.fabricName,
+                    price: fabricRes.data.price,
+                    id: item.customProduct.fabricID
+                  },
+                  lining: {
+                    name: liningRes.data.data.liningName,
+                    id: item.customProduct.liningID
+                  },
+                  styleOptions: styleOptionResponses.map(res => ({
+                    type: res.data.optionType,
+                    value: res.data.optionValue,
+                    id: res.data.styleOptionID
+                  }))
+                };
+
+                console.log(`Details for item ${productCode}:`, details[productCode]);
+              } catch (error) {
+                console.error(`Error fetching details for product:`, error);
+              }
             }
           }
+
+          console.log('All cart items:', cartData.cartItems.map(item => ({
+            cartItemId: item.cartItemId,
+            productCode: item.isCustom ? item.customProduct.productCode : item.product?.productCode
+          })));
+          
+          console.log('Final details object:', details);
           setCustomDetails(details);
         }
       } catch (error) {
+        console.error('Error fetching cart:', error);
         setError('Đã xảy ra lỗi khi lấy giỏ hàng');
       } finally {
         setLoading(false);
@@ -178,7 +235,7 @@ const Checkout = () => {
       // Only fetch user data if we have both token and userId
       if (token && userId) {
         try {
-          const response = await axios.get(`https://localhost:7194/api/User/${userId}`, {
+          const response = await axios.get(`https://vesttour.xyz/api/User/${userId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -229,7 +286,7 @@ const Checkout = () => {
   useEffect(() => {
     const fetchVouchers = async () => {
       try {
-        const response = await axios.get('https://localhost:7194/api/Voucher/valid');
+        const response = await axios.get('https://vesttour.xyz/api/Voucher/valid');
         if (response.status === 200) {
           setVouchers(response.data);
         }
@@ -278,7 +335,7 @@ const Checkout = () => {
       console.log('Shipping Fee Payload:', shippingPayload);
 
       const response = await axios.post(
-        'https://localhost:7194/api/Shipping/calculate-fee',
+        'https://vesttour.xyz/api/Shipping/calculate-fee',
         shippingPayload
       );
 
@@ -310,9 +367,17 @@ const Checkout = () => {
   const handleDeliveryMethodChange = (e) => {
     const newMethod = e.target.value;
     setDeliveryMethod(newMethod);
+    
+    // Reset shipping fee và nearest store khi không phải delivery
     if (newMethod !== 'Delivery') {
       setShippingFee(0);
       setNearestStore(null);
+      
+      // Nếu đang áp dụng voucher FREESHIP, bỏ chọn nó
+      if (selectedVoucher?.voucherCode?.substring(0, 8) === 'FREESHIP') {
+        setSelectedVoucher(null);
+        setDiscountedShippingFee(0);
+      }
     }
   };
 
@@ -325,7 +390,7 @@ const Checkout = () => {
   };
 
   const handleVoucherSelect = async (voucher) => {
-    // Reset states if no voucher is selected
+    // Reset states nếu không có voucher được chọn
     if (!voucher) {
       setSelectedVoucher(null);
       setDiscountedShippingFee(shippingFee);
@@ -334,9 +399,15 @@ const Checkout = () => {
 
     try {
       setSelectedVoucher(voucher);
+      
+      // Xử lý riêng cho từng loại voucher
       if (voucher.voucherCode?.substring(0, 8) === 'FREESHIP') {
+        // Logic cũ cho FREESHIP
         const discountAmount = shippingFee * voucher.discountNumber;
         setDiscountedShippingFee(shippingFee - discountAmount);
+      } else if (voucher.voucherCode?.substring(0, 7) === 'BIGSALE') {
+        // Đặt shipping fee về giá gốc vì BIGSALE không ảnh hưởng đến phí ship
+        setDiscountedShippingFee(shippingFee);
       } else {
         setDiscountedShippingFee(shippingFee);
       }
@@ -351,7 +422,7 @@ const Checkout = () => {
 
   const setOrderPaid = async (orderId) => {
     try {
-      const response = await axios.put(`https://localhost:7194/api/Orders/SetPaidTrue/${orderId}`);
+      const response = await axios.put(`https://vesttour.xyz/api/Orders/SetPaidTrue/${orderId}`);
       if (response.status === 200) {
         console.log('Order marked as paid successfully');
       } else {
@@ -365,7 +436,7 @@ const Checkout = () => {
 
   const handleCreatePayment = async (orderId, userId, method, paymentDetails, amount) => {
     try {
-      const response = await axios.post('https://localhost:7194/api/Payments', {
+      const response = await axios.post('https://vesttour.xyz/api/Payments', {
         orderId: orderId,
         userId: userId,
         method: method,
@@ -393,12 +464,19 @@ const Checkout = () => {
         setIsLoading(true);
         
         // Tính toán lại tổng tiền sau khi áp dụng voucher
+        let finalTotal = apiCart.cartTotal;
+        
+        // Áp dụng BIGSALE nếu có
+        if (selectedVoucher?.voucherCode?.substring(0, 7) === 'BIGSALE') {
+            finalTotal = finalTotal * (1 - selectedVoucher.discountNumber);
+        }
+        
+        // Thêm phí ship sau khi đã tính giảm giá BIGSALE
         const finalShippingFee = selectedVoucher?.voucherCode?.substring(0, 8) === 'FREESHIP' 
             ? discountedShippingFee 
             : shippingFee;
         
-        // Tính tổng cuối cùng bao gồm cả shipping fee đã giảm giá
-        const finalTotal = apiCart.cartTotal + finalShippingFee;
+        finalTotal += finalShippingFee;
         
         // Tính depositAmount dựa trên tổng đã giảm giá
         const depositAmount = isDeposit ? (finalTotal * 0.5) : finalTotal;
@@ -456,11 +534,12 @@ const Checkout = () => {
             guestEmail: guestEmail,
             guestAddress: guestAddress,
             guestPhone: guestPhone,
-            deposit: depositAmount.toString(),
+            deposit: depositAmount.toString(), // Sử dụng giá đã giảm
             shippingfee: finalShippingFee.toString(),
             deliverymethod: deliveryMethod,
             storeId: storeId,
-            voucherId: selectedVoucher?.voucherId || ''
+            voucherId: selectedVoucher?.voucherId || '',
+            note: orderNote
         });
 
         const token = localStorage.getItem('token');
@@ -482,7 +561,7 @@ const Checkout = () => {
                 userId, 
                 "Paypal", 
                 paymentDetails, 
-                finalTotal
+                finalTotal // Sử dụng giá đã giảm
             );
 
             setIsPaid(true);
@@ -521,10 +600,21 @@ const Checkout = () => {
   // Add this function to calculate the final total
   const calculateFinalTotal = () => {
     const baseTotal = apiCart.cartTotal;
-    const finalShippingFee = selectedVoucher?.voucherCode.substring(0, 8) === 'FREESHIP' 
+    let discountedTotal = baseTotal;
+    
+    if (selectedVoucher) {
+      if (selectedVoucher.voucherCode?.substring(0, 7) === 'BIGSALE') {
+        // Áp dụng giảm giá % cho tổng đơn hàng
+        discountedTotal = baseTotal * (1 - selectedVoucher.discountNumber);
+      }
+    }
+
+    // Tính phí ship sau khi áp dụng voucher FREESHIP (nếu có)
+    const finalShippingFee = selectedVoucher?.voucherCode?.substring(0, 8) === 'FREESHIP' 
       ? discountedShippingFee 
       : shippingFee;
-    return baseTotal + finalShippingFee;
+
+    return discountedTotal + finalShippingFee;
   };
 
   if (isLoading) {
@@ -589,6 +679,16 @@ const Checkout = () => {
                         value={guestPhone}
                         onChange={(e) => setGuestPhone(e.target.value)}
                         required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Order Note</label>
+                      <textarea
+                        placeholder="Add any special instructions or notes for your order"
+                        value={orderNote}
+                        onChange={(e) => setOrderNote(e.target.value)}
+                        rows="3"
                       />
                     </div>
 
@@ -691,7 +791,7 @@ const Checkout = () => {
                       </thead>
                       <tbody>
                         {apiCart.cartItems.map((item) => (
-                          <tr key={item.cartItemId}>
+                          <tr key={item.customProduct?.productCode || item.cartItemId}>
                             <td>
                               {item.isCustom 
                                 ? item.customProduct?.productCode 
@@ -699,27 +799,35 @@ const Checkout = () => {
                             </td>
                             <td>
                               {item.isCustom ? (
-                                customDetails[item.cartItemId] && (
-                                  <div className="product-details">
-                                    <p><strong>Fabric:</strong> {customDetails[item.cartItemId].fabric.name}</p>
-                                    <p><strong>Lining:</strong> {customDetails[item.cartItemId].lining.name}</p>
-                                    <div className="style-options">
-                                      <strong>Style Options:</strong>
-                                      {customDetails[item.cartItemId].styleOptions.map((option, index) => (
-                                        <p key={index}>{option.type}: {option.value}</p>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )
+                                <div className="product-details">
+                                  {customDetails[item.customProduct.productCode] ? (
+                                    <>
+                                      <p><strong>Fabric:</strong> {customDetails[item.customProduct.productCode].fabric.name}</p>
+                                      <p><strong>Lining:</strong> {customDetails[item.customProduct.productCode].lining.name}</p>
+                                      <div className="style-options">
+                                        <strong>Style Options:</strong>
+                                        {customDetails[item.customProduct.productCode].styleOptions.map((option, index) => (
+                                          <p key={`${item.customProduct.productCode}-${index}`}>
+                                            {option.type}: {option.value}
+                                          </p>
+                                        ))}
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <p>Loading details...</p>
+                                  )}
+                                </div>
                               ) : (
                                 <div className="product-details">
                                   <div className="product-image">
-                                    <img src={item.product?.imgURL} alt="Product" style={{ width: '100px' }} />
+                                    <img 
+                                      src={item.product?.imgURL} 
+                                      alt="Product" 
+                                      style={{ width: '100px' }} 
+                                    />
                                   </div>
                                   <p><strong>Product Code:</strong> {getDisplayProductCode(item.product?.productCode)}</p>
                                   <p><strong>Size:</strong> {item.product?.size}</p>
-                                
-                                  
                                 </div>
                               )}
                             </td>
@@ -733,13 +841,21 @@ const Checkout = () => {
                           <td colSpan="3"><strong>Subtotal</strong></td>
                           <td><strong>${apiCart.cartTotal.toFixed(2)}</strong></td>
                         </tr>
+                        {selectedVoucher?.voucherCode?.substring(0, 7) === 'BIGSALE' && (
+                          <tr>
+                            <td colSpan="3"><strong>Discount ({selectedVoucher.description})</strong></td>
+                            <td className="discount-amount">
+                              <strong>-${(apiCart.cartTotal * selectedVoucher.discountNumber).toFixed(2)}</strong>
+                            </td>
+                          </tr>
+                        )}
                         {deliveryMethod === 'Delivery' && (
                           <>
                             <tr>
                               <td colSpan="3"><strong>Shipping Fee</strong></td>
                               <td><strong>${shippingFee.toFixed(2)}</strong></td>
                             </tr>
-                            {selectedVoucher && selectedVoucher.voucherCode.substring(0, 8) === 'FREESHIP' && (
+                            {selectedVoucher?.voucherCode?.substring(0, 8) === 'FREESHIP' && (
                               <tr>
                                 <td colSpan="3"><strong>Shipping Discount</strong></td>
                                 <td className="discount-amount">
@@ -770,7 +886,18 @@ const Checkout = () => {
                           >
                             <option value="">Select a voucher</option>
                             {vouchers
-                              .filter(voucher => voucher.status === "OnGoing")
+                              .filter(voucher => {
+                                // Chỉ hiển thị voucher đang có hiệu lực
+                                if (voucher.status !== "OnGoing") return false;
+                                
+                                // Nếu là voucher FREESHIP, chỉ hiển thị khi delivery method là "Delivery"
+                                if (voucher.voucherCode?.substring(0, 8) === 'FREESHIP') {
+                                  return deliveryMethod === 'Delivery';
+                                }
+                                
+                                // Các loại voucher khác hiển thị bình thường
+                                return true;
+                              })
                               .map((voucher) => (
                                 <option key={voucher.voucherId} value={voucher.voucherId}>
                                   {voucher.voucherCode} - {voucher.description}

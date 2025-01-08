@@ -11,7 +11,7 @@ const Sidebar = ({ onSelectSubcategory }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("https://localhost:7194/api/category");
+        const response = await axios.get("https://vesttour.xyz/api/category");
         if (Array.isArray(response.data.data)) {
           setCategories(response.data.data);
         } else {

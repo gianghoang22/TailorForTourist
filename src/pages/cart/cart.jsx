@@ -35,17 +35,17 @@ const Cart = () => {
             try {
               const [fabricRes, liningRes] = await Promise.all([
                 axios.get(
-                  `https://localhost:7194/api/Fabrics/${item.customProduct.fabricID}`
+                  `https://vesttour.xyz/api/Fabrics/${item.customProduct.fabricID}`
                 ),
                 axios.get(
-                  `https://localhost:7194/api/Linings/${item.customProduct.liningID}`
+                  `https://vesttour.xyz/api/Linings/${item.customProduct.liningID}`
                 ),
               ]);
 
               // For guest cart, styleOptionIds is used instead of pickedStyleOptions
               const styleOptionPromises = item.customProduct.styleOptionIds.map(
                 (id) =>
-                  axios.get(`https://localhost:7194/api/StyleOption/${id}`)
+                  axios.get(`https://vesttour.xyz/api/StyleOption/${id}`)
               );
               const styleOptionResponses =
                 await Promise.all(styleOptionPromises);
@@ -77,7 +77,7 @@ const Cart = () => {
 
       try {
         // Fetch cart data
-        const cartResponse = await axios.get("https://localhost:7194/api/AddCart/mycart", {
+        const cartResponse = await axios.get("https://vesttour.xyz/api/AddCart/mycart", {
           headers: { 
             Authorization: `Bearer ${localStorage.getItem("token")}` // Kiểm tra token
           },
@@ -92,10 +92,10 @@ const Cart = () => {
             if (item.customProduct) {
               const [fabricRes, liningRes] = await Promise.all([
                 axios.get(
-                  `https://localhost:7194/api/Fabrics/${item.customProduct.fabricID}`
+                  `https://vesttour.xyz/api/Fabrics/${item.customProduct.fabricID}`
                 ),
                 axios.get(
-                  `https://localhost:7194/api/Linings/${item.customProduct.liningID}`
+                  `https://vesttour.xyz/api/Linings/${item.customProduct.liningID}`
                 ),
               ]);
 
@@ -103,7 +103,7 @@ const Cart = () => {
               const styleOptionPromises =
                 item.customProduct.pickedStyleOptions.map((option) =>
                   axios.get(
-                    `https://localhost:7194/api/StyleOption/${option.styleOptionID}`
+                    `https://vesttour.xyz/api/StyleOption/${option.styleOptionID}`
                   )
                 );
               const styleOptionResponses =
@@ -160,7 +160,7 @@ const Cart = () => {
       console.log("Removing product:", { productCode, userId }); // Debug log
 
       const response = await axios.delete(
-        `https://localhost:7194/api/AddCart/remove/${productCode}?userId=${userId}`,
+        `https://vesttour.xyz/api/AddCart/remove/${productCode}?userId=${userId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -171,7 +171,7 @@ const Cart = () => {
       if (response.status === 200) {
         // Fetch updated cart data after removal
         const updatedCartResponse = await axios.get(
-          "https://localhost:7194/api/AddCart/mycart",
+          "https://vesttour.xyz/api/AddCart/mycart",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -202,8 +202,8 @@ const Cart = () => {
 
       const endpoint =
         action === "increase"
-          ? `https://localhost:7194/api/AddCart/increase/${productCode}`
-          : `https://localhost:7194/api/AddCart/decrease/${productCode}`;
+          ? `https://vesttour.xyz/api/AddCart/increase/${productCode}`
+          : `https://vesttour.xyz/api/AddCart/decrease/${productCode}`;
 
       const response = await axios.post(endpoint, null, {
         headers: {
@@ -214,7 +214,7 @@ const Cart = () => {
       if (response.status === 200) {
         // Fetch updated cart data after quantity change
         const updatedCartResponse = await axios.get(
-          "https://localhost:7194/api/AddCart/mycart",
+          "https://vesttour.xyz/api/AddCart/mycart",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -328,6 +328,7 @@ const Cart = () => {
                     <th className="product-price">Price</th>
                     <th className="product-quantity">Quantity</th>
                     <th className="product-subtotal">Total</th>
+                    <th className="product-note">Note</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -416,6 +417,9 @@ const Cart = () => {
                       <td className="product-subtotal">
                         ${item.price * item.quantity}
                       </td>
+                      <td className="product-note">
+                        {item.note}
+                      </td>
                       <td className="product-remove">
                         <button
                           className="remove-button"
@@ -436,9 +440,21 @@ const Cart = () => {
               </table>
               <div className="cart-total">
                 <p>
-                  <strong>Total Price:</strong> ${apiCart.cartTotal}
+                  <strong>Total Price:</strong> {apiCart.cartTotal} USD.
                 </p>
               </div>
+              {/* <div className="measurement-notice" style={{
+              backgroundColor: '#fff3cd',
+              color: '#856404',
+              padding: '15px',
+              margin: '20px 0',
+              borderRadius: '4px',
+              textAlign: 'center'
+            }}>
+              <p>
+                <strong>Note:</strong> For the service fee, we will charge you 10$.
+              </p>
+            </div> */}
               <div>
                 <button className="checkout-button">
                   <Link to="/checkout">Proceed to checkout</Link>

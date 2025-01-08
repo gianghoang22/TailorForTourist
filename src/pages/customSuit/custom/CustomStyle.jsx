@@ -170,8 +170,8 @@ const CustomStyle = () => {
     const fetchStylesAndOptions = async () => {
       try {
         const [stylesResponse, optionsResponse] = await Promise.all([
-          axios.get("https://localhost:7194/api/Style"),
-          axios.get("https://localhost:7194/api/StyleOption"),
+          axios.get("https://vesttour.xyz/api/Style"),
+          axios.get("https://vesttour.xyz/api/StyleOption"),
         ]);
 
         setStyles(stylesResponse.data);
@@ -395,34 +395,24 @@ const CustomStyle = () => {
             </h1>
 
             {/* Display selected options and their images */}
-            <div className="selected-options-preview" style={{ display: 'flex', flexDirection: 'row' }}>
+            <div className="selected-options-grid">
               {Object.entries(selectedImages).map(([optionType, imageUrl]) => (
-                <div key={optionType} className="selected-option" style={{ marginRight: '10px' }}>
-                  <h3>{optionType}</h3>
+                <div key={optionType} className="selected-option-card">
+                  <div className="option-header">
+                    <span className="option-type">{optionType}</span>
+                    <button 
+                      onClick={() => handleRemoveStyle(optionType)}
+                      className="remove-btn"
+                      aria-label="Remove style"
+                    >
+                      ×
+                    </button>
+                  </div>
                   <img
                     src={imageUrl}
                     alt={`Selected ${optionType}`}
-                    className="selected-option-image"
+                    className="option-image"
                   />
-                  <button 
-                    onClick={() => {
-                      // Xóa style khỏi selectedOptions và selectedImages
-                      setSelectedOptions(prev => {
-                        const newSelectedOptions = { ...prev };
-                        delete newSelectedOptions[optionType];
-                        return newSelectedOptions;
-                      });
-                      setSelectedImages(prev => {
-                        const newSelectedImages = { ...prev };
-                        delete newSelectedImages[optionType];
-                        return newSelectedImages;
-                      });
-                    }}
-                    className="remove-style-button"
-                    style={{ marginLeft: '5px', cursor: 'pointer', color: 'red', background: 'none', border: 'none', fontSize: '16px' }}
-                  >
-                    X
-                  </button>
                 </div>
               ))}
             </div>

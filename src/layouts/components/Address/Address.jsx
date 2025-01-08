@@ -48,7 +48,7 @@ const Address = ({ initialAddress, onAddressChange, resetAddress, setResetAddres
   const fetchProvinces = async () => {
     try {
       const response = await axios.get(
-        "https://localhost:7194/api/Shipping/provinces"
+        "https://vesttour.xyz/api/Shipping/provinces"
       );
       if (response.data) {
         setProvinces(response.data);
@@ -64,7 +64,7 @@ const Address = ({ initialAddress, onAddressChange, resetAddress, setResetAddres
 
     try {
       const response = await axios.get(
-        `https://localhost:7194/api/Shipping/districts?provinceId=${provinceID}`
+        `https://vesttour.xyz/api/Shipping/districts?provinceId=${provinceID}`
       );
       if (response.data) {
         console.log("Districts API Response:", response.data);
@@ -81,7 +81,7 @@ const Address = ({ initialAddress, onAddressChange, resetAddress, setResetAddres
 
     try {
       const response = await axios.get(
-        `https://localhost:7194/api/Shipping/wards?districtId=${districtId}`
+        `https://vesttour.xyz/api/Shipping/wards?districtId=${districtId}`
       );
       if (response.data) {
         console.log("Wards API Response:", response.data);
@@ -200,7 +200,9 @@ const Address = ({ initialAddress, onAddressChange, resetAddress, setResetAddres
           className="address-input"
           required
         />
-        {!isAddressValid && <span className="error-message" style={{ color: 'red' }}>Please fill in all address fields.</span>}
+        {!isAddressValid && (
+          <span className="error-message">Please fill in all address fields.</span>
+        )}
       </div>
 
       <div className="select-group">

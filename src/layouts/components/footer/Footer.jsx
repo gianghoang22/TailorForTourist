@@ -1,8 +1,26 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../footer/Footer.scss';
+import { useEffect, useState } from 'react';
 
 
 export const Footer = () => {
+
+ const [storeInfo, setStoreInfo] = useState(null);
+
+ useEffect(() => {
+    const fetchStoreInfo = async () => {
+        try {
+            const response = await fetch('https://vesttour.xyz/api/Store');
+            const data = await response.json();
+            const activeStore = data.find(store => store.status === 'Active');
+            setStoreInfo(activeStore);
+        } catch (error) {
+            console.error('Error fetching store info:', error);
+        }
+    };
+    fetchStoreInfo();
+ }, []);
+
   return (
     <>
         {/* Address link */}
@@ -133,13 +151,14 @@ export const Footer = () => {
                 <div id="mona_contact-2" className="Mona_contact">
                     <h3 className='lbl'>
                         <div className="ft-right-cont">
-                            <h4></h4>
+                            
                             <div className="ft-right-it">
                                 <p className='lb'>
                                     <i className='fa fa-map-marker'></i>
                                     ADDRESS:
                                 </p>
-                                <p>62 Tran Hung Dao St., - 40 Le Loi St., Hoi An City, Quang Nam Province, Vietnam</p>
+                                <p>{storeInfo?.address}</p>
+                                
                             </div>
                             <div className="ft-right-it">
                                 <p className='lb'>
@@ -154,7 +173,7 @@ export const Footer = () => {
                                     PHONE:
                                 </p>
                                 <p>
-                                    <a href="tel:(+84)0123456789">(+84) 123 456 789</a>
+                                    <a>{storeInfo?.contactNumber}</a>
                                 </p>
                             </div>
                         </div>

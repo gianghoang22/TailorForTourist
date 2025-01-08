@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import {
   Button,
@@ -29,8 +29,17 @@ import {
   Chip,
   TablePagination,
   Card,
+  FormControlLabel,
+  Checkbox,
+  List,
+  ListItem,
+  ListItemText,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  Radio,
 } from "@mui/material";
-import { Edit, Visibility, Add, Delete, FilterList } from "@mui/icons-material";
+import { Edit, Visibility, Add, Delete, FilterList, Payment } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { OrderChart } from "./DashboardCharts";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -42,7 +51,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import BankingPayment from '../../../assets/img/elements/bankingPayment.jpg'
 
-const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
+const BASE_URL = "https://vesttour.xyz/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
 
 const fetchStoreByStaffId = async (staffId) => {
@@ -152,11 +161,10 @@ const OrderList = () => {
     paymentId: "",
     storeId: "",
     voucherId: "",
-    // shipperPartnerId: "4",
     orderDate: "",
     shippedDate: "",
     note: "",
-    paid: "",
+    paid: false,
     totalPrice: "",
   });
   const [orderDetails, setOrderDetails] = useState(null);
@@ -166,7 +174,6 @@ const OrderList = () => {
   const [createOrderForm, setCreateOrderForm] = useState({
     storeId: 0,
     voucherId: 0,
-    // shipperPartnerId: 0,
     shippedDate: "",
     note: "",
     paid: false,
@@ -220,7 +227,7 @@ const OrderList = () => {
   const [userId, setUserId] = useState(''); // State để lưu userId
   const [amount, setAmount] = useState(0); // State để lưu amount
   const [createdOrderId, setCreatedOrderId] = useState(''); // State cho createdOrderId
-  const [method, setMethod] = useState(''); // State cho payment method
+  const [method, setMethod] = useState('Cash'); // Thêm state cho payment method
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]); // Tự động chọn ngày hiện tại
   const [paymentDetails, setPaymentDetails] = useState('Paid full'); // Mặc định là "Paid full"
   const [resetAddress, setResetAddress] = useState(false); // Add this state
@@ -231,6 +238,14 @@ const OrderList = () => {
     amount: '',
     shippedDate: ''
   });
+  const [paymentListDialog, setPaymentListDialog] = useState(false);
+  const [unpaidDeposits, setUnpaidDeposits] = useState([]);
+  const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
+  const [remainingPaymentDialog, setRemainingPaymentDialog] = useState(false);
+  const [isDeposit, setIsDeposit] = useState(false);
+  const [isLoadingDeposits, setIsLoadingDeposits] = useState(false);
+  // Thêm state để theo dõi việc cần refresh data
+  const [refreshData, setRefreshData] = useState(false);
 
   const handleDateFilterChange = (event) => {
     setDateFilter(event.target.value);
@@ -444,7 +459,7 @@ const OrderList = () => {
     };
 
     fetchOrders();
-  }, []);
+  }, [refreshData]); // Thêm refreshData vào dependencies
 
   const fetchUnpaidOrders = async () => {
     try {
@@ -525,27 +540,62 @@ const OrderList = () => {
   const handleCreateOrder = async () => {
     setIsCreatingOrder(true);
     try {
-      // Calculate total amount including shipping fee
-      const totalOrderAmount = selectedProducts.reduce((sum, product) => 
-        sum + (product.price * product.quantity), 0) + (createOrderForm.shippingFee || 0);
+      // Validation checks...
 
-      // Calculate deposit based on payment details
-      const depositAmount = totalOrderAmount; // This will be the same as the payment amount
+      // Format regular products
+      const formattedProducts = selectedProducts.map(product => ({
+        productID: product.productID,
+        quantity: product.quantity,
+        price: product.price
+      }));
 
-      const formattedShippedDate = createOrderForm.shippedDate 
-        ? new Date(createOrderForm.shippedDate).toISOString().split('T')[0]
-        : null;
-      console.log('Formatted Shipped Date:', formattedShippedDate);
+      // Format custom products
+      const formattedCustomProducts = createOrderForm.customProducts.map(product => ({
+        fabricID: product.fabricID,
+        liningID: product.liningID,
+        measurementID: product.measurementID,
+        quantity: product.quantity,
+        pickedStyleOptions: product.pickedStyleOptions
+      }));
 
-      const formattedProducts = createOrderForm.products.map(product => {
-        const formatted = {
-          productID: product.productID,
-          quantity: product.quantity,
-          price: product.price || 0
-        };
-        console.log('Formatted Product:', formatted);
-        return formatted;
-      });
+      // Calculate totals with voucher discount
+      const productTotal = selectedProducts.reduce((sum, product) => 
+        sum + (product.price * product.quantity), 0);
+      
+      const customProductTotal = createOrderForm.customProducts.reduce((sum, product) => 
+        sum + (product.price * product.quantity), 0);
+
+      // Calculate total before voucher
+      let totalBeforeVoucher = productTotal + customProductTotal;
+      console.log('Total before voucher:', totalBeforeVoucher);
+
+      // Apply voucher discount
+      let finalTotal = totalBeforeVoucher;
+      if (createOrderForm.voucherId) {
+        const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
+        console.log('Applied voucher:', voucher);
+        
+        if (voucher?.voucherCode?.includes('BIGSALE')) {
+          finalTotal = totalBeforeVoucher * (1 - voucher.discountNumber);
+          console.log('Total after BIGSALE discount:', finalTotal);
+        }
+      }
+
+      // Add shipping fee (after voucher discount)
+      let finalShippingFee = createOrderForm.shippingFee || 0;
+      if (createOrderForm.voucherId) {
+        const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
+        if (voucher?.voucherCode?.includes('FREESHIP')) {
+          finalShippingFee = 0;
+        }
+      }
+      
+      finalTotal += finalShippingFee;
+      console.log('Final total with shipping:', finalTotal);
+
+      // Calculate deposit
+      const depositAmount = isDeposit ? finalTotal * 0.5 : finalTotal;
+      console.log('Deposit amount:', depositAmount);
 
       const orderPayload = {
         userId: selectedUser?.userId || null,
@@ -553,49 +603,40 @@ const OrderList = () => {
         voucherId: createOrderForm.voucherId || null,
         shippedDate: createOrderForm.shippedDate,
         note: createOrderForm.note || '',
-        paid: createOrderForm.paid || false,
+        paid: false,
         guestName: createOrderForm.guestName,
         guestEmail: createOrderForm.guestEmail,
         guestAddress: createOrderForm.guestAddress,
-        deposit: depositAmount, // Set deposit to match the payment amount
-        shippingFee: createOrderForm.shippingFee || 0,
+        guestPhone: createOrderForm.guestPhone,
+        deposit: depositAmount,
+        shippingFee: finalShippingFee,
         deliveryMethod: createOrderForm.deliveryMethod,
         products: formattedProducts,
-        customProducts: createOrderForm.customProducts || []
+        customProducts: formattedCustomProducts,
+        totalPrice: finalTotal // Sử dụng giá đã được tính với voucher
       };
 
-      // Log payload for verification
-      console.log('Final API Request Payload:', orderPayload);
+      console.log('Final order payload:', orderPayload);
 
       const response = await api.post('/Orders/staffcreateorder', orderPayload);
-      console.log('API Response Success:', response.data);
+      const orderId = response.data.orderId;
       
-      const orderId = response.data.orderId; // Lưu orderId
       setCreatedOrderId(orderId);
       localStorage.setItem('orderId', orderId);
+      await fetchOrderDetails(orderId);
       
-      // Gọi hàm để lấy thông tin đơn hàng
-      await fetchOrderDetails(orderId); // Đảm bảo orderId được truyền đúng
-      
-      // Mở dialog createPayment
+      setAmount(depositAmount);
       setOpenPaymentDialog(true);
-      
       setSnackbarMessage('Order created successfully');
       setSnackbarSeverity('success');
       setOpen(false);
+
+      // Trigger data refresh
+      setRefreshData(prev => !prev);
+
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('Axios Error:', error);
-        console.error('Error Response:', error.response); // Thông tin phản hồi từ máy chủ
-        console.error('Error Message:', error.message); // Thông điệp lỗi
-      } else {
-        console.error('Unexpected Error:', error); // Lỗi không phải từ Axios
-      }
-      
-      setSnackbarMessage(
-        error.response?.data?.message || 
-        'Failed to create order'
-      );
+      console.error('Error:', error);
+      setSnackbarMessage(error.message || 'Failed to create order');
       setSnackbarSeverity('error');
     } finally {
       setIsCreatingOrder(false);
@@ -660,7 +701,7 @@ const OrderList = () => {
         console.log('Shipping Fee Payload:', shippingPayload);
 
         const response = await axios.post(
-            'https://localhost:7194/api/Shipping/calculate-fee',
+            'https://vesttour.xyz/api/Shipping/calculate-fee',
             shippingPayload
         );
 
@@ -736,9 +777,9 @@ const OrderList = () => {
     }
   };
 
-  const handleAddCustomProduct = () => {
+  const handleAddCustomProduct = async () => {
     try {
-      // Validate required fields
+      // Validation
       if (!selectedFabric) {
         throw new Error('Please select a fabric');
       }
@@ -755,23 +796,44 @@ const OrderList = () => {
         throw new Error('Quantity must be greater than 0');
       }
 
+      // Fetch measurement details
+      const measurementResponse = await api.get(`/Measurement/${measurementId}`);
+      const measurementDetails = measurementResponse.data;
+
+      // Tính giá cho custom product
+      const priceDetails = calculateCustomProductPrice(
+        selectedFabric.fabricID, 
+        selectedStyleOptions,
+        measurementDetails
+      );
+
+      // Tạo note về phụ phí (nếu có)
+      let additionalNote = '';
+      if (priceDetails.additionalCharges.sizeCharge > 0) {
+        additionalNote = `An additional fee of $${priceDetails.additionalCharges.sizeCharge}.00 per unit has been applied due to exceeding standard measurements.`;
+      }
+
       // Create new custom product
       const newCustomProduct = {
         productCode: `CUSTOM-${Date.now()}`,
-        categoryID: 5, // Assuming 5 is for custom products
+        categoryID: 5,
         fabricID: selectedFabric.fabricID,
         liningID: selectedLining.liningId,
         measurementID: parseInt(measurementId),
         quantity: customQuantity,
+        price: priceDetails.price,
+        note: additionalNote, // Remove service charge note, only keep size charge if applicable
         pickedStyleOptions: selectedStyleOptions.map(option => ({
-          styleOptionID: option.styleOptionId
+          styleOptionID: option.styleOptionId,
+          additionalPrice: option.additionalPrice || 0
         }))
       };
 
       // Update form state
       setCreateOrderForm(prev => ({
         ...prev,
-        customProducts: [...prev.customProducts, newCustomProduct]
+        customProducts: [...prev.customProducts, newCustomProduct],
+        note: prev.note + (additionalNote ? additionalNote : '')
       }));
 
       // Reset selections
@@ -838,17 +900,17 @@ const OrderList = () => {
   const fetchPayments = async () => {
     try {
       const response = await api.get('/Payments');
-      console.log('Payments Data:', response.data); // Log the payments data
+      console.log('Payments Data:', response.data);
       const paymentsData = response.data;
 
-      // Create a mapping of orderId to payment method
+      // Create a mapping of orderId to full payment object
       const paymentMap = {};
       paymentsData.forEach(payment => {
-        paymentMap[payment.orderId] = payment.method;
+        paymentMap[payment.orderId] = payment;
       });
 
-      console.log('Payment Map:', paymentMap); // Log the payment map
-      setPayments(paymentMap); // Store the mapping in state
+      console.log('Payment Map:', paymentMap);
+      setPayments(paymentMap);
     } catch (error) {
       console.error('Error fetching payments:', error);
     }
@@ -907,13 +969,19 @@ const OrderList = () => {
             ...prevPayments,
             [createdOrderId]: method
         }));
+
+        // Trigger data refresh
+        setRefreshData(prev => !prev);
+        
+        // Reset form
+        resetForm();
     } catch (error) {
         console.error('Error creating payment:', error);
         setSnackbarMessage('Failed to create payment');
         setSnackbarSeverity('error');
     }
     setSnackbarOpen(true);
-    setOpenPaymentDialog(false); // Close the dialog after submission
+    setOpenPaymentDialog(false);
   };
 
   // Call fetchUnpaidOrders in useEffect to load unpaid orders on component mount
@@ -1036,6 +1104,310 @@ const OrderList = () => {
     }
     return '';
   };
+
+  const fetchUnpaidDeposits = async () => {
+    setIsLoadingDeposits(true);
+    try {
+      const response = await api.get('/Payments');
+      const paymentsData = response.data;
+      
+      // Debug logs
+      console.log('All Orders:', orders);
+      console.log('All Payments:', paymentsData);
+      
+      const depositsNeededPayment = orders.filter(order => {
+        // Tìm tất cả payments cho order này
+        const orderPayments = paymentsData.filter(p => p.orderId === order.orderId);
+        
+        // Kiểm tra xem có payment nào là "Paid remaining balance" không
+        const hasRemainingPayment = orderPayments.some(p => 
+          p.paymentDetails === "Paid remaining balance"
+        );
+
+        // Kiểm tra xem có payment deposit 50% không
+        const hasDepositPayment = orderPayments.some(p => 
+          p.paymentDetails === "Make deposit 50%"
+        );
+
+        console.log(`Checking order ${order.orderId}:`, {
+          hasDepositPayment,
+          hasRemainingPayment,
+          balancePayment: order.balancePayment,
+          isEligible: hasDepositPayment && !hasRemainingPayment && order.balancePayment > 0
+        });
+
+        // Chỉ trả về true nếu:
+        // 1. Có payment deposit 50%
+        // 2. Chưa có payment remaining balance
+        // 3. Còn số tiền cần thanh toán
+        return hasDepositPayment && !hasRemainingPayment && order.balancePayment > 0;
+      });
+
+      console.log('Filtered Orders for Payment:', depositsNeededPayment);
+      setUnpaidDeposits(depositsNeededPayment);
+    } catch (error) {
+      console.error('Error fetching unpaid deposits:', error);
+      setSnackbarMessage('Error loading unpaid deposits');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setIsLoadingDeposits(false);
+    }
+  };
+
+  // Thêm hàm handleCreatePayment
+  const handleCreatePayment = async (order) => {
+    try {
+      const remainingAmount = order.totalPrice - order.deposit;
+
+      const paymentPayload = {
+        orderId: order.orderId,
+        userId: order.userId,
+        method: method,
+        paymentDate: new Date().toISOString().split('T')[0],
+        paymentDetails: "Paid remaining balance",
+        status: "Success",
+        amount: remainingAmount
+      };
+
+      console.log('Payment Payload:', paymentPayload);
+
+      // Gọi API tạo payment
+      const response = await api.post('/Payments', paymentPayload);
+      console.log('Payment created:', response.data);
+
+      // Cập nhật trạng thái paid của order
+      await api.put(`/Orders/SetPaidTrue/${order.orderId}`);
+
+      // Cập nhật shipStatus thành Finished
+      try {
+        const updateStatusResponse = await fetch(`${BASE_URL}/Orders/update-ship-status/${order.orderId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify("Finished")
+        });
+
+        if (!updateStatusResponse.ok) {
+          console.error('Failed to update ship status');
+        }
+      } catch (error) {
+        console.error('Error updating ship status:', error);
+      }
+
+      // Cập nhật state orders để thay đổi balancePayment thành 0
+      setOrders(prevOrders => 
+        prevOrders.map(o => 
+          o.orderId === order.orderId 
+            ? { ...o, balancePayment: 0, paid: true }
+            : o
+        )
+      );
+
+      // Trigger data refresh
+      setRefreshData(prev => !prev);
+
+      // Refresh danh sách payments
+      await fetchPayments();
+      
+      // Đóng dialog
+      setRemainingPaymentDialog(false);
+      setPaymentListDialog(false);
+
+      // Hiển thị thông báo thành công
+      setSnackbarMessage('Payment processed successfully');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+
+    } catch (error) {
+      console.error('Error creating payment:', error);
+      setSnackbarMessage('Failed to process payment');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  };
+
+  // Thêm hàm reset form
+  const resetForm = () => {
+    setFormState({
+      id: "",
+      customerName: "",
+      status: "pending",
+      paymentId: "",
+      storeId: "",
+      voucherId: "",
+      orderDate: "",
+      shippedDate: "",
+      note: "",
+      paid: false,
+      totalPrice: "",
+    });
+    
+    // Reset các state khác
+    setSelectedUser(null);
+    setCreateOrderForm({
+      guestName: "",
+      guestEmail: "",
+      guestAddress: "",
+      guestPhone: "",
+      storeId: "",
+      voucherId: null,
+      shippedDate: "",
+      note: "",
+      deliveryMethod: "Pick up",
+      shippingFee: 0,
+      products: [],
+      customProducts: []
+    });
+    setSelectedProducts([]);
+    setMethod("Cash");
+    setPaymentDetails("Paid full");
+    setIsDeposit(false);
+    setSelectedFabric(null);
+    setSelectedLining(null);
+    setSelectedStyleOptions([]);
+    setCustomQuantity(1);
+    setProductQuantity(1);
+    setSelectedProduct(null);
+    setNearestStore(null);
+    setValidationErrors({});
+    setMeasurementId(null);
+  };
+
+  // Thêm xử lý đóng dialog
+  const handleCloseDialog = () => {
+    resetForm();
+    setOpen(false);
+  };
+
+  // Thêm hàm tính tổng tiền
+  const calculateTotalAmount = () => {
+    // Tính tổng tiền regular products
+    const productTotal = selectedProducts.reduce((sum, product) => 
+      sum + (product.price * product.quantity), 0);
+    console.log('Regular Products Total:', productTotal);
+
+    // Tính tổng tiền custom products
+    const customProductTotal = createOrderForm.customProducts.reduce((sum, product) => 
+      sum + (product.price * product.quantity), 0);
+    console.log('Custom Products Total:', customProductTotal);
+
+    // Tổng tiền trước khi áp dụng voucher
+    let totalBeforeVoucher = productTotal + customProductTotal;
+    console.log('Total Before Voucher:', totalBeforeVoucher);
+
+    // Áp dụng voucher
+    let totalAfterVoucher = totalBeforeVoucher;
+    if (createOrderForm.voucherId) {
+      const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
+      console.log('Selected Voucher:', voucher);
+      
+      if (voucher) {
+        // Kiểm tra loại voucher và áp dụng giảm giá
+        if (voucher.voucherCode?.includes('BIGSALE')) {
+          const discount = totalBeforeVoucher * voucher.discountNumber;
+          totalAfterVoucher = totalBeforeVoucher - discount;
+          console.log('Discount Amount:', discount);
+        } else if (voucher.voucherCode?.includes('FREESHIP')) {
+          // Xử lý FREESHIP riêng
+          createOrderForm.shippingFee = 0;
+        }
+      }
+    }
+    console.log('Total After Voucher:', totalAfterVoucher);
+
+    // Cộng phí ship
+    const shippingFee = createOrderForm.shippingFee || 0;
+    console.log('Shipping Fee:', shippingFee);
+    
+    const finalTotal = totalAfterVoucher + shippingFee;
+    console.log('Final Total:', finalTotal);
+
+    return finalTotal;
+  };
+
+  // Chuyển calculateCustomProductPrice thành hàm sync
+  const calculateCustomProductPrice = (fabricId, styleOptions, measurementDetails) => {
+    // Lấy giá vải
+    const fabric = fabrics.find(f => f.fabricID === fabricId);
+    let basePrice = fabric ? fabric.price : 0;
+
+    // Cộng thêm giá của các style options (nếu có)
+    const optionsPrice = styleOptions.reduce((sum, option) => {
+      const styleOption = styleOptions.find(so => so.styleOptionId === option.styleOptionID);
+      return sum + (styleOption?.additionalPrice || 0);
+    }, 0);
+
+    // Tính phí phụ thu dựa trên measurement
+    let additionalCharge = 0;
+    if (measurementDetails) {
+      if (measurementDetails.height > 190 || measurementDetails.weight > 100) {
+        additionalCharge = 20;
+      } else if (measurementDetails.height > 180 && measurementDetails.height <= 190 || 
+                measurementDetails.weight > 85 && measurementDetails.weight <= 100) {
+        additionalCharge = 10;
+      }
+    }
+
+    // Tổng giá = giá vải + giá options + phí phụ thu size
+    const totalPrice = basePrice + optionsPrice + additionalCharge;
+
+    return {
+      price: totalPrice,
+      additionalCharges: {
+        sizeCharge: additionalCharge
+      }
+    };
+  };
+
+  // Thêm useEffect để cập nhật deposit amount
+  useEffect(() => {
+    const totalAmount = calculateTotalAmount();
+    setCreateOrderForm(prev => ({
+      ...prev,
+      totalPrice: totalAmount,
+      deposit: isDeposit ? Math.round(totalAmount * 0.5) : totalAmount
+    }));
+  }, [selectedProducts, createOrderForm.customProducts, createOrderForm.shippingFee, createOrderForm.voucherId, isDeposit]);
+
+  // Thêm hàm handleVoucherChange vào trong component OrderList
+  const handleVoucherChange = (_, newValue) => {
+    console.log('Selected New Voucher:', newValue);
+    
+    // Cập nhật voucherId trong form
+    setCreateOrderForm(prev => ({
+      ...prev,
+      voucherId: newValue ? newValue.voucherId : null
+    }));
+
+    // Reset shipping fee nếu là FREESHIP voucher
+    if (newValue?.voucherCode?.includes('FREESHIP')) {
+      setCreateOrderForm(prev => ({
+        ...prev,
+        shippingFee: 0
+      }));
+    }
+
+    // Tự động cập nhật tổng tiền và deposit
+    const totalAmount = calculateTotalAmount();
+    setCreateOrderForm(prev => ({
+      ...prev,
+      totalPrice: totalAmount,
+      deposit: isDeposit ? Math.round(totalAmount * 0.5) : totalAmount
+    }));
+  };
+
+  // First, add this new function to group style options by type
+  const groupedStyleOptions = useMemo(() => {
+    return styleOptions.reduce((acc, option) => {
+      if (!acc[option.optionType]) {
+        acc[option.optionType] = [];
+      }
+      acc[option.optionType].push(option);
+      return acc;
+    }, {});
+  }, [styleOptions]);
 
   if (loading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
@@ -1207,19 +1579,7 @@ const OrderList = () => {
         variant="contained"
         startIcon={<Add />}
         onClick={() => {
-          setFormState({
-            id: "",
-            customerName: "",
-            status: "pending",
-            paymentId: "",
-            storeId: "",
-            voucherId: "",
-            orderDate: "",
-            shippedDate: "",
-            note: "",
-            paid: false,
-            totalPrice: "",
-          });
+          resetForm(); // Gọi hàm reset
           setOpen(true);
           setIsEditMode(false);
         }}
@@ -1228,14 +1588,18 @@ const OrderList = () => {
         Add Order
       </StyledButton>
 
-      {/* <Button
+      <StyledButton
         variant="contained"
-        color="secondary"
-        onClick={() => setOpenPaymentDialog(true)}
+        startIcon={<Payment />}
+        onClick={() => {
+          console.log('Opening payment dialog');
+          fetchUnpaidDeposits(); // Gọi trực tiếp khi click button
+          setRemainingPaymentDialog(true);
+        }}
         sx={{ mb: 2, ml: 2 }}
       >
-        Create Payment
-      </Button> */}
+        Process Payment
+      </StyledButton>
 
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
@@ -1245,8 +1609,10 @@ const OrderList = () => {
               <StyledTableCell>Customer</StyledTableCell>
               <StyledTableCell>Status</StyledTableCell>
               <StyledTableCell>Payment Method</StyledTableCell>
+              <StyledTableCell>Payment Details</StyledTableCell>
               <StyledTableCell>Order Date</StyledTableCell>
               <StyledTableCell>Total Price</StyledTableCell>
+              <StyledTableCell>Balance Payment</StyledTableCell>
               <StyledTableCell>Actions</StyledTableCell>
             </TableRow>
           </StyledTableHead>
@@ -1256,41 +1622,45 @@ const OrderList = () => {
                 <TableCell>{order.orderId}</TableCell>
                 <TableCell>{order.guestName}</TableCell>
                 <TableCell>{order.status || 'Pending'}</TableCell>
-                <TableCell>{payments[order.orderId] || 'N/A'}</TableCell>
+                <TableCell>
+                  {payments[order.orderId]?.method}
+                </TableCell>
+                <TableCell>{payments[order.orderId]?.paymentDetails}</TableCell>
                 <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
                 <TableCell>{order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}$</TableCell>
                 <TableCell>
-                  
+                  {order.balancePayment ? (
+                    <Typography
+                      color={order.balancePayment > 0 ? "error" : "success"}
+                      fontWeight="bold"
+                    >
+                      ${order.balancePayment.toFixed(2)}
+                    </Typography>
+                  ) : (
+                    "$0.00"
+                  )}
+                </TableCell>
+                <TableCell>
                   <Tooltip title="View Details">
                     <IconButton onClick={() => handleViewDetails(order.orderId)} sx={{ color: "primary.main" }}>
                       <Visibility />
                     </IconButton>
                   </Tooltip>
+                  {/* {order.balancePayment > 0 && (
+                    <Tooltip title="Process Payment">
+                      <IconButton 
+                        onClick={() => handleCreatePayment(order)}
+                        color="primary"
+                      >
+                        <Payment />
+                      </IconButton>
+                    </Tooltip>
+                  )} */}
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-        {/* <TablePagination
-          rowsPerPageOptions={[10]}
-          component="div"
-          count={filterOrders(orders).length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          sx={{
-            '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-              margin: '0',
-            },
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            '.MuiTablePagination-actions': {
-              marginLeft: 'auto',
-              marginRight: 'auto'
-            }
-          }}
-        /> */}
       </TableContainer>
 
       {/* Pagination Controls */}
@@ -1384,7 +1754,12 @@ const OrderList = () => {
       </Snackbar>
 
       {/* Create Order Dialog */}
-      <Dialog open={open && !isEditMode} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
+      <Dialog 
+        open={open && !isEditMode} 
+        onClose={handleCloseDialog}
+        maxWidth="md" 
+        fullWidth
+      >
         <DialogTitle>Create New Order</DialogTitle>
         <DialogContent>
           {isCreatingOrder ? (
@@ -1502,25 +1877,7 @@ const OrderList = () => {
                 options={vouchers.filter(voucher => voucher.status === "OnGoing")}
                 getOptionLabel={(option) => `${option.voucherCode} - ${option.description}` || ''}
                 value={vouchers.find(voucher => voucher.voucherId === createOrderForm.voucherId) || null}
-                onChange={(_, newValue) => {
-                  console.log('Selected Voucher:', newValue);
-                  setCreateOrderForm(prev => {
-                    const updatedForm = {
-                      ...prev,
-                      voucherId: newValue ? newValue.voucherId : null
-                    };
-
-                    // Tính toán lại shipping fee với voucher mới
-                    if (prev.shippingFee) {
-                      const newShippingFee = calculateFinalShippingFee(prev.shippingFee, newValue);
-                      console.log('Original Shipping Fee:', prev.shippingFee);
-                      console.log('New Shipping Fee:', newShippingFee);
-                      updatedForm.shippingFee = newShippingFee;
-                    }
-
-                    return updatedForm;
-                  });
-                }}
+                onChange={handleVoucherChange}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -1551,6 +1908,16 @@ const OrderList = () => {
                     shippedDate: method === 'Pick up' ? '' : prev.shippedDate,
                     shippingFee: method === 'Pick up' ? 0 : prev.shippingFee
                   }));
+                  
+                  // Reset deposit nếu chuyển sang Delivery
+                  if (method === 'Delivery') {
+                    setIsDeposit(false);
+                    const totalAmount = calculateTotalAmount();
+                    setCreateOrderForm(prev => ({
+                      ...prev,
+                      deposit: totalAmount // Set deposit bằng full amount
+                    }));
+                  }
                 }}
                 fullWidth
                 margin="normal"
@@ -1703,32 +2070,38 @@ const OrderList = () => {
                 multiline
                 rows={2}
               />
+              {/* Chỉ hiển thị checkbox deposit khi KHÔNG phải Home delivery */}
               {createOrderForm.deliveryMethod !== 'Delivery' && (
-                <TextField
-                    label="Deposit"
-                    type="number"
-                    value={createOrderForm.deposit}
-                    onChange={handleDepositChange}
+                <>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={isDeposit}
+                        onChange={(e) => {
+                          setIsDeposit(e.target.checked);
+                          // Cập nhật paymentDetails dựa trên trạng thái checkbox
+                          setPaymentDetails(e.target.checked ? "Make deposit 50%" : "Paid full");
+                        }}
+                      />
+                    }
+                    label="Pay 50% Deposit"
+                    sx={{ mt: 2, mb: 1 }}
+                  />
+
+                  {/* Hiển thị số tiền deposit (chỉ để xem) */}
+                  <TextField
+                    label="Deposit Amount"
+                    value={createOrderForm.deposit || 0}
+                    disabled
                     fullWidth
                     margin="normal"
-                    error={!!validationErrors.deposit}
-                    helperText={validationErrors.deposit}
                     InputProps={{
-                      inputProps: { 
-                        min: 0,
-                        step: "0.01",
-                        onKeyDown: (e) => {
-                          if (e.key === '-') {
-                            e.preventDefault();
-                          }
-                        }
-                      },
-                      startAdornment: <InputAdornment position="start">$</InputAdornment>
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
-                />
+                  />
+                </>
               )}
-              
-              
+
               {/* You might want to add more complex inputs for products and customProducts arrays */}
               <Button
                 variant="contained"
@@ -1746,6 +2119,8 @@ const OrderList = () => {
                     <TableHead>
                       <TableRow>
                         <TableCell>Product Code</TableCell>
+                        <TableCell>Type</TableCell>
+                        <TableCell>Details</TableCell>
                         <TableCell>Quantity</TableCell>
                         <TableCell>Price</TableCell>
                         <TableCell>Total</TableCell>
@@ -1753,28 +2128,58 @@ const OrderList = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
+                      {/* Regular Products */}
                       {selectedProducts.map((product, index) => (
-                        <TableRow key={index}>
+                        <TableRow key={`regular-${index}`}>
                           <TableCell>{product.productCode}</TableCell>
+                          <TableCell>Regular</TableCell>
+                          <TableCell>{product.name}</TableCell>
                           <TableCell>{product.quantity}</TableCell>
                           <TableCell>${product.price}</TableCell>
-                          <TableCell>${(product.price * product.quantity).toFixed(2)}</TableCell>
+                          <TableCell>${product.price * product.quantity}</TableCell>
                           <TableCell>
-                            <IconButton
-                              onClick={() => {
-                                const newProducts = selectedProducts.filter((_, i) => i !== index);
-                                setSelectedProducts(newProducts);
-                                setCreateOrderForm(prev => ({
-                                  ...prev,
-                                  products: newProducts
-                                }));
-                              }}
-                            >
+                            <IconButton onClick={() => handleRemoveProduct(index)}>
                               <Delete />
                             </IconButton>
                           </TableCell>
                         </TableRow>
                       ))}
+                      
+                      {/* Custom Products */}
+                      {createOrderForm.customProducts.map((product, index) => {
+                        const fabric = fabrics.find(f => f.fabricID === product.fabricID);
+                        return (
+                          <TableRow key={`custom-${index}`}>
+                            <TableCell>{product.productCode}</TableCell>
+                            <TableCell>Custom</TableCell>
+                            <TableCell>
+                              <div>
+                                <strong>Fabric:</strong> {fabric?.fabricName}<br />
+                                <strong>Style Options:</strong><br />
+                                {product.pickedStyleOptions.map((option, i) => (
+                                  <span key={i}>
+                                    {styleOptions.find(so => so.styleOptionId === option.styleOptionID)?.optionValue}<br />
+                                  </span>
+                                ))}
+                                {product.note && (
+                                  <>
+                                    <br />
+                                    <strong>Note:</strong> {product.note}
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>{product.quantity}</TableCell>
+                            <TableCell>${product.price}</TableCell>
+                            <TableCell>${product.price * product.quantity}</TableCell>
+                            <TableCell>
+                              <IconButton onClick={() => handleRemoveCustomProduct(index)}>
+                                <Delete />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -1970,27 +2375,47 @@ const OrderList = () => {
                   />
 
                   {/* Style Options Selection */}
-                  <Autocomplete
-                    multiple
-                    options={styleOptions}
-                    getOptionLabel={(option) => option.optionValue}
-                    value={selectedStyleOptions}
-                    onChange={(_, newValue) => setSelectedStyleOptions(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Style Options"
-                        margin="normal"
-                        fullWidth
-                        required
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <li {...props}>
-                        <Typography>{option.optionValue}</Typography>
-                      </li>
-                    )}
-                  />
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle1" gutterBottom>Style Options</Typography>
+                    <Grid container spacing={2}>
+                      {Object.entries(groupedStyleOptions).map(([optionType, options]) => (
+                        <Grid item xs={12} md={6} key={optionType}>
+                          <TextField
+                            select
+                            fullWidth
+                            label={optionType}
+                            value={selectedStyleOptions.find(selected => 
+                              options.some(opt => opt.styleOptionId === selected.styleOptionId)
+                            )?.styleOptionId || ''}
+                            onChange={(e) => {
+                              const selectedId = Number(e.target.value);
+                              const selectedOption = options.find(opt => opt.styleOptionId === selectedId);
+                              
+                              setSelectedStyleOptions(prev => {
+                                // Remove any existing option of the same type
+                                const filtered = prev.filter(option => 
+                                  styleOptions.find(so => so.styleOptionId === option.styleOptionId)?.optionType !== optionType
+                                );
+                                // Add the new selection
+                                return [...filtered, selectedOption];
+                              });
+                            }}
+                            size="small"
+                          >
+                            <MenuItem value="">
+                              <em>Select {optionType}</em>
+                            </MenuItem>
+                            {options.map(option => (
+                              <MenuItem key={option.styleOptionId} value={option.styleOptionId}>
+                                {option.optionValue}
+                                {option.price && ` (+$${option.price})`}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Box>
 
                   {/* Hiển thị thông tin người dùng */}
                   {selectedUser && (
@@ -2061,6 +2486,111 @@ const OrderList = () => {
                   </Button>
                 </DialogActions>
               </Dialog>
+
+              {/* Thêm Summary Box sau khi có sản phẩm được thêm vào */}
+              {(selectedProducts.length > 0 || createOrderForm.customProducts.length > 0) && (
+                <Paper 
+                  elevation={3} 
+                  sx={{ 
+                    p: 3, 
+                    my: 3, 
+                    backgroundColor: '#f8f9fa',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 2
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+                    Order Summary
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={6}>
+                      <List dense>
+                        <ListItem>
+                          <ListItemText 
+                            primary="Products Total" 
+                            secondary={`$${selectedProducts.reduce((sum, product) => 
+                              sum + (product.price * product.quantity), 0).toFixed(2)}`}
+                          />
+                        </ListItem>
+                        <ListItem>
+                          <ListItemText 
+                            primary="Custom Products Total" 
+                            secondary={`$${createOrderForm.customProducts.reduce((sum, product) => 
+                              sum + (product.price * product.quantity), 0).toFixed(2)}`}
+                          />
+                        </ListItem>
+                        {createOrderForm.shippingFee > 0 && (
+                          <ListItem>
+                            <ListItemText 
+                              primary="Shipping Fee" 
+                              secondary={`$${createOrderForm.shippingFee.toFixed(2)}`}
+                            />
+                          </ListItem>
+                        )}
+                      </List>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <List dense>
+                        {createOrderForm.voucherId && (
+                          <ListItem>
+                            <ListItemText 
+                              primary={
+                                <Typography color="success.main">
+                                  {(() => {
+                                    const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
+                                    const discountText = voucher?.voucherCode?.includes('BIGSALE') 
+                                      ? `${(voucher.discountNumber * 100).toFixed(0)}% Off`
+                                      : voucher?.voucherCode?.includes('FREESHIP')
+                                      ? 'Free Shipping'
+                                      : '';
+                                    return `Voucher Applied: ${voucher?.voucherCode} (${discountText})`;
+                                  })()}
+                                </Typography>
+                              }
+                              secondary={
+                                <Typography color="success.main" variant="caption">
+                                  {vouchers.find(v => v.voucherId === createOrderForm.voucherId)?.description}
+                                </Typography>
+                              }
+                            />
+                          </ListItem>
+                        )}
+                        <ListItem>
+                          <ListItemText 
+                            primary={
+                              <Typography variant="subtitle1" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                                Total Amount
+                              </Typography>
+                            }
+                            secondary={
+                              <Typography variant="h6" color="primary.main">
+                                ${calculateTotalAmount().toFixed(2)}
+                              </Typography>
+                            }
+                          />
+                        </ListItem>
+                        {createOrderForm.deliveryMethod !== 'Delivery' && isDeposit && (
+                          <ListItem>
+                            <ListItemText 
+                              primary={
+                                <Typography variant="subtitle1" color="secondary.main" sx={{ fontWeight: 'bold' }}>
+                                  Deposit Amount (50%)
+                                </Typography>
+                              }
+                              secondary={
+                                <Typography variant="h6" color="secondary.main">
+                                  ${(calculateTotalAmount() * 0.5).toFixed(2)}
+                                </Typography>
+                              }
+                            />
+                          </ListItem>
+                        )}
+                      </List>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              )}
+
               <Button
                 variant="contained"
                 color="primary"
@@ -2114,7 +2644,7 @@ const OrderList = () => {
               <MenuItem value="Cash">Cash</MenuItem>
               <MenuItem value="Banking">Banking Payment</MenuItem>
             </TextField>
-            {method === 'Paypal' && (
+            {method === 'Banking' && (
               <div>
                 <img src={BankingPayment} alt="Banking Payment" style={{ width: '50%', marginTop: '10px' }} />
               </div>
@@ -2144,6 +2674,7 @@ const OrderList = () => {
               onChange={(e) => setPaymentDetails(e.target.value)} // Cập nhật paymentDetails
               fullWidth
               margin="normal"
+              disabled // Thêm disabled để không cho phép thay đổi trực tiếp trong dialog
             >
               <MenuItem value="Paid full">Paid full</MenuItem>
               <MenuItem value="Make deposit 50%">Make deposit 50%</MenuItem>
@@ -2153,6 +2684,88 @@ const OrderList = () => {
             </Button>
           </form>
         </DialogContent>
+      </Dialog>
+
+      {/* Thêm Dialog cho danh sách thanh toán */}
+      <Dialog 
+        open={remainingPaymentDialog} 
+        onClose={() => setRemainingPaymentDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        onEnter={() => {
+          console.log('Dialog opened');
+          console.log('Current unpaidDeposits:', unpaidDeposits);
+        }}
+      >
+        <DialogTitle>Process Remaining Payment</DialogTitle>
+        <DialogContent>
+          {isLoadingDeposits ? (
+            <CircularProgress />
+          ) : (
+            <TextField
+              select
+              label="Select Order"
+              fullWidth
+              margin="normal"
+              value={selectedOrderForPayment?.orderId || ''}
+              onChange={(e) => {
+                const order = unpaidDeposits.find(o => o.orderId === e.target.value);
+                setSelectedOrderForPayment(order);
+              }}
+            >
+              {unpaidDeposits.map((order) => (
+                <MenuItem key={order.orderId} value={order.orderId}>
+                  Order #{order.orderId} - {order.guestName}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+
+          {selectedOrderForPayment && (
+            <>
+              <TextField
+                label="Customer"
+                value={selectedOrderForPayment.guestName}
+                fullWidth
+                margin="normal"
+                disabled
+              />
+              <TextField
+                label="Remaining Amount"
+                value={(selectedOrderForPayment.totalPrice - selectedOrderForPayment.deposit).toFixed(2)}
+                fullWidth
+                margin="normal"
+                disabled
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                }}
+              />
+              <TextField
+                select
+                label="Payment Method"
+                value={method}
+                onChange={(e) => setMethod(e.target.value)}
+                fullWidth
+                margin="normal"
+              >
+                <MenuItem value="Cash">Cash</MenuItem>
+                <MenuItem value="Banking">Banking Payment</MenuItem>
+                <MenuItem value="Paypal">Visa Card</MenuItem>
+              </TextField>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRemainingPaymentDialog(false)}>Cancel</Button>
+          <Button 
+            onClick={() => handleCreatePayment(selectedOrderForPayment)}
+            variant="contained" 
+            color="primary"
+            disabled={!selectedOrderForPayment}
+          >
+            Process Payment
+          </Button>
+        </DialogActions>
       </Dialog>
 
     </div>

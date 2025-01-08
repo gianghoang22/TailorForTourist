@@ -51,7 +51,7 @@ const OrderHistory = () => {
       setUserID(storedUserID);
 
       // Fetch orders for the user
-      fetch(`https://localhost:7194/api/Orders/user/${storedUserID}`)
+      fetch(`https://vesttour.xyz/api/Orders/user/${storedUserID}`)
         .then((response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok");
@@ -70,7 +70,7 @@ const OrderHistory = () => {
         });
 
       // Fetch payment methods for the user
-      fetch(`https://localhost:7194/api/Payments/by-user/${storedUserID}`)
+      fetch(`https://vesttour.xyz/api/Payments/by-user/${storedUserID}`)
         .then((response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok");
@@ -105,7 +105,7 @@ const OrderHistory = () => {
   }, []);
 
   const fetchOrderDetails = (orderId) => {
-    fetch(`https://localhost:7194/api/Orders/${orderId}/details`)
+    fetch(`https://vesttour.xyz/api/Orders/${orderId}/details`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Please make payment for order so that you could view details");
@@ -120,7 +120,7 @@ const OrderHistory = () => {
       })
       .then((detailsArray) => {
         const productDetailsPromises = detailsArray.map((item) =>
-          fetch(`https://localhost:7194/api/Product/details/${item.productId}`)
+          fetch(`https://vesttour.xyz/api/Product/details/${item.productId}`)
             .then((response) => {
               if (!response.ok) {
                 throw new Error("Failed to fetch product details");
@@ -169,7 +169,7 @@ const OrderHistory = () => {
 
     try {
       const response = await fetch(
-        "https://localhost:7194/api/Feedback/feedbackfororder",
+        "https://vesttour.xyz/api/Feedback/feedbackfororder",
         {
           method: "POST",
           headers: {
@@ -259,6 +259,7 @@ const OrderHistory = () => {
                     <th>Deposit</th>
                     <th>Shipping Fee</th>
                     <th>Payment</th>
+                    <th>Note</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -295,9 +296,12 @@ const OrderHistory = () => {
                           </td>
                           <td>${order.totalPrice?.toFixed(2) || ""}</td>
                           <td>${order.deposit?.toFixed(2) || ""}</td>
-                          <td>${order.shippingFee?.toFixed(2) || "N/A"}</td>
+                          <td>${order.shippingFee?.toFixed(2) || ""}</td>
                           <td>
                             {paymentMethod ? paymentMethod.method : "Paypal"}
+                          </td>
+                          <td>
+                            ${order.note || ""}
                           </td>
                           <td>
                             <button

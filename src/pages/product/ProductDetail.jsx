@@ -48,6 +48,33 @@ const ProductDetailPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const feedbacksPerPage = 4;
   const [styleOptions, setStyleOptions] = useState([]);
+  const [quantity, setQuantity] = useState(0);
+  const [selectedSize, setSelectedSize] = useState(product?.size || null);
+
+  const sizes = ['S  ', 'M  ', 'L  ', 'XL  '];
+
+  const SizeSelector = () => {
+    return (
+      <div className="size-selector">
+        <div className="size-label">Size: {selectedSize}</div>
+        <div className="size-options">
+          {sizes.map((size) => (
+            <button
+              key={size}
+              className={`size-btn ${selectedSize === size ? 'selected' : ''} ${
+                product.size === size ? 'available' : 'unavailable'
+              }`}
+              onClick={() => setSelectedSize(size)}
+              disabled={product.size !== size}
+            >
+              {size}
+              {product.size !== size && <div className="crossed-line" />}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   // Calculate pagination values
   const indexOfLastFeedback = currentPage * feedbacksPerPage;
@@ -63,14 +90,14 @@ const ProductDetailPage = () => {
   const fetchFeedbacks = async () => {
     try {
       // First fetch feedbacks
-      const feedbackResponse = await axios.get(`https://localhost:7194/api/Feedback/product/${id}`);
+      const feedbackResponse = await axios.get(`https://vesttour.xyz/api/Feedback/product/${id}`);
       const feedbackData = feedbackResponse.data;
       setFeedbacks(feedbackData);
 
       // Then fetch user details one by one
       for (const feedback of feedbackData) {
         try {
-          const userResponse = await axios.get(`https://localhost:7194/api/User/${feedback.userId}`);
+          const userResponse = await axios.get(`https://vesttour.xyz/api/User/${feedback.userId}`);
           setUserNames(prev => ({
             ...prev,
             [feedback.userId]: userResponse.data.name
@@ -93,12 +120,23 @@ const ProductDetailPage = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await axios.get(`https://localhost:7194/api/Product/details/${id}`);
-        setProduct(response.data);
-        // Lấy styleOptions từ sản phẩm
-        if (response.data && response.data.styleOptions) {
-          setStyleOptions(response.data.styleOptions);
+        const [productResponse, storeResponse] = await Promise.all([
+          axios.get(`https://vesttour.xyz/api/Product/details/${id}`),
+          axios.get('https://vesttour.xyz/api/ProductInStore')
+        ]);
+
+        setProduct(productResponse.data);
+        if (productResponse.data && productResponse.data.styleOptions) {
+          setStyleOptions(productResponse.data.styleOptions);
         }
+
+        // Calculate total quantity across all stores
+        const totalQuantity = storeResponse.data.data
+          .filter(item => item.productID === parseInt(id))
+          .reduce((sum, item) => sum + item.quantity, 0);
+        
+        setQuantity(totalQuantity);
+
       } catch (err) {
         setError(err.message);
       } finally {
@@ -115,6 +153,11 @@ const ProductDetailPage = () => {
 
     if (!userId) {
       toast.error('You must be logged in to add items to the cart.');
+      return;
+    }
+
+    if (!selectedSize) {
+      toast.error('Please select a size before adding to cart.');
       return;
     }
 
@@ -147,7 +190,7 @@ const ProductDetailPage = () => {
 
       console.log("Sending product to add to cart:", productToAdd);
       // Gửi dữ liệu lên API
-      const response = await fetch("https://localhost:7194/api/AddCart/addtocart", {
+      const response = await fetch("https://vesttour.xyz/api/AddCart/addtocart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -207,7 +250,7 @@ const ProductDetailPage = () => {
 
       console.log('Feedback Data to be sent:', feedbackData);
 
-      const response = await fetch('https://localhost:7194/api/Feedback/feedbackforproduct', {
+      const response = await fetch('https://vesttour.xyz/api/Feedback/feedbackforproduct', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -249,8 +292,6 @@ const ProductDetailPage = () => {
             <div className="right-pd-info">
               <h1 className="pd-name">{product.productCode}</h1>
               <dl className="pdinfo-dl">
-                <dt>Size:</dt>
-                <dd>{product.size}</dd>
                 <dt>Fabric:</dt>
                 <dd>{product.fabricName}</dd>
                 <dt>Lining:</dt>
@@ -262,7 +303,13 @@ const ProductDetailPage = () => {
                 </li>
               ))}</dd>
               </dl>
+              <SizeSelector />
               <p className="price">From {product.price} USD</p>
+              {/* <p className="availability">
+                Status: <span className={quantity > 0 ? 'in-stock' : 'out-of-stock'}>
+                  {quantity > 0 ? 'Available' : 'Out of Stock'}
+                </span>
+              </p> */}
             </div>
             <div className="right-pd-info">
               <div className="actions-link">
@@ -270,7 +317,11 @@ const ProductDetailPage = () => {
                   Choose between personalizing the product or add it like we designed it to your cart
                 </p>
                 <Link to="/custom-suits" className="btn primary-btn">Customize</Link>
-                <button onClick={handleAddToCart} className="btn gray-btn">
+                <button 
+                  onClick={handleAddToCart} 
+                  className="btn gray-btn"
+                  disabled={quantity <= 0}
+                >
                   Add to Cart
                 </button>
               </div>

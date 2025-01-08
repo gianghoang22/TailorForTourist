@@ -61,4 +61,15 @@
 .required {
   color: #ff0000;
   margin-left: 2px;
+}
+
+.error-message {
+  color: #fff;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: inline-block;
+  background-color: #dc3545;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-align: center;
 } 

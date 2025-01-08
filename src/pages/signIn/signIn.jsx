@@ -104,7 +104,7 @@ export default function SignIn(props) {
 
     setIsLoading(true);
     try {
-      const response = await fetch("https://localhost:7194/api/Login/login", {
+      const response = await fetch("https://vesttour.xyz/api/Login/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -297,7 +297,7 @@ export default function SignIn(props) {
               </span>
             </Typography>
           </Box>
-          <Divider>or</Divider>
+          {/* <Divider>or</Divider>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Button
               type="button"
@@ -317,7 +317,7 @@ export default function SignIn(props) {
             >
               Sign in with Facebook
             </Button>
-          </Box>
+          </Box> */}
         </Card>
       </SignInContainer>
     </AppTheme>

@@ -39,7 +39,7 @@ import {
   Fade,
 } from "@mui/material";
 
-const BASE_URL = "https://localhost:7194/api";
+const BASE_URL = "https://vesttour.xyz/api";
 
 const getStatusColor = (status) => {
   switch (status.toLowerCase()) {

@@ -43,7 +43,7 @@ const FabricManagement = () => {
   const fetchFabricData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("https://localhost:7194/api/Fabrics");
+      const response = await fetch("https://vesttour.xyz/api/Fabrics");
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
@@ -90,7 +90,7 @@ const FabricManagement = () => {
 
       console.log("Adding Fabric Data:", JSON.stringify(fabricToAdd));
 
-      const response = await fetch("https://localhost:7194/api/Fabrics", {
+      const response = await fetch("https://vesttour.xyz/api/Fabrics", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -184,7 +184,7 @@ const FabricManagement = () => {
       console.log("Sending update request:", fabricToUpdate); // Debug log
 
       const response = await fetch(
-        `https://localhost:7194/api/Fabrics/${editIndex}`,
+        `https://vesttour.xyz/api/Fabrics/${editIndex}`,
         {
           method: "PUT",
           headers: {
@@ -234,7 +234,7 @@ const FabricManagement = () => {
   const handleDelete = async (fabricID) => {
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Fabrics/${fabricID}`,
+        `https://vesttour.xyz/api/Fabrics/${fabricID}`,
         {
           method: "DELETE",
         }
@@ -268,7 +268,7 @@ const FabricManagement = () => {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `https://localhost:7194/api/Fabrics/${fabricID}/status`,
+        `https://vesttour.xyz/api/Fabrics/${fabricID}/status`,
         {
           method: "PATCH",
           headers: {

@@ -11,9 +11,21 @@ const PayPalCheckoutButton = ({
 }) => {
   const [isDeposit, setIsDeposit] = useState(false);
 
-  const validAmount = parseFloat(amount) || 0;
-  const validShippingFee = parseFloat(shippingFee) || 0;
+  // Tính toán giá sau khi áp dụng voucher
+  const calculateDiscountedAmount = () => {
+    let discountedAmount = amount;
+    
+    if (selectedVoucher) {
+      if (selectedVoucher.voucherCode?.substring(0, 7) === 'BIGSALE') {
+        // Áp dụng giảm giá % cho tổng đơn hàng
+        discountedAmount = amount * (1 - selectedVoucher.discountNumber);
+      }
+    }
+    return discountedAmount;
+  };
 
+  const validAmount = calculateDiscountedAmount();
+  const validShippingFee = parseFloat(shippingFee) || 0;
   const finalPrice = validAmount + validShippingFee;
 
   useEffect(() => {
@@ -37,21 +49,12 @@ const PayPalCheckoutButton = ({
 
               const calculatedTotal = itemTotal + shippingValue;
 
-              // Ensure total matches the breakdown
-              if (calculatedTotal.toFixed(2) !== finalPrice.toFixed(2)) {
-                throw new Error(
-                  `AMOUNT_MISMATCH: Total ${calculatedTotal.toFixed(
-                    2
-                  )} does not match Final Price ${finalPrice.toFixed(2)}`
-                );
-              }
-
               return actions.order.create({
                 purchase_units: [
                   {
                     amount: {
                       currency_code: "USD",
-                      value: finalPrice.toFixed(2),
+                      value: calculatedTotal.toFixed(2),
                       breakdown: {
                         item_total: {
                           currency_code: "USD",
@@ -121,9 +124,16 @@ const PayPalCheckoutButton = ({
   return (
     <div className="paypal-container">
       <div className="deposit-option">
-        
         <p className="price-display">
-          Original Price: ${validAmount.toFixed(2)}
+          Price: ${amount.toFixed(2)}
+          {selectedVoucher?.voucherCode?.substring(0, 7) === 'BIGSALE' && (
+            <>
+              <br />
+              <span>Discount ({selectedVoucher.description}): -${(amount * selectedVoucher.discountNumber).toFixed(2)}</span>
+              <br />
+              <span>Price after discount: ${validAmount.toFixed(2)}</span>
+            </>
+          )}
           {validShippingFee > 0 && (
             <>
               <br />

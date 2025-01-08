@@ -39,7 +39,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const BASE_URL = "https://localhost:7194/api";
+const BASE_URL = "https://vesttour.xyz/api";
 
 const fetchStoreByStaffId = async (staffId) => {
   const response = await fetch(`${BASE_URL}/Store/GetStoreByStaff/${staffId}`);
@@ -113,11 +113,11 @@ const ShipmentList = () => {
   const paginatedShipments = sortedShipments.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const statusStyles = {
-    Tailoring: { background: "blue", color: "white" },
-    Confirming: { background: "pink", color: "black" },
-    Shipping: { background: "yellow", color: "black" },
-    Ready: { background: "green", color: "white" },
-    Finished: { background: "green", color: "white" },
+    Tailoring: { background: "#a5b4fc", color: "#1e1b4b" },    // Soft indigo
+    Confirming: { background: "#fecdd3", color: "#881337" },   // Soft pink
+    Shipping: { background: "#fef08a", color: "#854d0e" },     // Soft yellow
+    Ready: { background: "#bfdbfe", color: "#14532d" },        // Soft green
+    Finished: { background: "#86efac", color: "#1e3a8a" },     // Soft blue
   };
 
   const getStatusStyles = (status) => statusStyles[status] || { background: "white", color: "white" };
