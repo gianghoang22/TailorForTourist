@@ -540,16 +540,13 @@ const OrderList = () => {
   const handleCreateOrder = async () => {
     setIsCreatingOrder(true);
     try {
-      // Validation checks...
-
-      // Format regular products
+      // Format products...
       const formattedProducts = selectedProducts.map(product => ({
         productID: product.productID,
         quantity: product.quantity,
         price: product.price
       }));
 
-      // Format custom products
       const formattedCustomProducts = createOrderForm.customProducts.map(product => ({
         fabricID: product.fabricID,
         liningID: product.liningID,
@@ -558,44 +555,66 @@ const OrderList = () => {
         pickedStyleOptions: product.pickedStyleOptions
       }));
 
-      // Calculate totals with voucher discount
+      // Calculate initial totals
       const productTotal = selectedProducts.reduce((sum, product) => 
         sum + (product.price * product.quantity), 0);
       
       const customProductTotal = createOrderForm.customProducts.reduce((sum, product) => 
         sum + (product.price * product.quantity), 0);
 
-      // Calculate total before voucher
       let totalBeforeVoucher = productTotal + customProductTotal;
-      console.log('Total before voucher:', totalBeforeVoucher);
-
-      // Apply voucher discount
-      let finalTotal = totalBeforeVoucher;
-      if (createOrderForm.voucherId) {
-        const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
-        console.log('Applied voucher:', voucher);
-        
-        if (voucher?.voucherCode?.includes('BIGSALE')) {
-          finalTotal = totalBeforeVoucher * (1 - voucher.discountNumber);
-          console.log('Total after BIGSALE discount:', finalTotal);
-        }
-      }
-
-      // Add shipping fee (after voucher discount)
       let finalShippingFee = createOrderForm.shippingFee || 0;
+      let finalTotal = totalBeforeVoucher;
+
+      console.log('Initial calculations:', {
+        productTotal,
+        customProductTotal,
+        totalBeforeVoucher,
+        originalShippingFee: finalShippingFee
+      });
+
+      // Apply voucher discounts
       if (createOrderForm.voucherId) {
         const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
-        if (voucher?.voucherCode?.includes('FREESHIP')) {
-          finalShippingFee = 0;
+        console.log('Found voucher:', voucher);
+
+        if (voucher) {
+          if (voucher.voucherCode?.includes('FREESHIP')) {
+            // Giảm giá shipping fee
+            finalShippingFee = finalShippingFee * (1 - voucher.discountNumber);
+            console.log('After FREESHIP:', {
+              discountRate: voucher.discountNumber,
+              finalShippingFee
+            });
+          } 
+          else if (voucher.voucherCode?.includes('BIGSALE')) {
+            // Giảm giá sản phẩm
+            const discountAmount = totalBeforeVoucher * voucher.discountNumber;
+            finalTotal = totalBeforeVoucher - discountAmount;
+            console.log('After BIGSALE:', {
+              originalTotal: totalBeforeVoucher,
+              discountRate: voucher.discountNumber,
+              discountAmount,
+              finalTotal
+            });
+          }
         }
       }
-      
+
+      // Add shipping fee to final total
       finalTotal += finalShippingFee;
-      console.log('Final total with shipping:', finalTotal);
+      console.log('Final calculations:', {
+        finalTotal,
+        finalShippingFee,
+        withShipping: finalTotal
+      });
 
       // Calculate deposit
       const depositAmount = isDeposit ? finalTotal * 0.5 : finalTotal;
-      console.log('Deposit amount:', depositAmount);
+      console.log('Deposit calculation:', {
+        isDeposit,
+        depositAmount
+      });
 
       const orderPayload = {
         userId: selectedUser?.userId || null,
@@ -613,7 +632,7 @@ const OrderList = () => {
         deliveryMethod: createOrderForm.deliveryMethod,
         products: formattedProducts,
         customProducts: formattedCustomProducts,
-        totalPrice: finalTotal // Sử dụng giá đã được tính với voucher
+        totalPrice: finalTotal  // Tổng tiền đã bao gồm cả giảm giá và shipping fee
       };
 
       console.log('Final order payload:', orderPayload);
