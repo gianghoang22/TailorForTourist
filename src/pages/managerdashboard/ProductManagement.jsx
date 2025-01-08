@@ -16,7 +16,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import "./ProductManagement.scss";
 
-const BASE_URL = "https://vesttour.xyz/api";
+const BASE_URL = "https://localhost:7194/api";
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);

@@ -51,7 +51,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import BankingPayment from '../../../assets/img/elements/bankingPayment.jpg'
 
-const BASE_URL = "https://vesttour.xyz/api"; // Update this to match your API URL
+const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
 
 const fetchStoreByStaffId = async (staffId) => {
@@ -566,54 +566,25 @@ const OrderList = () => {
       let finalShippingFee = createOrderForm.shippingFee || 0;
       let finalProductTotal = totalBeforeVoucher;
 
-      console.log('Initial calculations:', {
-        productTotal,
-        customProductTotal,
-        totalBeforeVoucher,
-        finalShippingFee
-      });
-
       // Apply voucher discounts
       if (createOrderForm.voucherId) {
         const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
-        console.log('Found voucher:', voucher);
-
+        
         if (voucher) {
           if (voucher.voucherCode?.includes('FREESHIP')) {
-            // Giảm giá shipping fee
             finalShippingFee = finalShippingFee * (1 - voucher.discountNumber);
-            console.log('After FREESHIP:', {
-              originalShippingFee: createOrderForm.shippingFee,
-              discountRate: voucher.discountNumber,
-              finalShippingFee
-            });
           } 
           else if (voucher.voucherCode?.includes('BIGSALE')) {
-            // Giảm giá sản phẩm
             finalProductTotal = totalBeforeVoucher * (1 - voucher.discountNumber);
-            console.log('After BIGSALE:', {
-              originalTotal: totalBeforeVoucher,
-              discountRate: voucher.discountNumber,
-              finalProductTotal
-            });
           }
         }
       }
 
       // Calculate final total including shipping fee
       const finalTotal = finalProductTotal + finalShippingFee;
-      console.log('Final calculations:', {
-        finalProductTotal,
-        finalShippingFee,
-        finalTotal
-      });
 
       // Calculate deposit
       const depositAmount = isDeposit ? finalTotal * 0.5 : finalTotal;
-      console.log('Deposit calculation:', {
-        isDeposit,
-        depositAmount
-      });
 
       const orderPayload = {
         userId: selectedUser?.userId || null,
@@ -631,7 +602,7 @@ const OrderList = () => {
         deliveryMethod: createOrderForm.deliveryMethod,
         products: formattedProducts,
         customProducts: formattedCustomProducts,
-        totalPrice: finalTotal  // Đã bao gồm cả giảm giá và shipping fee
+        totalPrice: finalTotal  // Sử dụng finalTotal đã được tính toán với voucher
       };
 
       console.log('Final order payload:', orderPayload);
@@ -719,7 +690,7 @@ const OrderList = () => {
         console.log('Shipping Fee Payload:', shippingPayload);
 
         const response = await axios.post(
-            'https://vesttour.xyz/api/Shipping/calculate-fee',
+            'https://localhost:7194/api/Shipping/calculate-fee',
             shippingPayload
         );
 

@@ -21,8 +21,8 @@ const MeasureList = () => {
   const [currentPage, setCurrentPage] = useState(1); // State for current page
   const usersPerPage = 7; // Number of users per page
 
-  const API_URL = "https://vesttour.xyz/api/Measurement";
-  const USER_API_URL = "https://vesttour.xyz/api/User";
+  const API_URL = "https://localhost:7194/api/Measurement";
+  const USER_API_URL = "https://localhost:7194/api/User";
 
   // Update the users fetch to filter roleId === 3
   useEffect(() => {

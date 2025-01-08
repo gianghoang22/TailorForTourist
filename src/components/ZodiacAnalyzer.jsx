@@ -23,7 +23,7 @@ const ZodiacAnalyzer = () => {
       setLoading(true);
       const formattedDate = format(new Date(birthDate), "MM/dd/yyyy");
       const response = await fetch(
-        `https://vesttour.xyz/api/User/get-zodiac?birthDate=${encodeURIComponent(formattedDate)}`
+        `https://localhost:7194/api/User/get-zodiac?birthDate=${encodeURIComponent(formattedDate)}`
       );
       const data = await response.json();
       setZodiacData(data);
