@@ -564,13 +564,13 @@ const OrderList = () => {
 
       let totalBeforeVoucher = productTotal + customProductTotal;
       let finalShippingFee = createOrderForm.shippingFee || 0;
-      let finalTotal = totalBeforeVoucher;
+      let finalProductTotal = totalBeforeVoucher;
 
       console.log('Initial calculations:', {
         productTotal,
         customProductTotal,
         totalBeforeVoucher,
-        originalShippingFee: finalShippingFee
+        finalShippingFee
       });
 
       // Apply voucher discounts
@@ -583,30 +583,29 @@ const OrderList = () => {
             // Giảm giá shipping fee
             finalShippingFee = finalShippingFee * (1 - voucher.discountNumber);
             console.log('After FREESHIP:', {
+              originalShippingFee: createOrderForm.shippingFee,
               discountRate: voucher.discountNumber,
               finalShippingFee
             });
           } 
           else if (voucher.voucherCode?.includes('BIGSALE')) {
             // Giảm giá sản phẩm
-            const discountAmount = totalBeforeVoucher * voucher.discountNumber;
-            finalTotal = totalBeforeVoucher - discountAmount;
+            finalProductTotal = totalBeforeVoucher * (1 - voucher.discountNumber);
             console.log('After BIGSALE:', {
               originalTotal: totalBeforeVoucher,
               discountRate: voucher.discountNumber,
-              discountAmount,
-              finalTotal
+              finalProductTotal
             });
           }
         }
       }
 
-      // Add shipping fee to final total
-      finalTotal += finalShippingFee;
+      // Calculate final total including shipping fee
+      const finalTotal = finalProductTotal + finalShippingFee;
       console.log('Final calculations:', {
-        finalTotal,
+        finalProductTotal,
         finalShippingFee,
-        withShipping: finalTotal
+        finalTotal
       });
 
       // Calculate deposit
@@ -632,7 +631,7 @@ const OrderList = () => {
         deliveryMethod: createOrderForm.deliveryMethod,
         products: formattedProducts,
         customProducts: formattedCustomProducts,
-        totalPrice: finalTotal  // Tổng tiền đã bao gồm cả giảm giá và shipping fee
+        totalPrice: finalTotal  // Đã bao gồm cả giảm giá và shipping fee
       };
 
       console.log('Final order payload:', orderPayload);
