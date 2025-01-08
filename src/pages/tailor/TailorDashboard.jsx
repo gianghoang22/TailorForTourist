@@ -168,13 +168,18 @@ const TailorDashboard = () => {
         return { error: `No order details found for order ${orderId}` };
       }
 
-      const { productId } = orderData.orderDetails[0];
-      if (!productId) {
-        console.log(`No productId found in order details for order ${orderId}`);
-        return { error: `No productId found for order ${orderId}` };
+      // Find the SUIT product in the order details
+      const suitProduct = orderData.orderDetails.find((detail) =>
+        detail.productCode.startsWith("SUIT")
+      );
+
+      if (!suitProduct) {
+        console.log(`No SUIT product found in order ${orderId}`);
+        return { error: `No SUIT product found in order ${orderId}` };
       }
 
-      console.log(`Order details fetched. ProductId: ${productId}`);
+      const productId = suitProduct.productId;
+      console.log(`SUIT product found. ProductId: ${productId}`);
 
       // Step 2: Fetch product details to get measurementId
       const productResponse = await fetch(
@@ -850,9 +855,6 @@ const TailorDashboard = () => {
                           <option value="Doing">Doing</option>
                           <option value="Finish">Finish</option>
                           <option value="Due">Due</option>
-                          <option value="Cancel">Cancel</option>
-                          <option value="Pending">Pending</option>
-                          <option value="Processing">Processing</option>
                         </select>
                         <ChevronDown size={16} className="select-icon" />
                       </div>

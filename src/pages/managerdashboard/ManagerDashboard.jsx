@@ -37,6 +37,7 @@ import "./ManagerDashboard.scss";
 import logo from "./../../assets/img/icon/matcha.png";
 import Pagination from "@mui/material/Pagination";
 import { motion } from "framer-motion";
+import { calculateStoreRevenue } from "../../utils/revenueCalculator";
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -124,6 +125,7 @@ const ManagerDashboard = () => {
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const [storeInfo, setStoreInfo] = useState(null);
   const userID = localStorage.getItem("userID");
+  const [ordersWithSuits, setOrdersWithSuits] = useState(new Set());
 
   const BASE_URL = "https://localhost:7194/api";
 
@@ -150,7 +152,7 @@ const ManagerDashboard = () => {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-      if (!response.ok) throw new Error('Failed to fetch user details');
+      if (!response.ok) throw new Error("Failed to fetch user details");
       return response.json();
     } catch (error) {
       console.error(`Error fetching user ${userId}:`, error);
@@ -165,10 +167,25 @@ const ManagerDashboard = () => {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-      if (!response.ok) throw new Error('Failed to fetch store details');
+      if (!response.ok) throw new Error("Failed to fetch store details");
       return response.json();
     } catch (error) {
       console.error(`Error fetching store ${storeId}:`, error);
+      return null;
+    }
+  };
+
+  const fetchOrderDetails = async (orderId) => {
+    try {
+      const response = await fetch(`${BASE_URL}/Orders/${orderId}/details`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch order details");
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching order details:`, error);
       return null;
     }
   };
@@ -181,36 +198,65 @@ const ManagerDashboard = () => {
         throw new Error("User ID not found");
       }
 
-      // Fetch store và orders như cũ
       const storeData = await fetchStoreByManagerId(userId);
       const ordersData = await fetchOrdersByStoreId(storeData.storeId);
       const orders = Array.isArray(ordersData) ? ordersData : [ordersData];
 
-      // Fetch thông tin user và store cho mỗi order
-      const userPromises = orders.map(order => fetchUserDetails(order.userID));
-      const storePromises = orders.map(order => fetchStoreDetails(order.storeId));
+      // Track orders with SUIT products
+      const ordersWithSuitsSet = new Set();
+
+      // Fetch order details and calculate revenues using the same logic as ProfitCalculation
+      const ordersWithDetails = await Promise.all(
+        orders.map(async (order) => {
+          const details = await fetchOrderDetails(order.orderId);
+          const revenueData = await calculateStoreRevenue(order.orderId);
+
+          if (details) {
+            const hasSuitProducts = details.orderDetails.some((detail) =>
+              detail.productCode.startsWith("SUIT")
+            );
+            if (hasSuitProducts) {
+              ordersWithSuitsSet.add(order.orderId);
+            }
+          }
+
+          return {
+            ...order,
+            calculatedRevenue: revenueData.storeRevenue,
+            revenueShare: revenueData.suitTotal * 0.3,
+            suitTotal: revenueData.suitTotal,
+          };
+        })
+      );
+
+      setOrdersWithSuits(ordersWithSuitsSet);
+
+      // Fetch user and store details as before
+      const userPromises = ordersWithDetails.map((order) =>
+        fetchUserDetails(order.userID)
+      );
+      const storePromises = ordersWithDetails.map((order) =>
+        fetchStoreDetails(order.storeId)
+      );
 
       const users = await Promise.all(userPromises);
       const stores = await Promise.all(storePromises);
 
-      // Tạo map để lưu trữ thông tin user và store
       const userMap = {};
       const storeMap = {};
 
-      orders.forEach((order, index) => {
+      ordersWithDetails.forEach((order, index) => {
         if (users[index]) {
-          userMap[order.userID] = users[index].name || 'Unknown';
+          userMap[order.userID] = users[index].name || "Unknown";
         }
         if (stores[index]) {
-          storeMap[order.storeId] = stores[index].name || 'Unknown';
+          storeMap[order.storeId] = stores[index].name || "Unknown";
         }
       });
 
-      // Cập nhật state
-      setOrders(orders);
+      setOrders(ordersWithDetails);
       setUsers(userMap);
       setStores(storeMap);
-
     } catch (err) {
       setError(err.message);
     } finally {
@@ -287,11 +333,12 @@ const ManagerDashboard = () => {
           statusFilter === "all" ||
           (order?.status && order.status === statusFilter);
 
-        // Process status filtering - Fix: Handle null/undefined status
+        // Process status filtering - Updated to handle "Not in Action"
         const matchesProcessStatus =
           processStatusFilter === "all" ||
-          (processingStatuses[order.orderId] &&
-            processingStatuses[order.orderId] === processStatusFilter);
+          (processStatusFilter === "Not in Action"
+            ? !processingStatuses[order.orderId]
+            : processingStatuses[order.orderId] === processStatusFilter);
 
         return (
           matchesSearch && matchesDate && matchesStatus && matchesProcessStatus
@@ -398,16 +445,49 @@ const ManagerDashboard = () => {
     }
   }, [storeInfo]);
 
-  const handleProcessTailor = (order) => {
+  const handleProcessTailor = async (order) => {
     if (!order) return;
-    
-    // Set tailorPartnerId mặc định từ storeInfo
-    setProcessingData({
-      ...processingData,
-      orderId: order.orderId || 0,
-      tailorPartnerId: storeInfo?.tailorPartner?.tailorPartnerId || '',
-    });
-    setProcessingDialogOpen(true);
+
+    setIsFetchingDetails(true);
+    try {
+      const orderDetails = await fetchOrderDetails(order.orderId);
+      if (!orderDetails) {
+        setError("Failed to fetch order details");
+        return;
+      }
+
+      const suitProducts = orderDetails.orderDetails.filter((detail) =>
+        detail.productCode.startsWith("SUIT")
+      );
+
+      if (suitProducts.length === 0) {
+        setError("No suit products found in this order");
+        return;
+      }
+
+      // Get today's date and format it to YYYY-MM-DD
+      const today = new Date();
+      const formattedToday = today.toISOString().split("T")[0];
+
+      // Calculate initial dates
+      const deliveryDate = new Date(today);
+      deliveryDate.setDate(today.getDate() + 1);
+
+      setProcessingData({
+        ...processingData,
+        orderId: order.orderId || 0,
+        tailorPartnerId: storeInfo?.tailorPartner?.tailorPartnerId || "",
+        dateSample: formattedToday,
+        dateDelivery: deliveryDate.toISOString().split("T")[0],
+      });
+
+      setProcessingDialogOpen(true);
+    } catch (error) {
+      console.error("Error processing order:", error);
+      setError("Failed to process order");
+    } finally {
+      setIsFetchingDetails(false);
+    }
   };
 
   const handleProcessingChange = (e) => {
@@ -419,14 +499,20 @@ const ManagerDashboard = () => {
     const token = localStorage.getItem("token");
     setLoading(true);
 
-    // Prepare the data to be sent
+    // Prepare the data to match the tailor workflow
     const dataToSubmit = {
-      ...processingData,
-      stageName: "Make Sample", // Ensure these values are set
-      status: "Not Start",
-      // Only include dateFix if Fix stage is included
-      ...(includeFixStage ? {} : { dateFix: null }),
+      processingId: 0,
+      stageName: "Make Sample", // Always starts with Make Sample
+      tailorPartnerId: processingData.tailorPartnerId,
+      status: "Not Start", // Overall process starts as Not Start
+      orderId: processingData.orderId,
+      note: processingData.note || "",
+      dateSample: processingData.dateSample,
+      dateFix: includeFixStage ? processingData.dateFix : null, // Only include if Fix stage is needed
+      dateDelivery: processingData.dateDelivery,
     };
+
+    console.log("Submitting data:", dataToSubmit);
 
     try {
       const response = await fetch(
@@ -441,19 +527,17 @@ const ManagerDashboard = () => {
         }
       );
 
+      const rawResponse = await response.text();
+      console.log("Raw server response:", rawResponse);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to process tailor");
+        throw new Error(rawResponse || "Failed to process tailor");
       }
 
-      const responseData = await response.json();
-
-      if (response.status === 201) {
-        await fetchOrders();
-        setProcessingDialogOpen(false);
-        setError(null);
-        alert("Successfully transferred!");
-      }
+      await fetchOrders();
+      setProcessingDialogOpen(false);
+      setError(null);
+      alert("Successfully transferred!");
     } catch (error) {
       console.error("Error processing tailor:", error);
       setError(error.message);
@@ -595,7 +679,6 @@ const ManagerDashboard = () => {
           onChange={(e) => setStatusFilter(e.target.value)}
         >
           <MenuItem value="all">All Status</MenuItem>
-          <MenuItem value="Pending">Pending</MenuItem>
           <MenuItem value="Processing">Processing</MenuItem>
           <MenuItem value="Finish">Finish</MenuItem>
           <MenuItem value="Cancel">Cancel</MenuItem>
@@ -610,7 +693,7 @@ const ManagerDashboard = () => {
           onChange={(e) => setProcessStatusFilter(e.target.value)}
         >
           <MenuItem value="all">All Status</MenuItem>
-          <MenuItem value="Pending">Pending</MenuItem>
+          <MenuItem value="Not in Action">Not in Action</MenuItem>
           <MenuItem value="Doing">Doing</MenuItem>
           <MenuItem value="Due">Due</MenuItem>
           <MenuItem value="Finish">Finish</MenuItem>
@@ -629,7 +712,7 @@ const ManagerDashboard = () => {
       completedOrders: orders.filter((o) => o.status === "Finish").length,
       revenue: orders
         .filter((o) => o.shipStatus === "Finished")
-        .reduce((sum, order) => sum + (order.totalPrice || 0), 0),
+        .reduce((sum, order) => sum + (order.calculatedRevenue || 0), 0),
     };
     setDashboardStats(stats);
   }, [orders]);
@@ -680,27 +763,38 @@ const ManagerDashboard = () => {
   useEffect(() => {
     const fetchProcessingStatuses = async () => {
       try {
-        const response = await fetch('https://localhost:7194/api/ProcessingTailor', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        const response = await fetch(
+          "https://localhost:7194/api/ProcessingTailor",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
         const { data } = await response.json();
-        
+
         // Tạo object mapping từ orderId sang status
         const statusMap = data.reduce((acc, processing) => {
           acc[processing.orderId] = processing.status;
           return acc;
         }, {});
-        
+
         setProcessingStatuses(statusMap);
       } catch (error) {
-        console.error('Error fetching processing statuses:', error);
+        console.error("Error fetching processing statuses:", error);
       }
     };
 
     fetchProcessingStatuses();
   }, []);
+
+  // Add this validation function
+  const isDateValid = (selectedDate) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dateToCheck = new Date(selectedDate);
+    return dateToCheck >= today;
+  };
 
   return (
     <motion.div
@@ -892,7 +986,9 @@ const ManagerDashboard = () => {
                         <TableRow key={order.orderId}>
                           <TableCell>{order.orderId}</TableCell>
                           <TableCell>
-                            {users[order.userID] || order.guestName || "Unknown"}
+                            {users[order.userID] ||
+                              order.guestName ||
+                              "Unknown"}
                           </TableCell>
                           <TableCell>
                             {stores[order.storeId] || "Unknown"}
@@ -923,33 +1019,67 @@ const ManagerDashboard = () => {
                             </span>
                           </TableCell>
                           <TableCell>
-                            ${order.totalPrice?.toFixed(2) || "0.00"}
+                            ${order.suitTotalPrice?.toFixed(2) || "0.00"}
+                            {order.totalPrice !== order.suitTotalPrice && (
+                              <Tooltip title="Total includes non-suit products">
+                                <span
+                                  style={{
+                                    marginLeft: "4px",
+                                    color: "gray",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  (Total: ${order.totalPrice?.toFixed(2)})
+                                </span>
+                              </Tooltip>
+                            )}
                           </TableCell>
                           <TableCell>
-                            <Tooltip title={`Processing Status: ${processingStatuses[order.orderId] || 'Not Started'}`}>
+                            <Tooltip
+                              title={`Processing Status: ${processingStatuses[order.orderId] || "Not in Action"}`}
+                            >
                               <span
                                 style={{
-                                  backgroundColor: getProcessingStatusColor(processingStatuses[order.orderId]),
+                                  backgroundColor: getProcessingStatusColor(
+                                    processingStatuses[order.orderId]
+                                  ),
                                   color: "white",
                                   padding: "4px 8px",
                                   borderRadius: "5px",
                                   fontSize: "12px",
-                                  cursor: "help"
+                                  cursor: "help",
                                 }}
                               >
-                                {processingStatuses[order.orderId] || "Not Started"}
+                                {processingStatuses[order.orderId] ||
+                                  "Not in Action"}
                               </span>
                             </Tooltip>
                           </TableCell>
                           <TableCell>
-                            <Button
-                              variant="outlined"
-                              color="primary"
-                              onClick={() => handleProcessTailor(order)}
-                              disabled={!order}
+                            <Tooltip
+                              title={
+                                processingStatuses[order.orderId]
+                                  ? "This order has already been processed"
+                                  : ordersWithSuits.has(order.orderId)
+                                    ? "Process tailor order"
+                                    : "This order does not contain any suit products"
+                              }
                             >
-                              Process Tailor
-                            </Button>
+                              <span>
+                                <Button
+                                  variant="outlined"
+                                  color="primary"
+                                  onClick={() => handleProcessTailor(order)}
+                                  disabled={
+                                    !ordersWithSuits.has(order.orderId) ||
+                                    processingStatuses[order.orderId] !==
+                                      undefined
+                                  }
+                                >
+                                  Process Tailor
+                                </Button>
+                              </span>
+                            </Tooltip>
                           </TableCell>
                           <TableCell>
                             <Select
@@ -1009,7 +1139,9 @@ const ManagerDashboard = () => {
                       }}
                     >
                       {storeInfo?.tailorPartner ? (
-                        <MenuItem value={storeInfo.tailorPartner.tailorPartnerId}>
+                        <MenuItem
+                          value={storeInfo.tailorPartner.tailorPartnerId}
+                        >
                           {storeInfo.tailorPartner.location}
                         </MenuItem>
                       ) : (
@@ -1073,6 +1205,13 @@ const ManagerDashboard = () => {
                       value={processingData.dateSample}
                       onChange={(e) => {
                         const newSampleDate = e.target.value;
+
+                        // Validate the selected date
+                        if (!isDateValid(newSampleDate)) {
+                          setError("Cannot select a past date");
+                          return;
+                        }
+
                         const sampleDate = new Date(newSampleDate);
 
                         // Calculate new dates based on sample date
@@ -1098,11 +1237,15 @@ const ManagerDashboard = () => {
                               .split("T")[0],
                           }),
                         }));
+                        setError(null); // Clear any previous error
                       }}
                       fullWidth
                       margin="dense"
                       InputLabelProps={{
                         shrink: true,
+                      }}
+                      inputProps={{
+                        min: new Date().toISOString().split("T")[0], // Set minimum date to today
                       }}
                     />
 

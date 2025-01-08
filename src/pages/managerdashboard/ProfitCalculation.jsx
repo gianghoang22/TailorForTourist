@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import "./ProfitCalculation.scss";
 import html2pdf from "html2pdf.js";
+import { calculateStoreRevenue } from "../../utils/revenueCalculator";
 
 ChartJS.register(
   CategoryScale,
@@ -76,16 +77,34 @@ const ProfitCalculation = () => {
       console.log("Fetched bookings data:", bookingsData);
       console.log("Fetched store data:", storeData);
 
-      const ordersResponse = await fetch(`https://localhost:7194/api/Orders/store/${storeId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const ordersResponse = await fetch(
+        `https://localhost:7194/api/Orders/store/${storeId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (!ordersResponse.ok) {
         throw new Error("Failed to fetch orders");
       }
 
       const ordersData = await ordersResponse.json();
-      setOrders(Array.isArray(ordersData) ? ordersData : []);
+
+      // Fetch details for each order
+      const ordersWithDetails = await Promise.all(
+        ordersData.map(async (order) => {
+          const revenueData = await calculateStoreRevenue(order.orderId);
+
+          return {
+            ...order,
+            calculatedRevenue: revenueData.storeRevenue,
+            revenueShare: revenueData.suitTotal * 0.3,
+            suitTotal: revenueData.suitTotal,
+          };
+        })
+      );
+
+      setOrders(ordersWithDetails);
       setBookings(Array.isArray(bookingsData.data) ? bookingsData.data : []);
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -129,11 +148,14 @@ const ProfitCalculation = () => {
 
     // Process orders with year filter
     orders.forEach((order) => {
-      if (order.shipStatus === "Finished" && filterByMonthAndYear(order.orderDate)) {
+      if (
+        order.shipStatus === "Finished" &&
+        filterByMonthAndYear(order.orderDate)
+      ) {
         const date = new Date(order.orderDate);
         const month = date.getMonth();
-        monthlyRevenue[month] += order.totalPrice || 0;
-        monthlyProfit[month] += (order.totalPrice || 0) * 0.3;
+        monthlyRevenue[month] += order.calculatedRevenue || 0;
+        monthlyProfit[month] += order.revenueShare || 0;
       }
     });
 
@@ -175,11 +197,18 @@ const ProfitCalculation = () => {
         const orderYear = new Date(order.orderDate).getFullYear();
         return order.shipStatus === "Finished" && orderYear === selectedYear;
       })
-      .reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+      .reduce(
+        (totals, order) => ({
+          revenue: totals.revenue + (order.calculatedRevenue || 0),
+          profit: totals.profit + (order.revenueShare || 0),
+        }),
+        { revenue: 0, profit: 0 }
+      );
   };
 
-  const totalRevenue = calculateTotals();
-  const totalProfit = totalRevenue * 0.3;
+  const totals = calculateTotals();
+  const totalRevenue = totals.revenue;
+  const totalProfit = totals.profit;
   const profitMargin =
     totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
@@ -192,7 +221,7 @@ const ProfitCalculation = () => {
         backgroundColor: "rgba(53, 162, 235, 0.5)",
       },
       {
-        label: "Profit",
+        label: "Revenue Share",
         data: monthlyData.profit,
         backgroundColor: "rgba(75, 192, 192, 0.5)",
       },
@@ -203,7 +232,7 @@ const ProfitCalculation = () => {
     labels: monthlyData.labels,
     datasets: [
       {
-        label: "Profit Trend",
+        label: "Revenue Share Trend",
         data: monthlyData.profit,
         borderColor: "rgb(75, 192, 192)",
         tension: 0.1,
@@ -324,14 +353,14 @@ const ProfitCalculation = () => {
         className: "profit",
       },
       {
-        title: "Average Monthly Profit",
+        title: "Average Monthly Revenue Share",
         value: `$${(totalProfit / 12).toFixed(2)}`,
         subtext: "per month",
         icon: <DollarSignIcon />,
         className: "profit",
       },
       {
-        title: "Peak Profit Month",
+        title: "Peak Revenue Share Month",
         value:
           monthlyData.labels[
             monthlyData.profit.indexOf(Math.max(...monthlyData.profit))
@@ -393,13 +422,13 @@ const ProfitCalculation = () => {
           active={activeTab === "revenue"}
           onClick={() => setActiveTab("revenue")}
         >
-          Revenue & Profit
+          Revenue & Revenue Share
         </TabButton>
         <TabButton
           active={activeTab === "profit"}
           onClick={() => setActiveTab("profit")}
         >
-          Profit Trend
+          Revenue Share Trend
         </TabButton>
         <TabButton
           active={activeTab === "bookings"}

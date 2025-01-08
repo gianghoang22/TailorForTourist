@@ -24,6 +24,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import FileDownloadIcon from "@mui/icons-material/FileDownload"; // Import the FileDownloadIcon
+import { calculateStoreRevenue } from "../../utils/revenueCalculator";
 
 const AdminDashboard = () => {
   const location = useLocation();
@@ -468,7 +469,7 @@ const AdminDashboard = () => {
     </Box>
   );
 
-  // Add new function to fetch orders and calculate total price
+  // Update the fetchOrdersAndCalculateTotal function
   const fetchOrdersAndCalculateTotal = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -477,33 +478,57 @@ const AdminDashboard = () => {
     }
 
     try {
-      const response = await fetch("https://localhost:7194/api/Orders", {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
+      // First, fetch all active stores
+      const storesResponse = await fetch("https://localhost:7194/api/Store", {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) {
-        throw new Error(`Orders API error: ${response.status}`);
-      }
+      if (!storesResponse.ok) throw new Error("Failed to fetch stores");
+      const storesData = await storesResponse.json();
 
-      const data = await response.json();
-      // Filter orders with status "Finish" and calculate total price
-      const finishedOrders = data.filter(
-        (order) => order.shipStatus === "Finished"
+      // Filter only active stores
+      const activeStores = Array.isArray(storesData)
+        ? storesData.filter((store) => store.status === "Active")
+        : [];
+
+      // Fetch orders for each active store and calculate their revenue
+      const storeRevenues = await Promise.all(
+        activeStores.map(async (store) => {
+          const ordersResponse = await fetch(
+            `https://localhost:7194/api/Orders/store/${store.storeId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          if (!ordersResponse.ok) throw new Error("Failed to fetch orders");
+          const ordersData = await ordersResponse.json();
+
+          // Calculate revenue for each order using the same logic as StoreRevenue
+          const ordersWithRevenue = await Promise.all(
+            ordersData.map(async (order) => {
+              if (order.shipStatus === "Finished") {
+                const revenueData = await calculateStoreRevenue(order.orderId);
+                return revenueData.storeRevenue || 0;
+              }
+              return 0;
+            })
+          );
+
+          // Sum up all order revenues for this store
+          return ordersWithRevenue.reduce((sum, revenue) => sum + revenue, 0);
+        })
       );
-      const total = finishedOrders.reduce(
-        (acc, order) => acc + order.totalPrice,
+
+      // Calculate total revenue across all stores
+      const totalRevenue = storeRevenues.reduce(
+        (sum, revenue) => sum + revenue,
         0
       );
-
-      setTotalRevenue(total); // Update the total revenue state
+      setTotalRevenue(totalRevenue);
     } catch (error) {
-      console.error("Error fetching orders:", error);
+      console.error("Error calculating total revenue:", error);
+      setTotalRevenue(0);
     }
   };
 
@@ -671,8 +696,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Conditional rendering based on route */}
-          {isMainDashboard ? (
+          {isMainDashboard && (
             <>
               {/* Dashboard Stats */}
               <div className="stats">
@@ -790,9 +814,9 @@ const AdminDashboard = () => {
                 </Paper>
               </Box>
             </>
-          ) : (
-            <Outlet />
           )}
+
+          <Outlet />
         </div>
       </div>
     </div>

@@ -29,6 +29,7 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import html2pdf from "html2pdf.js";
 import "./StoreRevenue.scss";
+import { calculateStoreRevenue } from "../../utils/revenueCalculator";
 
 ChartJS.register(
   CategoryScale,
@@ -93,8 +94,23 @@ const StoreRevenue = () => {
         }
       );
       if (!response.ok) throw new Error("Failed to fetch orders");
-      const data = await response.json();
-      setOrders(Array.isArray(data) ? data : []);
+      const ordersData = await response.json();
+
+      // Use the same revenue calculation logic as ProfitCalculation
+      const ordersWithDetails = await Promise.all(
+        ordersData.map(async (order) => {
+          const revenueData = await calculateStoreRevenue(order.orderId);
+
+          return {
+            ...order,
+            calculatedRevenue: revenueData.storeRevenue,
+            revenueShare: revenueData.suitTotal * 0.3,
+            suitTotal: revenueData.suitTotal,
+          };
+        })
+      );
+
+      setOrders(ordersWithDetails);
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -118,6 +134,7 @@ const StoreRevenue = () => {
       "Dec",
     ];
     const monthlyRevenue = new Array(12).fill(0);
+    const monthlyRevenueShare = new Array(12).fill(0);
     const monthlyOrders = new Array(12).fill(0);
 
     orders.forEach((order) => {
@@ -131,7 +148,8 @@ const StoreRevenue = () => {
             date.getMonth() === parseInt(selectedMonth))
         ) {
           const month = date.getMonth();
-          monthlyRevenue[month] += order.totalPrice || 0;
+          monthlyRevenue[month] += order.calculatedRevenue || 0;
+          monthlyRevenueShare[month] += order.revenueShare || 0;
           monthlyOrders[month]++;
         }
       }
@@ -140,6 +158,7 @@ const StoreRevenue = () => {
     return {
       labels: months,
       revenue: monthlyRevenue,
+      revenueShare: monthlyRevenueShare,
       orders: monthlyOrders,
     };
   };
@@ -151,10 +170,17 @@ const StoreRevenue = () => {
     labels: monthlyData.labels,
     datasets: [
       {
-        label: "Revenue",
+        label: "Total Revenue",
         data: monthlyData.revenue,
         backgroundColor: "rgba(53, 162, 235, 0.5)",
         borderColor: "rgba(53, 162, 235, 1)",
+        borderWidth: 1,
+      },
+      {
+        label: "Revenue Share",
+        data: monthlyData.revenueShare,
+        backgroundColor: "rgba(75, 192, 192, 0.5)",
+        borderColor: "rgba(75, 192, 192, 1)",
         borderWidth: 1,
       },
     ],
@@ -186,11 +212,35 @@ const StoreRevenue = () => {
 
   // Calculate statistics
   const calculateStats = () => {
-    const totalRevenue = monthlyData.revenue.reduce((a, b) => a + b, 0);
-    const totalOrders = monthlyData.orders.reduce((a, b) => a + b, 0);
-    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    const finishedOrders = orders.filter((order) => {
+      const orderDate = new Date(order.orderDate);
+      const orderYear = orderDate.getFullYear();
+      const orderMonth = orderDate.getMonth();
 
-    return { totalRevenue, totalOrders, avgOrderValue };
+      return (
+        order.shipStatus === "Finished" &&
+        orderYear === selectedYear &&
+        (selectedMonth === "all" || orderMonth === parseInt(selectedMonth))
+      );
+    });
+
+    const totalRevenue = finishedOrders.reduce(
+      (sum, order) => sum + (order.calculatedRevenue || 0),
+      0
+    );
+
+    const totalRevenueShare = finishedOrders.reduce(
+      (sum, order) => sum + (order.revenueShare || 0),
+      0
+    );
+
+    const totalOrders = finishedOrders.length;
+
+    return {
+      totalRevenue,
+      totalRevenueShare,
+      totalOrders,
+    };
   };
 
   const stats = calculateStats();
@@ -288,16 +338,16 @@ const StoreRevenue = () => {
               color="primary"
             />
             <StatCard
-              title="Total Orders"
-              value={stats.totalOrders}
-              icon={<StorefrontIcon />}
+              title="Revenue Share"
+              value={`$${stats.totalRevenueShare.toFixed(2)}`}
+              icon={<AttachMoneyIcon />}
               color="success"
             />
             <StatCard
-              title="Average Order Value"
-              value={`$${stats.avgOrderValue.toFixed(2)}`}
-              icon={<TrendingUpIcon />}
-              color="warning"
+              title="Total Orders"
+              value={stats.totalOrders}
+              icon={<StorefrontIcon />}
+              color="info"
             />
           </Box>
 

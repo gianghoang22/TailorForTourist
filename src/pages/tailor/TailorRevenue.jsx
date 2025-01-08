@@ -35,31 +35,108 @@ const TailorRevenue = () => {
   });
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
+  const [tailorPartnerId, setTailorPartnerId] = useState(null);
+  const userID = localStorage.getItem("userID");
 
-  useEffect(() => {
-    fetchRevenueData();
-  }, []);
-
-  const fetchRevenueData = async () => {
+  const fetchTailorPartnerId = async () => {
     try {
-      setIsLoading(true);
-      const response = await fetch("https://localhost:7194/api/api/Orders", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      });
+      if (!userID) {
+        throw new Error("User ID not found");
+      }
+
+      const response = await fetch(
+        `https://localhost:7194/api/TailorPartner/get-by-user/${userID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
       const data = await response.json();
-      const finishedOrders = data.filter(
+      if (data.success && data.data?.tailorPartnerId) {
+        setTailorPartnerId(data.data.tailorPartnerId);
+        return data.data.tailorPartnerId;
+      } else {
+        throw new Error("Failed to get tailor partner ID");
+      }
+    } catch (error) {
+      console.error("Error fetching tailor partner ID:", error);
+      setError("Error fetching tailor partner details");
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (userID) {
+      fetchTailorPartnerId().then((id) => {
+        if (id) {
+          fetchRevenueData(id);
+        }
+      });
+    }
+  }, [userID]);
+
+  const fetchRevenueData = async (id) => {
+    try {
+      setIsLoading(true);
+
+      const assignedOrdersResponse = await fetch(
+        `https://localhost:7194/api/ProcessingTailor/assigned-to/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!assignedOrdersResponse.ok) {
+        throw new Error(`HTTP error! Status: ${assignedOrdersResponse.status}`);
+      }
+
+      const assignedOrdersData = await assignedOrdersResponse.json();
+      const assignedOrderIds = assignedOrdersData.data.map(
+        (order) => order.orderId
+      );
+
+      // Then fetch full order details for these assigned orders
+      const ordersWithDetails = await Promise.all(
+        assignedOrderIds.map(async (orderId) => {
+          const detailsResponse = await fetch(
+            `https://localhost:7194/api/Orders/${orderId}/details`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          const details = await detailsResponse.json();
+
+          // Calculate total price only for SUIT products
+          const suitTotalPrice = details.orderDetails
+            .filter((detail) => detail.productCode.startsWith("SUIT"))
+            .reduce((sum, detail) => sum + detail.price, 0);
+
+          return {
+            ...details,
+            suitTotalPrice,
+          };
+        })
+      );
+
+      const finishedOrders = ordersWithDetails.filter(
         (order) => order.shipStatus === "Finished"
       );
+
       const totalRevenue = finishedOrders.reduce((sum, order) => {
-        return sum + order.totalPrice * 0.7;
+        return sum + order.suitTotalPrice * 0.7;
       }, 0);
 
       setRevenueData({
@@ -100,8 +177,8 @@ const TailorRevenue = () => {
           (selectedMonth === "all" || orderMonth === parseInt(selectedMonth));
 
         const matchesAmount =
-          (!minAmount || order.totalPrice >= parseFloat(minAmount)) &&
-          (!maxAmount || order.totalPrice <= parseFloat(maxAmount));
+          (!minAmount || order.suitTotalPrice >= parseFloat(minAmount)) &&
+          (!maxAmount || order.suitTotalPrice <= parseFloat(maxAmount));
 
         return matchesSearch && matchesDate && matchesAmount;
       })
@@ -130,8 +207,8 @@ const TailorRevenue = () => {
           (order) =>
             `${order.orderId},${new Date(
               order.orderDate
-            ).toLocaleDateString()},${order.totalPrice.toFixed(2)},${(
-              order.totalPrice * 0.7
+            ).toLocaleDateString()},${order.suitTotalPrice.toFixed(2)},${(
+              order.suitTotalPrice * 0.7
             ).toFixed(2)}`
         )
         .join("\n");
@@ -156,7 +233,7 @@ const TailorRevenue = () => {
   const calculateStats = () => {
     const filteredOrders = filterOrders();
     const totalRevenue = filteredOrders.reduce(
-      (sum, order) => sum + order.totalPrice * 0.7,
+      (sum, order) => sum + (order.suitTotalPrice || 0) * 0.7,
       0
     );
     const averageOrderValue =
@@ -334,9 +411,9 @@ const TailorRevenue = () => {
               <tr key={order.orderId}>
                 <td>#{order.orderId}</td>
                 <td>{new Date(order.orderDate).toLocaleDateString()}</td>
-                <td>${order.totalPrice.toFixed(2)}</td>
+                <td>${(order.suitTotalPrice || 0).toFixed(2)}</td>
                 <td className="revenue-cell">
-                  ${(order.totalPrice * 0.7).toFixed(2)}
+                  ${((order.suitTotalPrice || 0) * 0.7).toFixed(2)}
                 </td>
               </tr>
             ))}
