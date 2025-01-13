@@ -108,7 +108,7 @@ const BookingPage = () => {
         imgUrl: store.imgUrl.startsWith("http")
           ? store.imgUrl
           : store.imgUrl.startsWith("/")
-            ? `https://localhost:7194${store.imgUrl}`
+            ? `https://vesttour.xyz${store.imgUrl}`
             : `https://vesttour.xyz/api/Store/image/${store.imgUrl}`,
       }));
 
@@ -518,7 +518,7 @@ const BookingPage = () => {
   };
 
   const handleServiceSelection = (service) => {
-    if (!["Return", "Exchange"].includes(service)) {
+    if (!["Fix", "Exchange"].includes(service)) {
       setProductNote("");
       setFormData((prev) => ({
         ...prev,
@@ -683,7 +683,7 @@ const BookingPage = () => {
 
                 <div className="service-grid">
                   {(localStorage.getItem("token")
-                    ? ["Tailor", "Return", "Exchange"]
+                    ? ["Tailor", "Fix", "Exchange"]
                     : ["Tailor"]
                   ).map((service) => (
                     <motion.div
@@ -701,7 +701,7 @@ const BookingPage = () => {
                   ))}
                 </div>
 
-                {["Return", "Exchange"].includes(formData.service) && (
+                {["Fix", "Exchange"].includes(formData.service) && (
                   <div className="form-section">
                     <label htmlFor="productCode">Select Product:</label>
                     <select
@@ -761,7 +761,7 @@ const BookingPage = () => {
                   value={formData.description}
                   onChange={handleInputChange}
                   placeholder={
-                    ["Return", "Exchange"].includes(formData.service)
+                    ["Fix", "Exchange"].includes(formData.service)
                       ? "Please provide additional details about your request..."
                       : "Tell us about your requirements..."
                   }
