@@ -14,7 +14,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://localhost:7194/api/:path*"
+      "destination": "https://vesttour.xyz/api/:path*"
     },
     {
       "source": "/(.*)",

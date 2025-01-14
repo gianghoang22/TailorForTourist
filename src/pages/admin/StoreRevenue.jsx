@@ -67,7 +67,7 @@ const StoreRevenue = () => {
   const fetchStores = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch("https://localhost:7194/api/Store", {
+      const response = await fetch("https://vesttour.xyz/api/Store", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error("Failed to fetch stores");
@@ -88,7 +88,7 @@ const StoreRevenue = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Orders/store/${storeId}`,
+        `https://vesttour.xyz/api/Orders/store/${storeId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
