@@ -960,13 +960,7 @@ const OrderList = () => {
         measurementDetails
       );
 
-      // Tạo note về phụ phí (nếu có)
-      let additionalNote = '';
-      if (priceDetails.additionalCharges.sizeCharge > 0) {
-        additionalNote = `An additional fee of $${priceDetails.additionalCharges.sizeCharge}.00 per unit has been applied due to exceeding standard measurements.`;
-      }
-
-      // Create new custom product
+      // Create new custom product - remove note generation
       const newCustomProduct = {
         productCode: `CUSTOM-${Date.now()}`,
         categoryID: 5,
@@ -975,17 +969,15 @@ const OrderList = () => {
         measurementID: parseInt(measurementId),
         quantity: customQuantity,
         price: priceDetails.price,
-        note: additionalNote, // Remove service charge note, only keep size charge if applicable
         pickedStyleOptions: selectedStyleOptions.map(option => ({
           styleOptionID: option.styleOptionId,
         }))
       };
 
-      // Update form state
+      // Update form state without modifying the note
       setCreateOrderForm(prev => ({
         ...prev,
-        customProducts: [...prev.customProducts, newCustomProduct],
-        note: prev.note + (additionalNote ? additionalNote : '')
+        customProducts: [...prev.customProducts, newCustomProduct]
       }));
 
       // Reset selections

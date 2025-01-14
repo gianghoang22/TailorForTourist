@@ -9,6 +9,9 @@ import { Navigation } from "../../layouts/components/navigation/Navigation";
 import { Footer } from "../../layouts/components/footer/Footer";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaClock, FaMapMarkerAlt, FaPhone, FaEnvelope } from "react-icons/fa";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from 'react-toastify';
 
 const BookingPage = () => {
   const navigate = useNavigate();
@@ -24,10 +27,6 @@ const BookingPage = () => {
   });
   const [availableStores, setAvailableStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState(1);
-  const [phoneError, setPhoneError] = useState("");
-  const [dateError, setDateError] = useState("");
-  const [timeError, setTimeError] = useState("");
-  const [serviceError, setServiceError] = useState("");
 
   const [selectedStoreInfo, setSelectedStoreInfo] = useState({
     name: "",
@@ -63,7 +62,7 @@ const BookingPage = () => {
   }, [date, selectedStoreInfo.openTime, selectedStoreInfo.closeTime]);
 
   useEffect(() => {
-    if (["Return", "Exchange"].includes(formData.service)) {
+    if (["", "Exchange"].includes(formData.service)) {
       fetchUserOrders();
     }
   }, [formData.service]);
@@ -103,14 +102,16 @@ const BookingPage = () => {
       const response = await fetch("https://localhost:7194/api/Store");
       const data = await response.json();
 
-      const processedData = data.map((store) => ({
-        ...store,
-        imgUrl: store.imgUrl.startsWith("http")
-          ? store.imgUrl
-          : store.imgUrl.startsWith("/")
-            ? `https://localhost:7194${store.imgUrl}`
-            : `https://localhost:7194/api/Store/image/${store.imgUrl}`,
-      }));
+      const processedData = data
+        .filter(store => store.status === "Active")
+        .map((store) => ({
+          ...store,
+          imgUrl: store.imgUrl.startsWith("http")
+            ? store.imgUrl
+            : store.imgUrl.startsWith("/")
+              ? `https://vesttour.xyz${store.imgUrl}`
+              : `https://vesttour.xyz/api/Store/image/${store.imgUrl}`,
+        }));
 
       console.log("Store data received:", processedData);
       processedData.forEach((store) => {
@@ -233,31 +234,58 @@ const BookingPage = () => {
   const validatePhone = (phone) => {
     const phoneRegex = /^(0|\+84)(\d{9,10})$/;
     if (!phoneRegex.test(phone)) {
-      setPhoneError("Please enter a valid phone number.");
+      toast.error("Please enter a valid phone number (10 digits)");
       return false;
-    } else {
-      setPhoneError("");
-      return true;
     }
+    return true;
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    
+    if (!email) {
+      toast.error("Email is required.");
+      return false;
+    }
+    
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address (e.g., example@domain.com)");
+      return false;
+    }
+    
+    if (email.includes('..') || email.includes('@@')) {
+      toast.error("Email contains invalid consecutive special characters");
+      return false;
+    }
+    
+    if (email.length > 254) {
+      toast.error("Email address is too long");
+      return false;
+    }
+    
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const isEmailValid = validateEmail(formData.email);
+    const isPhoneValid = validatePhone(formData.phone);
+    
+    if (!isEmailValid || !isPhoneValid) {
+      return;
+    }
+
     // Validate service selection
     if (!formData.service) {
-      setServiceError("Please select a service.");
+      toast.error("Please select a service.");
       return;
-    } else {
-      setServiceError("");
     }
 
     // Validate product selection for specific services
-    if (["Return", "Exchange"].includes(formData.service) && !productNote) {
-      setServiceError("Please select a product for the chosen service.");
+    if (["Fix", "Exchange"].includes(formData.service) && !productNote) {
+      toast.error("Please select a product for the chosen service.");
       return;
-    } else {
-      setServiceError("");
     }
 
     // Validate booking date is not today or earlier
@@ -267,10 +295,8 @@ const BookingPage = () => {
     selectedDate.setHours(0, 0, 0, 0);
 
     if (selectedDate <= today) {
-      setDateError("Please select a date from tomorrow onwards.");
+      toast.error("Please select a date from tomorrow onwards.");
       return;
-    } else {
-      setDateError("");
     }
 
     const bookingDate = selectedDate.toLocaleDateString("en-CA");
@@ -306,7 +332,7 @@ const BookingPage = () => {
 
       // Restrict guest users to "Tailor" service only
       if (!isLoggedIn && formData.service !== "Tailor") {
-        setServiceError("Guest users can only book the Tailor service.");
+        toast.error("Guest users can only book the Tailor service.");
         return;
       }
 
@@ -328,24 +354,16 @@ const BookingPage = () => {
       });
 
       if (!response.ok) {
-        let errorMessage = "Failed to create booking";
-        try {
-          const errorData = await response.json();
-          console.error("Server error details:", errorData);
-          console.error("Validation errors:", errorData.errors);
-          errorMessage = errorData.message || errorData.title || errorMessage;
-        } catch (e) {
-          console.error("Raw response:", await response.text());
-          errorMessage = response.statusText || errorMessage;
-        }
-        console.error("Error creating booking:", errorMessage);
+        const errorData = await response.json();
+        toast.error(errorData.message || "Failed to create booking");
         return;
       }
 
       const result = await response.json();
-      console.log("Booking successful:", result);
+      toast.success("Booking submitted successfully!");
       navigate("/booking-thanks");
     } catch (error) {
+      toast.error("Error submitting booking. Please try again.");
       console.error("Error submitting booking:", error.message);
     }
   };
@@ -518,6 +536,11 @@ const BookingPage = () => {
   };
 
   const handleServiceSelection = (service) => {
+    if (!localStorage.getItem("token") && service !== "Tailor") {
+      toast.warning("Please login to access additional services.");
+      return;
+    }
+
     if (!["Fix", "Exchange"].includes(service)) {
       setProductNote("");
       setFormData((prev) => ({
@@ -667,7 +690,6 @@ const BookingPage = () => {
 
             <div className="booking-form-container">
               <div className="form-section service-selection">
-                {serviceError && <p className="error">{serviceError}</p>}
                 <select
                   className="studio-select elegant-select"
                   onChange={handleStoreChange}
@@ -807,7 +829,6 @@ const BookingPage = () => {
                         onChange={handleInputChange}
                         required
                       />
-                      {phoneError && <p className="error">{phoneError}</p>}
                     </div>
                     <button type="submit" className="submit-button">
                       Book Appointment
@@ -829,6 +850,19 @@ const BookingPage = () => {
       </motion.div>
 
       <Footer />
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </motion.div>
   );
 };

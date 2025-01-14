@@ -361,7 +361,7 @@ const BookingList = () => {
               <TableCell>Time</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Note</TableCell>
-              <TableCell>Staff</TableCell>
+              {/* <TableCell>Staff</TableCell> */}
               <TableCell>Change Status</TableCell>
             </TableRow>
           </TableHead>
@@ -386,7 +386,7 @@ const BookingList = () => {
                   />
                 </TableCell>
                 <TableCell>{booking.note}</TableCell>
-                <TableCell>{booking.assistStaffName}</TableCell>
+                {/* <TableCell>{booking.assistStaffName}</TableCell> */}
                 <TableCell>
                   <Select
                     size="small"
