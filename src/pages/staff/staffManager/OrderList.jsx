@@ -51,7 +51,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import BankingPayment from '../../../assets/img/elements/bankingPayment.jpg'
 
-const BASE_URL = "https://vesttour.xyz/api"; // Update this to match your API URL
+const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
 
 const fetchStoreByStaffId = async (staffId) => {
@@ -807,7 +807,7 @@ const OrderList = () => {
       console.log('Shipping Fee Payload:', shippingPayload);
 
       const response = await axios.post(
-        'https://vesttour.xyz/api/Shipping/calculate-fee',
+        'https://localhost:7194/api/Shipping/calculate-fee',
         shippingPayload
       );
 
@@ -1097,7 +1097,7 @@ const OrderList = () => {
 
       // Gọi API với async/await
       const response = await axios.post(
-        'https://vesttour.xyz/api/Payments', 
+        'https://localhost:7194/api/Payments', 
         paymentPayload,
         {
           headers: {
@@ -1112,7 +1112,7 @@ const OrderList = () => {
       if (response.data) {
         // Cập nhật trạng thái paid của order
         await axios.put(
-          `https://vesttour.xyz/api/Orders/SetPaidTrue/${createdOrderId}`,
+          `https://localhost:7194/api/Orders/SetPaidTrue/${createdOrderId}`,
           null,
           {
             headers: {

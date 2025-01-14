@@ -13,7 +13,7 @@ const FabricDetail = () => {
     const fetchFabric = async () => {
       try {
         const response = await fetch(
-          `https://vesttour.xyz/api/Fabrics/${id}`
+          `https://localhost:7194/api/Fabrics/${id}`
         );
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

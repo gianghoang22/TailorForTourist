@@ -60,7 +60,7 @@ const AdminDashboard = () => {
 
     try {
       // Fetch users count
-      const usersResponse = await fetch("https://vesttour.xyz/api/User", {
+      const usersResponse = await fetch("https://localhost:7194/api/User", {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -78,7 +78,7 @@ const AdminDashboard = () => {
 
       // Fetch fabrics count
       const fabricsResponse = await fetch(
-        "https://vesttour.xyz/api/Fabrics",
+        "https://localhost:7194/api/Fabrics",
         {
           method: "GET",
           headers: {
@@ -97,7 +97,7 @@ const AdminDashboard = () => {
       const fabricsData = await fabricsResponse.json();
 
       // Fetch stores count
-      const storesResponse = await fetch("https://vesttour.xyz/api/Store", {
+      const storesResponse = await fetch("https://localhost:7194/api/Store", {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -115,7 +115,7 @@ const AdminDashboard = () => {
 
       // Fetch active vouchers count
       const vouchersResponse = await fetch(
-        "https://vesttour.xyz/api/Voucher",
+        "https://localhost:7194/api/Voucher",
         {
           method: "GET",
           headers: {
@@ -244,7 +244,7 @@ const AdminDashboard = () => {
     }
 
     try {
-      const response = await fetch("https://vesttour.xyz/api/Payments", {
+      const response = await fetch("https://localhost:7194/api/Payments", {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -479,7 +479,7 @@ const AdminDashboard = () => {
 
     try {
       // First, fetch all active stores
-      const storesResponse = await fetch("https://vesttour.xyz/api/Store", {
+      const storesResponse = await fetch("https://localhost:7194/api/Store", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -495,7 +495,7 @@ const AdminDashboard = () => {
       const storeRevenues = await Promise.all(
         activeStores.map(async (store) => {
           const ordersResponse = await fetch(
-            `https://vesttour.xyz/api/Orders/store/${store.storeId}`,
+            `https://localhost:7194/api/Orders/store/${store.storeId}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }

@@ -49,7 +49,7 @@ import {
 import "./StaffDashboard.scss";
 import { useNavigate } from "react-router-dom";
 
-const BASE_URL = "https://vesttour.xyz/api";
+const BASE_URL = "https://localhost:7194/api";
 
 const StaffDashboard = () => {
   const navigate = useNavigate();

@@ -6,7 +6,7 @@ import lining_icon from "../../../assets/img/iconCustom/icon-accent-vailot.jpg";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const API_URL = "https://vesttour.xyz/api/AddCart/addtocart";
+const API_URL = "https://localhost:7194/api/AddCart/addtocart";
 
 const calculateCustomPrice = async () => {
   try {
@@ -18,13 +18,13 @@ const calculateCustomPrice = async () => {
 
     // Fetch fabric price
     const fabricResponse = await axios.get(
-      `https://vesttour.xyz/api/Fabrics/${fabricId}`
+      `https://localhost:7194/api/Fabrics/${fabricId}`
     );
     const fabricPrice = fabricResponse.data.price || 0;
 
     // Fetch lining price
     const liningResponse = await axios.get(
-      `https://vesttour.xyz/api/Linings/${liningId}`
+      `https://localhost:7194/api/Linings/${liningId}`
     );
     const liningPrice = liningResponse.data.price || 0;
 
@@ -32,7 +32,7 @@ const calculateCustomPrice = async () => {
     const styleOptionPrices = await Promise.all(
       styleOptionIds.map(async (id) => {
         const response = await axios.get(
-          `https://vesttour.xyz/api/StyleOption/${id}`
+          `https://localhost:7194/api/StyleOption/${id}`
         );
         return response.data.price || 0;
       })
@@ -67,7 +67,7 @@ const CustomLining = () => {
   useEffect(() => {
     const fetchLinings = async () => {
       try {
-        const response = await fetch("https://vesttour.xyz/api/Linings");
+        const response = await fetch("https://localhost:7194/api/Linings");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

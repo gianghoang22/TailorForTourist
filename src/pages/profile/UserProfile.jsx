@@ -61,7 +61,7 @@ const UserProfile = () => {
 
     try {
       const response = await fetch(
-        `https://vesttour.xyz/api/User/${userID}`,
+        `https://localhost:7194/api/User/${userID}`,
         {
           method: "PUT",
           headers: {
@@ -112,7 +112,7 @@ const UserProfile = () => {
         }
 
         const response = await fetch(
-          `https://vesttour.xyz/api/User/${userID}`,
+          `https://localhost:7194/api/User/${userID}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

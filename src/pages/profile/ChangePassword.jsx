@@ -39,7 +39,7 @@ const ChangePassword = () => {
     try {
       // The userId goes in the URL path, not in the request body
       const response = await fetch(
-        `https://vesttour.xyz/api/User/${userId}/update-pass?email=${encodeURIComponent(requestPayload.email)}&oldPassword=${encodeURIComponent(requestPayload.oldPassword)}&newPassword=${encodeURIComponent(requestPayload.newPassword)}`,
+        `https://localhost:7194/api/User/${userId}/update-pass?email=${encodeURIComponent(requestPayload.email)}&oldPassword=${encodeURIComponent(requestPayload.oldPassword)}&newPassword=${encodeURIComponent(requestPayload.newPassword)}`,
         {
           method: "PATCH",
           headers: {
