@@ -64,7 +64,7 @@ const UserManagement = () => {
 
         console.log("Fetching data..."); // Debug log
 
-        const response = await fetch("https://vesttour.xyz/api/User", {
+        const response = await fetch("https://localhost:7194/api/User", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -180,7 +180,7 @@ const UserManagement = () => {
 
       setLoading(true);
 
-      const response = await fetch("https://vesttour.xyz/api/User", {
+      const response = await fetch("https://localhost:7194/api/User", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -252,7 +252,7 @@ const UserManagement = () => {
       };
 
       const response = await fetch(
-        `https://vesttour.xyz/api/User/${editIndex}`,
+        `https://localhost:7194/api/User/${editIndex}`,
         {
           method: "PUT",
           headers: {
@@ -307,7 +307,7 @@ const UserManagement = () => {
       }
 
       const response = await fetch(
-        `https://vesttour.xyz/api/User/${userId}/status`,
+        `https://localhost:7194/api/User/${userId}/status`,
         {
           method: "PUT",
           headers: {

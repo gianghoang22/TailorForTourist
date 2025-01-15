@@ -45,7 +45,7 @@ const TailorRevenue = () => {
       }
 
       const response = await fetch(
-        `https://vesttour.xyz/api/TailorPartner/get-by-user/${userID}`,
+        `https://localhost:7194/api/TailorPartner/get-by-user/${userID}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -87,7 +87,7 @@ const TailorRevenue = () => {
       setIsLoading(true);
 
       const assignedOrdersResponse = await fetch(
-        `https://vesttour.xyz/api/ProcessingTailor/assigned-to/${id}`,
+        `https://localhost:7194/api/ProcessingTailor/assigned-to/${id}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -109,7 +109,7 @@ const TailorRevenue = () => {
       const ordersWithDetails = await Promise.all(
         assignedOrderIds.map(async (orderId) => {
           const detailsResponse = await fetch(
-            `https://vesttour.xyz/api/Orders/${orderId}/details`,
+            `https://localhost:7194/api/Orders/${orderId}/details`,
             {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,

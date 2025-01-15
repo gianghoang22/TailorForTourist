@@ -36,7 +36,7 @@ const Measurement = () => {
 
       try {
         const response = await fetch(
-          `https://vesttour.xyz/api/Measurement/user/${userID}`
+          `https://localhost:7194/api/Measurement/user/${userID}`
         );
         if (!response.ok) {
           if (response.status === 404) {
@@ -114,7 +114,7 @@ const Measurement = () => {
   const handleSubmit = () => {
     if (validateFields()) {
       // If validation passes, post data to the API
-      fetch("https://vesttour.xyz/api/Measurement", {
+      fetch("https://localhost:7194/api/Measurement", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -154,8 +154,8 @@ const Measurement = () => {
           body: JSON.stringify({ ...formData, userId: userID }),
         };
         const url = measurementId
-          ? `https://vesttour.xyz/api/Measurement/${measurementId}`
-          : "https://vesttour.xyz/api/Measurement";
+          ? `https://localhost:7194/api/Measurement/${measurementId}`
+          : "https://localhost:7194/api/Measurement";
 
         const response = await fetch(url, requestOptions);
 

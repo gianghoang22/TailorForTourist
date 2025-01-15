@@ -30,7 +30,7 @@ const CustomFabric = () => {
   const fetchFabrics = async (tag = "") => {
     try {
       const response = await fetch(
-        `https://vesttour.xyz/api/Fabrics${tag ? `/tag/${tag}` : ""}`
+        `https://localhost:7194/api/Fabrics${tag ? `/tag/${tag}` : ""}`
       );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -47,7 +47,7 @@ const CustomFabric = () => {
   useEffect(() => {
     const initializeFabric = async () => {
       try {
-        const response = await fetch("https://vesttour.xyz/api/Fabrics");
+        const response = await fetch("https://localhost:7194/api/Fabrics");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
