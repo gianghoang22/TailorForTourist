@@ -51,7 +51,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import BankingPayment from '../../../assets/img/elements/bankingPayment.jpg'
 
-const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
+const BASE_URL = "https://vesttour.xyz/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
 
 const fetchStoreByStaffId = async (staffId) => {
@@ -519,25 +519,21 @@ const OrderList = () => {
     const fetchOrders = async () => {
       try {
         const userId = localStorage.getItem("userID");
-        console.log("Retrieved userId from localStorage:", userId);
-
         if (!userId) {
           throw new Error("User ID not found");
         }
         const storeData = await fetchStoreByStaffId(userId);
         const ordersData = await fetchOrdersByStoreId(storeData.storeId);
-        setOrders(
-          Array.isArray(ordersData) ? ordersData : [ordersData]
-        );
+        setOrders(Array.isArray(ordersData) ? ordersData : [ordersData]);
         setLoading(false);
       } catch (err) {
-        setError(err.message);
+        // Không cần set error ở đây
         setLoading(false);
       }
     };
 
     fetchOrders();
-  }, [refreshData]); // Thêm refreshData vào dependencies
+  }, [refreshData]);
 
   const fetchUnpaidOrders = async () => {
     try {
@@ -807,7 +803,7 @@ const OrderList = () => {
       console.log('Shipping Fee Payload:', shippingPayload);
 
       const response = await axios.post(
-        'https://localhost:7194/api/Shipping/calculate-fee',
+        'https://vesttour.xyz/api/Shipping/calculate-fee',
         shippingPayload
       );
 
@@ -1034,6 +1030,9 @@ const OrderList = () => {
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setSnackbarMessage('Error fetching users');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -1067,7 +1066,7 @@ const OrderList = () => {
 
   // Function to handle payment form submission
   const handlePaymentSubmit = async (event) => {
-    event.preventDefault(); // Đảm bảo có dòng này
+    event.preventDefault();
     console.log('handlePaymentSubmit called'); // Debug log 1
 
     try {
@@ -1089,7 +1088,7 @@ const OrderList = () => {
 
       // Gọi API với async/await
       const response = await axios.post(
-        'https://localhost:7194/api/Payments', 
+        'https://vesttour.xyz/api/Payments', 
         paymentPayload,
         {
           headers: {
@@ -1104,7 +1103,7 @@ const OrderList = () => {
       if (response.data) {
         // Cập nhật trạng thái paid của order
         await axios.put(
-          `https://localhost:7194/api/Orders/SetPaidTrue/${createdOrderId}`,
+          `https://vesttour.xyz/api/Orders/SetPaidTrue/${createdOrderId}`,
           null,
           {
             headers: {
@@ -1554,180 +1553,39 @@ const OrderList = () => {
     }
   }, [open]);
 
-  if (loading) return <CircularProgress />;
-  if (error) return <Typography color="error">{error}</Typography>;
+  // const handleAddOrder = () => {
+  //   console.log("Opening Add Order dialog");
+  //   resetForm();
+  //   setOpen(true);
+  // };
 
+  // const handleCreatePayment = () => {
+  //   console.log("Opening Create Payment dialog");
+  //   fetchUnpaidDeposits();
+  //   setRemainingPaymentDialog(true);
+  // };
+
+  // Render UI
+  if (loading) return <CircularProgress />;
+  
   return (
     <div>
       <Typography variant="h4" sx={{ mb: 2 }}>
         Order Management
       </Typography>
 
-      {/* Chart Section */}
-      
-
-      {/* Enhanced Filter Section */}
-      <Paper sx={{ p: 3, mb: 3, backgroundColor: "#f8f9fa" }}>
-        <Typography
-          variant="h6"
-          sx={{ mb: 3, color: "primary.main", fontWeight: 600 }}
-        >
-          <FilterList sx={{ mr: 1, verticalAlign: "middle" }} />
-          Filter Orders
+      {/* Hiển thị thông báo nếu không có dữ liệu */}
+      {error && (
+        <Typography color="error" sx={{ mb: 2 }}>
+          {error}
         </Typography>
+      )}
 
-        <Grid container spacing={3}>
-          {/* Date Filter Column */}
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2,
-                backgroundColor: "white",
-                borderRadius: 2,
-                height: "100%",
-              }}
-            >
-              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
-                Date Range
-              </Typography>
-
-              <Box sx={{ px: 2, pb: 2 }}>
-                <TextField
-                  select
-                  label="Select Period"
-                  value={dateFilter}
-                  onChange={handleDateFilterChange}
-                  fullWidth
-                  sx={{ mb: 2 }}
-                  size="small"
-                >
-                  <MenuItem value="all">All Time</MenuItem>
-                  <MenuItem value="today">Today</MenuItem>
-                  <MenuItem value="thisWeek">This Week</MenuItem>
-                  <MenuItem value="thisMonth">This Month</MenuItem>
-                  <MenuItem value="lastMonth">Last Month</MenuItem>
-                  <MenuItem value="custom">Custom Range</MenuItem>
-                </TextField>
-
-                {dateFilter === "custom" && (
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Stack spacing={2}>
-                      <DatePicker
-                        label="Start Date"
-                        value={customDateRange.startDate}
-                        onChange={(newValue) => {
-                          setCustomDateRange((prev) => ({
-                            ...prev,
-                            startDate: newValue,
-                          }));
-                        }}
-                        slotProps={{ textField: { size: "small" } }}
-                      />
-                      <DatePicker
-                        label="End Date"
-                        value={customDateRange.endDate}
-                        onChange={(newValue) => {
-                          setCustomDateRange((prev) => ({
-                            ...prev,
-                            endDate: newValue,
-                          }));
-                        }}
-                        minDate={customDateRange.startDate}
-                        slotProps={{ textField: { size: "small" } }}
-                      />
-                    </Stack>
-                  </LocalizationProvider>
-                )}
-              </Box>
-            </Paper>
-          </Grid>
-
-          {/* Price Range Column */}
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2,
-                backgroundColor: "white",
-                borderRadius: 2,
-                height: "100%",
-              }}
-            >
-              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
-                Price Range
-              </Typography>
-
-              <Box sx={{ px: 2, pb: 2 }}>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 1 }}
-                >
-                  Select price range (USD)
-                </Typography>
-                <Typography variant="h6" sx={{ mb: 2, color: "primary.main" }}>
-                  ${priceRange[0]} - ${priceRange[1]}
-                </Typography>
-                <Slider
-                  value={priceRange}
-                  onChange={handlePriceRangeChange}
-                  valueLabelDisplay="auto"
-                  min={0}
-                  max={10000}
-                  sx={{
-                    "& .MuiSlider-thumb": {
-                      height: 24,
-                      width: 24,
-                      backgroundColor: "#fff",
-                      border: "2px solid currentColor",
-                      "&:focus, &:hover, &.Mui-active, &.Mui-focusVisible": {
-                        boxShadow: "inherit",
-                      },
-                    },
-                    "& .MuiSlider-valueLabel": {
-                      backgroundColor: "primary.main",
-                    },
-                  }}
-                />
-              </Box>
-            </Paper>
-          </Grid>
-        </Grid>
-
-        {/* Active Filters Display */}
-        <Box sx={{ mt: 2 }}>
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            {dateFilter !== "all" && (
-              <Chip
-                label={`Date: ${dateFilter}`}
-                onDelete={() => setDateFilter("all")}
-                color="primary"
-                variant="outlined"
-                size="small"
-              />
-            )}
-            {(priceRange[0] > 0 || priceRange[1] < 10000) && (
-              <Chip
-                label={`Price: $${priceRange[0]} - $${priceRange[1]}`}
-                onDelete={() => setPriceRange([0, 10000])}
-                color="primary"
-                variant="outlined"
-                size="small"
-              />
-            )}
-          </Stack>
-        </Box>
-      </Paper>
-
+      {/* Hiển thị các nút để tạo order hoặc payment */}
       <StyledButton
         variant="contained"
         startIcon={<Add />}
-        onClick={() => {
-          resetForm(); // Gọi hàm reset
-          setOpen(true);
-          setIsEditMode(false);
-        }}
+        onClick={handleAddOrder}
         sx={{ mb: 2 }}
       >
         Add Order
@@ -1736,16 +1594,13 @@ const OrderList = () => {
       <StyledButton
         variant="contained"
         startIcon={<Payment />}
-        onClick={() => {
-          console.log('Opening payment dialog');
-          fetchUnpaidDeposits(); // Gọi trực tiếp khi click button
-          setRemainingPaymentDialog(true);
-        }}
+        onClick={handleCreatePayment}
         sx={{ mb: 2, ml: 2 }}
       >
         Process Payment
       </StyledButton>
 
+      {/* Hiển thị bảng ngay cả khi không có dữ liệu */}
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
           <StyledTableHead>
@@ -1762,1172 +1617,49 @@ const OrderList = () => {
             </TableRow>
           </StyledTableHead>
           <TableBody>
-            {filterOrders(currentOrders).map((order) => (
-              <TableRow key={order.orderId} hover>
-                <TableCell>{order.orderId}</TableCell>
-                <TableCell>{order.guestName}</TableCell>
-                <TableCell>{order.status || 'Pending'}</TableCell>
-                <TableCell>
-                  {payments[order.orderId]?.method}
-                </TableCell>
-                <TableCell>{payments[order.orderId]?.paymentDetails}</TableCell>
-                <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
-                <TableCell>{order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}$</TableCell>
-                <TableCell>
-                  {order.balancePayment ? (
-                    <Typography
-                      color={order.balancePayment > 0 ? "error" : "success"}
-                      fontWeight="bold"
-                    >
-                      ${order.balancePayment.toFixed(2)}
-                    </Typography>
-                  ) : (
-                    "$0.00"
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Tooltip title="View Details">
-                    <IconButton onClick={() => handleViewDetails(order.orderId)} sx={{ color: "primary.main" }}>
-                      <Visibility />
-                    </IconButton>
-                  </Tooltip>
-                  {/* {order.balancePayment > 0 && (
-                    <Tooltip title="Process Payment">
-                      <IconButton 
-                        onClick={() => handleCreatePayment(order)}
-                        color="primary"
+            {orders.length > 0 ? (
+              orders.map((order) => (
+                <TableRow key={order.orderId} hover>
+                  <TableCell>{order.orderId}</TableCell>
+                  <TableCell>{order.guestName}</TableCell>
+                  <TableCell>{order.status || 'Pending'}</TableCell>
+                  <TableCell>{payments[order.orderId]?.method}</TableCell>
+                  <TableCell>{payments[order.orderId]?.paymentDetails}</TableCell>
+                  <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
+                  <TableCell>{order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}$</TableCell>
+                  <TableCell>
+                    {order.balancePayment ? (
+                      <Typography
+                        color={order.balancePayment > 0 ? "error" : "success"}
+                        fontWeight="bold"
                       >
-                        <Payment />
+                        ${order.balancePayment.toFixed(2)}
+                      </Typography>
+                    ) : (
+                      "$0.00"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title="View Details">
+                      <IconButton onClick={() => handleViewDetails(order.orderId)} sx={{ color: "primary.main" }}>
+                        <Visibility />
                       </IconButton>
                     </Tooltip>
-                  )} */}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={9} align="center">
+                  <Typography variant="body1" color="textSecondary">
+                    No orders available. You can create a new order.
+                  </Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>
-
-      {/* Pagination Controls */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-        {Array.from({ length: Math.ceil(sortedOrders.length / ordersPerPage) }, (_, index) => (
-          <Button
-            key={index}
-            onClick={() => setCurrentPage(index + 1)}
-            variant={currentPage === index + 1 ? 'contained' : 'outlined'}
-            sx={{ mx: 0.5 }}
-          >
-            {index + 1}
-          </Button>
-        ))}
-      </Box>
-
-      {/* Dialog for Order Details */}
-      <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Order Details</DialogTitle>
-        <DialogContent>
-          {orderDetails ? (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Typography variant="h6">Order ID: {orderDetails.orderId}</Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="subtitle1"><strong>Customer:</strong> {orderDetails.guestName}</Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="subtitle1"><strong>Status:</strong> {orderDetails.status || 'Pending'}</Typography>
-              </Grid>
-              {/* <Grid item xs={12}>
-                <Typography variant="subtitle1"><strong>Payment ID:</strong> {orderDetails.paymentId || ""}</Typography>
-              </Grid> */}
-              <Grid item xs={12}>
-                <Typography variant="subtitle1"><strong>Order Date:</strong> {new Date(orderDetails.orderDate).toLocaleDateString()}</Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="subtitle1"><strong>Total Price:</strong> ${orderDetails.totalPrice.toFixed(2)}</Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="subtitle1"><strong>Note:</strong> {orderDetails.note || ""}</Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="h6" sx={{ mt: 2 }}>Order Details:</Typography>
-                {orderDetails.orderDetails.map((detail, index) => (
-                  <Card key={index} variant="outlined" sx={{ mb: 2, p: 2 }}>
-                    <Typography variant="subtitle1"><strong>Product ID:</strong> {detail.productId}</Typography>
-                    <Typography variant="body2"><strong>Quantity:</strong> {detail.quantity}</Typography>
-                    <Typography variant="body2"><strong>Price:</strong> ${detail.price}</Typography>
-                    {detail.product ? (
-                      <>
-                        <Typography variant="body2">
-                          <strong>Fabric:</strong> {detail.product.fabricName}, <strong>Lining:</strong> {detail.product.liningName}
-                        </Typography>
-                        <Typography variant="body2">
-                          <strong>Style Options:</strong> {detail.product.styleOptions.map(option => option.optionValue).join(', ')}
-                        </Typography>
-                      </>
-                    ) : (
-                      <Typography color="error">Product details not available</Typography>
-                    )}
-                  </Card>
-                ))}
-              </Grid>
-            </Grid>
-          ) : (
-            <CircularProgress />
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDetailsOpen(false)} color="primary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-      >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbarSeverity}
-          sx={{ width: "100%" }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-
-      {/* Create Order Dialog */}
-      <Dialog 
-        open={open && !isEditMode} 
-        onClose={handleCloseDialog}
-        maxWidth="md" 
-        fullWidth
-      >
-        <DialogTitle>Create New Order</DialogTitle>
-        <DialogContent>
-          {isCreatingOrder ? (
-            <CircularProgress />
-          ) : (
-            <>
-              <Autocomplete
-                options={users.filter(user => user.roleId === 3)}
-                getOptionLabel={(option) => 
-                  option ? `${option.name || ''} (${option.email || ''})` : ''
-                }
-                onInputChange={(_, newValue) => {
-                  console.log('Searching for:', newValue);
-                  searchUsers(newValue);
-                }}
-                onChange={(_, newValue) => {
-                  console.log('Selected user:', newValue);
-                  setSelectedUser(newValue);
-                  if (newValue) {
-                    setCreateOrderForm(prev => ({
-                      ...prev,
-                      guestName: newValue.name || '',
-                      guestEmail: newValue.email || '',
-                      guestAddress: newValue.address || ''
-                    }));
-                    fetchUserMeasurements(newValue);
-                  }
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Search Customers"
-                    margin="normal"
-                    variant="outlined"
-                    fullWidth
-                    helperText="Search for customers by name or email"
-                  />
-                )}
-                renderOption={(props, option) => {
-                  const { key, ...restProps } = props;
-                  return (
-                    <li key={key} {...restProps}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <Typography variant="body1">{option.name}</Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {option.email}
-                        </Typography>
-                      </div>
-                    </li>
-                  );
-                }}
-                loading={users.length === 0}
-                loadingText="Searching..."
-                noOptionsText="No customers found"
-                clearOnBlur={false}
-                clearOnEscape
-              />
-              
-              <TextField
-                label="Guest Name"
-                value={createOrderForm.guestName}
-                onChange={(e) => handleCreateFormChange('guestName', e.target.value)}
-                disabled={selectedUser !== null}
-                fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="Guest Email"
-                value={createOrderForm.guestEmail}
-                onChange={(e) => handleCreateFormChange('guestEmail', e.target.value)}
-                disabled={selectedUser !== null}
-                fullWidth
-                margin="normal"
-              />
-              {/* <TextField
-                label="Guest Address"
-                value={createOrderForm.guestAddress}
-                onChange={(e) => handleCreateFormChange('guestAddress', e.target.value)}
-                fullWidth
-                margin="normal"
-              /> */}
-              {/* <Autocomplete
-                options={stores}
-                getOptionLabel={(option) => option.name || ''}
-                value={stores.find(store => store.storeId === createOrderForm.storeId) || null}
-                onChange={(_, newValue) => {
-                  handleCreateFormChange('storeId', newValue ? newValue.storeId : 0);
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Select Store"
-                    margin="normal"
-                    variant="outlined"
-                    fullWidth
-                    helperText="Select a store from the list"
-                  />
-                )}
-                renderOption={(props, option) => (
-                  <li {...props}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="body1">{option.name}</Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {option.address}
-                      </Typography>
-                    </div>
-                  </li>
-                )}
-                isOptionEqualToValue={(option, value) => option.storeId === value.storeId}
-                loading={stores.length === 0}
-                loadingText="Loading stores..."
-                noOptionsText="No stores found"
-              /> */}
-              <Autocomplete
-                options={vouchers.filter(voucher => voucher.status === "OnGoing")}
-                getOptionLabel={(option) => 
-                  option ? `${option.voucherCode} - ${option.description} (${option.discountNumber * 100}% off)` : ''
-                }
-                value={vouchers.find(v => v.voucherId === createOrderForm.voucherId) || null}
-                onChange={handleVoucherChange}
-                freeSolo={false}
-                disableClearable={false}
-                selectOnFocus={false}
-                clearOnBlur={true}
-                handleHomeEndKeys={false}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Select Voucher"
-                    margin="normal"
-                    variant="outlined"
-                    fullWidth
-                  />
-                )}
-                renderOption={(props, option) => (
-                  <li {...props}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="body1">
-                        {option.voucherCode} ({option.discountNumber * 100}% off)
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {option.description}
-                      </Typography>
-                    </div>
-                  </li>
-                )}
-                isOptionEqualToValue={(option, value) => option.voucherId === value?.voucherId}
-                noOptionsText="No valid vouchers available"
-              />
-              {/* <TextField
-                label="Shipper Partner ID"
-                type="number"
-                value={createOrderForm.shipperPartnerId || ''}
-                onChange={(e) => handleCreateFormChange('shipperPartnerId', e.target.value ? parseInt(e.target.value) : null)}
-                fullWidth
-                margin="normal"
-              /> */}
-              <TextField
-                select
-                label="Delivery Method"
-                value={createOrderForm.deliveryMethod}
-                onChange={handleDeliveryMethodChange}
-                fullWidth
-                margin="normal"
-              >
-                <MenuItem value="Pick up">Pick up</MenuItem>
-                <MenuItem value="Delivery">Delivery</MenuItem>
-              </TextField>
-
-              {createOrderForm.deliveryMethod === 'Delivery' && (
-                <>
-                  <Autocomplete
-                    options={stores}
-                    getOptionLabel={(option) => option.name || ''}
-                    value={nearestStore || null}
-                    onChange={(_, newValue) => {
-                      setNearestStore(newValue);
-                      setCreateOrderForm(prev => ({
-                        ...prev,
-                        storeId: newValue ? newValue.storeId : 0
-                      }));
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Nearest Store"
-                        margin="normal"
-                        variant="outlined"
-                        fullWidth
-                        helperText="Select the nearest store"
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <li {...props}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <Typography variant="body1">{option.name}</Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            {option.address}
-                          </Typography>
-                        </div>
-                      </li>
-                    )}
-                    isOptionEqualToValue={(option, value) => option.storeId === value.storeId}
-                    loading={stores.length === 0}
-                    loadingText="Loading stores..."
-                    noOptionsText="No stores found"
-                  />
-
-                  {nearestStore && (
-                    <Paper sx={{ p: 2, mt: 2, mb: 2, bgcolor: 'background.default' }}>
-                      <Typography variant="subtitle1" gutterBottom>
-                        Selected Store:
-                      </Typography>
-                      <Typography><strong>{nearestStore.name}</strong></Typography>
-                      <Typography>{nearestStore.address}</Typography>
-                    </Paper>
-                  )}
-
-                  <Address
-                    onAddressChange={async (address) => {
-                      console.log('Address changed:', address);
-                      setCreateOrderForm(prev => ({
-                        ...prev,
-                        guestAddress: address.fullAddress
-                      }));
-                      
-                      findNearestStore(address);
-
-                      if (address.wardCode && address.districtId && nearestStore) {
-                        await calculateShippingFee({
-                          wardCode: address.wardCode,
-                          districtId: address.districtId
-                        });
-                      }
-                    }}
-                  />
-                  
-                  <TextField
-                    label="Shipping Fee"
-                    type="number"
-                    value={createOrderForm.shippingFee || 0}
-                    disabled
-                    fullWidth
-                    margin="normal"
-                    InputProps={{
-                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                    }}
-                  />
-                </>
-              )}
-
-              {createOrderForm.deliveryMethod === 'Pick up' && (
-                <Autocomplete
-                  options={stores}
-                  getOptionLabel={(option) => option.name || ''}
-                  value={nearestStore || null}
-                  onChange={(_, newValue) => {
-                    setNearestStore(newValue);
-                    setCreateOrderForm(prev => ({
-                      ...prev,
-                      storeId: newValue ? newValue.storeId : 0
-                    }));
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Select Nearest Store"
-                      margin="normal"
-                      variant="outlined"
-                      fullWidth
-                      helperText="Select the nearest store"
-                    />
-                  )}
-                  renderOption={(props, option) => (
-                    <li {...props}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <Typography variant="body1">{option.name}</Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {option.address}
-                        </Typography>
-                      </div>
-                    </li>
-                  )}
-                  isOptionEqualToValue={(option, value) => option.storeId === value.storeId}
-                  loading={stores.length === 0}
-                  loadingText="Loading stores..."
-                  noOptionsText="No stores found"
-                />
-              )}
-              <TextField
-                label="Expected delivery date"
-                type="date"
-                value={createOrderForm.shippedDate}
-                onChange={(e) => handleCreateFormChange('shippedDate', e.target.value)}
-                fullWidth
-                margin="normal"
-                InputLabelProps={{ shrink: true }}
-                error={!!validationErrors.shippedDate}
-                helperText={validationErrors.shippedDate}
-                required
-                inputProps={{
-                  min: new Date().toISOString().split('T')[0] // Set minimum date to today
-                }}
-              />
-              <TextField
-                label="Note"
-                value={createOrderForm.note}
-                onChange={(e) => handleCreateFormChange('note', e.target.value)}
-                fullWidth
-                margin="normal"
-                multiline
-                rows={2}
-              />
-              {/* Chỉ hiển thị checkbox deposit khi KHÔNG phải Home delivery */}
-              {createOrderForm.deliveryMethod !== 'Delivery' && (
-                <>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={isDeposit}
-                        onChange={(e) => {
-                          setIsDeposit(e.target.checked);
-                          // Cập nhật paymentDetails dựa trên trạng thái checkbox
-                          setPaymentDetails(e.target.checked ? "Make deposit 50%" : "Paid full");
-                        }}
-                      />
-                    }
-                    label="Pay 50% Deposit"
-                    sx={{ mt: 2, mb: 1 }}
-                  />
-
-                  {/* Hiển thị số tiền deposit (chỉ để xem) */}
-                  {/* <TextField
-                    label="Deposit Amount"
-                    value={createOrderForm.deposit || 0}
-                    disabled
-                    fullWidth
-                    margin="normal"
-                    InputProps={{
-                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                    }}
-                  /> */}
-                </>
-              )}
-
-              {/* You might want to add more complex inputs for products and customProducts arrays */}
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => setOpenProductDialog(true)}
-                startIcon={<Add />}
-                sx={{ mt: 2, mb: 2 }}
-              >
-                Add Products
-              </Button>
-
-              {selectedProducts.length > 0 && (
-                <TableContainer component={Paper} sx={{ mt: 2, mb: 2 }}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Product Code</TableCell>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Details</TableCell>
-                        <TableCell>Quantity</TableCell>
-                        <TableCell>Price</TableCell>
-                        <TableCell>Total</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {/* Regular Products */}
-                      {selectedProducts.map((product, index) => (
-                        <TableRow key={`regular-${index}`}>
-                          <TableCell>{product.productCode}</TableCell>
-                          <TableCell>Regular</TableCell>
-                          <TableCell>{product.name}</TableCell>
-                          <TableCell>{product.quantity}</TableCell>
-                          <TableCell>${product.price}</TableCell>
-                          <TableCell>${product.price * product.quantity}</TableCell>
-                          <TableCell>
-                            <IconButton onClick={() => handleRemoveProduct(index)}>
-                              <Delete />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      
-                      {/* Custom Products */}
-                      {createOrderForm.customProducts.map((product, index) => {
-                        const fabric = fabrics.find(f => f.fabricID === product.fabricID);
-                        return (
-                          <TableRow key={`custom-${index}`}>
-                            <TableCell>{product.productCode}</TableCell>
-                            <TableCell>Custom</TableCell>
-                            <TableCell>
-                              <div>
-                                <strong>Fabric:</strong> {fabric?.fabricName}<br />
-                                <strong>Style Options:</strong><br />
-                                {product.pickedStyleOptions.map((option, i) => (
-                                  <span key={i}>
-                                    {styleOptions.find(so => so.styleOptionId === option.styleOptionID)?.optionValue}<br />
-                                  </span>
-                                ))}
-                                {product.note && (
-                                  <>
-                                    <br />
-                                    <strong>Note:</strong> {product.note}
-                                  </>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>{product.quantity}</TableCell>
-                            <TableCell>${product.price}</TableCell>
-                            <TableCell>${product.price * product.quantity}</TableCell>
-                            <TableCell>
-                              <IconButton onClick={() => handleRemoveCustomProduct(index)}>
-                                <Delete />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
-
-              {/* Dialog để thêm sản phẩm */}
-              <Dialog 
-                open={openProductDialog} 
-                onClose={() => setOpenProductDialog(false)}
-                maxWidth="md"
-                fullWidth
-              >
-                <DialogTitle>Add Product</DialogTitle>
-                <DialogContent>
-                  <Autocomplete
-                    options={products}
-                    getOptionLabel={(option) => 
-                      option ? `${option.productCode} - $${option.price}` : ''
-                    }
-                    value={selectedProduct}
-                    onChange={(_, newValue) => {
-                      console.log('Selected Product:', newValue);
-                      setSelectedProduct(newValue);
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Product"
-                        margin="normal"
-                        fullWidth
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <li {...props}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <Typography variant="body1">
-                            {option.productCode} - ${option.price}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            {option.productName}
-                          </Typography>
-                        </div>
-                      </li>
-                    )}
-                    isOptionEqualToValue={(option, value) => 
-                      option.productID === value?.productID
-                    }
-                  />
-                  
-                  <TextField
-                    label="Quantity"
-                    type="number"
-                    value={productQuantity}
-                    onChange={handleQuantityChange}
-                    fullWidth
-                    margin="normal"
-                    error={!!validationErrors.productQuantity}
-                    helperText={validationErrors.productQuantity}
-                    InputProps={{
-                      inputProps: { min: 1 }
-                    }}
-                  />
-                </DialogContent>
-                <DialogActions>
-                  <Button onClick={() => setOpenProductDialog(false)}>Cancel</Button>
-                  <Button onClick={handleAddProduct} color="primary" variant="contained">
-                    Add
-                  </Button>
-                </DialogActions>
-              </Dialog>
-
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={() => setOpenCustomDialog(true)}
-                startIcon={<Add />}
-                sx={{ mt: 2, mb: 2, ml: 2 }}
-              >
-                Add Custom Product
-              </Button>
-
-              {createOrderForm.customProducts.length > 0 && (
-                <TableContainer component={Paper} sx={{ mt: 2, mb: 2 }}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Product Code</TableCell>
-                        <TableCell>Fabric</TableCell>
-                        <TableCell>Lining</TableCell>
-                        <TableCell>Style Options</TableCell>
-                        <TableCell>Quantity</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {createOrderForm.customProducts.map((product, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{product.productCode}</TableCell>
-                          <TableCell>
-                            {fabrics.find(f => f.fabricID === product.fabricID)?.fabricName}
-                          </TableCell>
-                          <TableCell>
-                            {linings.find(l => l.liningId === product.liningID)?.liningName}
-                          </TableCell>
-                          <TableCell>
-                            {product.pickedStyleOptions.map(style => 
-                              styleOptions.find(s => s.styleOptionId === style.styleOptionID)?.optionValue
-                            ).join(', ')}
-                          </TableCell>
-                          <TableCell>{product.quantity}</TableCell>
-                          <TableCell>
-                            <IconButton
-                              onClick={() => {
-                                const newCustomProducts = createOrderForm.customProducts.filter((_, i) => i !== index);
-                                setCreateOrderForm(prev => ({
-                                  ...prev,
-                                  customProducts: newCustomProducts
-                                }));
-                              }}
-                            >
-                              <Delete />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
-
-              {/* Dialog cho custom product */}
-              <Dialog 
-                open={openCustomDialog} 
-                onClose={() => setOpenCustomDialog(false)}
-                maxWidth="md"
-                fullWidth
-              >
-                <DialogTitle>Add Custom Product</DialogTitle>
-                <DialogContent>
-                  {/* Fabric Selection */}
-                  <Autocomplete
-                    options={fabrics}
-                    getOptionLabel={(option) => 
-                      option ? `${option.fabricName} - $${option.price}` : ''
-                    }
-                    value={selectedFabric}
-                    onChange={(_, newValue) => setSelectedFabric(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Fabric"
-                        margin="normal"
-                        fullWidth
-                        required
-                      />
-                    )}
-                  />
-
-                  {/* Lining Selection */}
-                  <Autocomplete
-                    options={Array.isArray(linings) ? linings.filter(lining => lining.status === "Available") : []}
-                    getOptionLabel={(option) => 
-                      option ? `${option.liningName}` : ''
-                    }
-                    value={selectedLining}
-                    onChange={(_, newValue) => setSelectedLining(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Lining"
-                        margin="normal"
-                        fullWidth
-                        required
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <li {...props}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <img 
-                            src={option.imageUrl}
-                            alt={option.liningName}
-                            style={{ width: '20px', height: '20px', objectFit: 'cover', marginRight: '8px' }}
-                          />
-                          <Typography variant="body1">
-                            {option.liningName} 
-                          </Typography>
-                        </div>
-                      </li>
-                    )}
-                    isOptionEqualToValue={(option, value) => 
-                      option.liningId === value?.liningId
-                    }
-                  />
-
-                  {/* Style Options Selection */}
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom>Style Options</Typography>
-                    <Grid container spacing={2}>
-                      {Object.entries(groupedStyleOptions).map(([optionType, options]) => (
-                        <Grid item xs={12} md={6} key={optionType}>
-                          <TextField
-                            select
-                            fullWidth
-                            label={optionType}
-                            value={selectedStyleOptions.find(selected => 
-                              options.some(opt => opt.styleOptionId === selected.styleOptionId)
-                            )?.styleOptionId || ''}
-                            onChange={(e) => {
-                              const selectedId = Number(e.target.value);
-                              const selectedOption = options.find(opt => opt.styleOptionId === selectedId);
-                              
-                              setSelectedStyleOptions(prev => {
-                                // Remove any existing option of the same type
-                                const filtered = prev.filter(option => 
-                                  styleOptions.find(so => so.styleOptionId === option.styleOptionId)?.optionType !== optionType
-                                );
-                                // Add the new selection
-                                return [...filtered, selectedOption];
-                              });
-                            }}
-                            size="small"
-                          >
-                            <MenuItem value="">
-                              <em>Select {optionType}</em>
-                            </MenuItem>
-                            {options.map(option => (
-                              <MenuItem key={option.styleOptionId} value={option.styleOptionId}>
-                                {option.optionValue}
-                                {option.price && ` (+$${option.price})`}
-                              </MenuItem>
-                            ))}
-                          </TextField>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  </Box>
-
-                  {/* Hiển thị thông tin người dùng */}
-                  {selectedUser && (
-                    <div className="user-info">
-                      <h4>Measurement of customer:</h4>
-                      <p><strong>Name:</strong> {selectedUser.name}</p>
-                      <p><strong>Email:</strong> {selectedUser.email}</p>
-                    </div>
-                  )}
-
-                  {/* Quantity */}
-                  <TextField
-                    label="Quantity"
-                    type="number"
-                    value={customQuantity}
-                    onChange={handleCustomQuantityChange}
-                    fullWidth
-                    margin="normal"
-                    error={!!validationErrors.customQuantity}
-                    helperText={validationErrors.customQuantity}
-                    required
-                    InputProps={{
-                      inputProps: { min: 1 }
-                    }}
-                  />
-
-                  <Autocomplete
-                    options={measurements}
-                    getOptionLabel={(option) => {
-                      const user = users.find(user => user.userId === option.userId);
-                      return `${option.measurementId} (${user ? `${user.name} - ${user.email}` : 'Unknown User'})`;
-                    }}
-                    value={measurements.find(m => m.measurementId === measurementId) || null}
-                    onChange={(_, newValue) => {
-                      setMeasurementId(newValue?.measurementId || null);
-                      handleCreateFormChange('measurementId', newValue?.measurementId || null);
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Measurement ID"
-                        margin="normal"
-                        fullWidth
-                      />
-                    )}
-                    renderOption={(props, option) => {
-                      const user = users.find(user => user.userId === option.userId);
-                      return (
-                        <li {...props}>
-                          <Typography>{`${option.measurementId} (${user ? `${user.name} - ${user.email}` : 'Unknown User'})`}</Typography>
-                        </li>
-                      );
-                    }}
-                    loading={measurements.length === 0}
-                    loadingText="Loading measurements..."
-                    noOptionsText="No measurements found"
-                  />
-                </DialogContent>
-                <DialogActions>
-                  <Button onClick={() => setOpenCustomDialog(false)}>Cancel</Button>
-                  <Button 
-                    onClick={handleAddCustomProduct} 
-                    color="primary" 
-                    variant="contained"
-                    disabled={!selectedFabric || !selectedLining || selectedStyleOptions.length === 0 || !measurementId || customQuantity < 1}
-                  >
-                    Add Custom Product
-                  </Button>
-                </DialogActions>
-              </Dialog>
-
-              {/* Thêm Summary Box sau khi có sản phẩm được thêm vào */}
-              {(selectedProducts.length > 0 || createOrderForm.customProducts.length > 0) && (
-                <Paper 
-                  elevation={3} 
-                  sx={{ 
-                    p: 3, 
-                    my: 3, 
-                    backgroundColor: '#f8f9fa',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: 2
-                  }}
-                >
-                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                    Order Summary
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <List dense>
-                        <ListItem>
-                          <ListItemText 
-                            primary="Products Total" 
-                            secondary={`$${selectedProducts.reduce((sum, product) => 
-                              sum + (product.price * product.quantity), 0).toFixed(2)}`}
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemText 
-                            primary="Custom Products Total" 
-                            secondary={`$${createOrderForm.customProducts.reduce((sum, product) => 
-                              sum + (product.price * product.quantity), 0).toFixed(2)}`}
-                          />
-                        </ListItem>
-                        {createOrderForm.shippingFee > 0 && (
-                          <ListItem>
-                            <ListItemText 
-                              primary="Shipping Fee" 
-                              secondary={`$${createOrderForm.shippingFee.toFixed(2)}`}
-                            />
-                          </ListItem>
-                        )}
-                      </List>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <List dense>
-                        {createOrderForm.voucherId && (
-                          <ListItem>
-                            <ListItemText 
-                              primary={
-                                <Typography color="success.main">
-                                  {(() => {
-                                    const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
-                                    const discountText = voucher?.voucherCode?.includes('BIGSALE') 
-                                      ? `${(voucher.discountNumber * 100).toFixed(0)}% Off`
-                                      : voucher?.voucherCode?.includes('FREESHIP')
-                                      ? 'Free Shipping'
-                                      : '';
-                                    return `Voucher Applied: ${voucher?.voucherCode} (${discountText})`;
-                                  })()}
-                                </Typography>
-                              }
-                              secondary={
-                                <Typography color="success.main" variant="caption">
-                                  {vouchers.find(v => v.voucherId === createOrderForm.voucherId)?.description}
-                                </Typography>
-                              }
-                            />
-                          </ListItem>
-                        )}
-                        <ListItem>
-                          <ListItemText 
-                            primary={
-                              <Typography variant="subtitle1" color="primary.main" sx={{ fontWeight: 'bold' }}>
-                                Total Amount
-                              </Typography>
-                            }
-                            secondary={
-                              <Typography variant="h6" color="primary.main">
-                                ${calculateTotalAmount().toFixed(2)}
-                              </Typography>
-                            }
-                          />
-                        </ListItem>
-                        {createOrderForm.deliveryMethod !== 'Delivery' && isDeposit && (
-                          <ListItem>
-                            <ListItemText 
-                              primary={
-                                <Typography variant="subtitle1" color="secondary.main" sx={{ fontWeight: 'bold' }}>
-                                  Deposit Amount (50%)
-                                </Typography>
-                              }
-                              secondary={
-                                <Typography variant="h6" color="secondary.main">
-                                  ${(calculateTotalAmount() * 0.5).toFixed(2)}
-                                </Typography>
-                              }
-                            />
-                          </ListItem>
-                        )}
-                      </List>
-                    </Grid>
-                  </Grid>
-                </Paper>
-              )}
-
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleCreateOrder}
-                disabled={isCreatingOrder}
-              >
-                Next
-              </Button>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Payment Dialog */}
-      <Dialog open={openPaymentDialog} onClose={() => setOpenPaymentDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Create Payment</DialogTitle>
-        <DialogContent>
-          <form 
-            onSubmit={(e) => {
-              console.log('Form submitted'); // Debug log 6
-              handlePaymentSubmit(e);
-            }}
-          >
-            <TextField
-              label="Order ID"
-              value={createdOrderId || ''} 
-              fullWidth
-              margin="normal"
-              disabled
-            />
-            <TextField
-              label="User ID"
-              value={userId || ''}
-              fullWidth
-              margin="normal"
-              disabled 
-            />
-            <TextField
-              label="Amount"
-              value={amount.toFixed(2)} // Format to 2 decimal places
-              fullWidth
-              margin="normal"
-              disabled // Make it read-only
-              InputProps={{
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
-              }}
-            />
-            <TextField
-              label="Payment Method"
-              select
-              value={method}
-              onChange={(e) => setMethod(e.target.value)} // Cập nhật method
-              fullWidth
-              margin="normal"
-            >
-              <MenuItem value="Cash">Cash</MenuItem>
-              <MenuItem value="Banking">Banking Payment</MenuItem>
-            </TextField>
-            {method === 'Banking' && (
-              <div>
-                <img src={BankingPayment} alt="Banking Payment" style={{ width: '50%', marginTop: '10px' }} />
-              </div>
-            )}
-            <TextField
-              label="Payment Date"
-              type="date"
-              value={paymentDate}
-              onChange={(e) => {
-                const dateError = validatePaymentDate(e.target.value);
-                setValidationErrors(prev => ({
-                  ...prev,
-                  paymentDate: dateError
-                }));
-                setPaymentDate(e.target.value);
-              }}
-              fullWidth
-              margin="normal"
-              error={!!validationErrors.paymentDate}
-              helperText={validationErrors.paymentDate}
-              required
-            />
-            <TextField
-              label="Payment Details"
-              select
-              value={paymentDetails}
-              onChange={(e) => setPaymentDetails(e.target.value)} // Cập nhật paymentDetails
-              fullWidth
-              margin="normal"
-              disabled // Thêm disabled để không cho phép thay đổi trực tiếp trong dialog
-            >
-              <MenuItem value="Paid full">Paid full</MenuItem>
-              <MenuItem value="Make deposit 50%">Make deposit 50%</MenuItem>
-            </TextField>
-            <Button 
-              type="submit"
-              variant="contained" 
-              color="primary"
-              onClick={(e) => {
-                console.log('Submit button clicked'); // Debug log 7
-              }}
-            >
-              Create Payment
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Thêm Dialog cho danh sách thanh toán */}
-      <Dialog 
-        open={remainingPaymentDialog} 
-        onClose={() => setRemainingPaymentDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        onEnter={() => {
-          console.log('Dialog opened');
-          console.log('Current unpaidDeposits:', unpaidDeposits);
-        }}
-      >
-        <DialogTitle>Process Remaining Payment</DialogTitle>
-        <DialogContent>
-          {isLoadingDeposits ? (
-            <CircularProgress />
-          ) : (
-            <TextField
-              select
-              label="Select Order"
-              fullWidth
-              margin="normal"
-              value={selectedOrderForPayment?.orderId || ''}
-              onChange={(e) => {
-                const order = unpaidDeposits.find(o => o.orderId === e.target.value);
-                setSelectedOrderForPayment(order);
-              }}
-            >
-              {unpaidDeposits.map((order) => (
-                <MenuItem key={order.orderId} value={order.orderId}>
-                  Order #{order.orderId} - {order.guestName}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
-
-          {selectedOrderForPayment && (
-            <>
-              <TextField
-                label="Customer"
-                value={selectedOrderForPayment.guestName}
-                fullWidth
-                margin="normal"
-                disabled
-              />
-              <TextField
-                label="Remaining Amount"
-                value={(selectedOrderForPayment.totalPrice - selectedOrderForPayment.deposit).toFixed(2)}
-                fullWidth
-                margin="normal"
-                disabled
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                }}
-              />
-              <TextField
-                select
-                label="Payment Method"
-                value={method}
-                onChange={(e) => setMethod(e.target.value)}
-                fullWidth
-                margin="normal"
-              >
-                <MenuItem value="Cash">Cash</MenuItem>
-                <MenuItem value="Banking">Banking Payment</MenuItem>
-                <MenuItem value="Paypal">Visa Card</MenuItem>
-              </TextField>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRemainingPaymentDialog(false)}>Cancel</Button>
-          <Button 
-            onClick={() => handleCreatePayment(selectedOrderForPayment)}
-            variant="contained" 
-            color="primary"
-            disabled={!selectedOrderForPayment}
-          >
-            Process Payment
-          </Button>
-        </DialogActions>
-      </Dialog>
-
     </div>
   );
 };

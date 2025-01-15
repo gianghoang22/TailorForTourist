@@ -88,7 +88,7 @@ const ProductPage = () => {
   const fetchAllProducts = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("https://localhost:7194/api/Product/products/custom-false");
+      const response = await axios.get("https://vesttour.xyz/api/Product/products/custom-false");
       setProducts(response.data);
       setLoading(false);
     } catch (err) {
@@ -118,7 +118,7 @@ const ProductPage = () => {
     setError(null);
     try {
       const response = await axios.get(
-        `https://localhost:7194/api/Product/category-iscustomfalse/${categoryId}`
+        `https://vesttour.xyz/api/Product/category-iscustomfalse/${categoryId}`
       );
       setProducts(response.data);
       setLoading(false);

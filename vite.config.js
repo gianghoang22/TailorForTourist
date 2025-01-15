@@ -13,7 +13,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://localhost:7194',
+        target: 'https://vesttour.xyz',
         changeOrigin: true,
         secure: false,
       },

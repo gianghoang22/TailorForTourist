@@ -124,10 +124,10 @@ const optionTypeImages = {
   No: jk_breastPocket_no,
   Yes: jk_breastPocket_yes,
   "Patched x2": jk_breastPocket_patched,
-  "slim fit": pants_fit_slim,
-  "regular fit": pants_fit_regular,
-  "no pleats": pants_pleats_no,
-  pleated: pants_pleats_pleated,
+  "Pants Slim fit": pants_fit_slim,
+  "Pants Regular fit": pants_fit_regular,
+  "No pleats": pants_pleats_no,
+  Pleated: pants_pleats_pleated,
   "Double pleats": pants_pleats_double,
   Centered: pants_fastent_center,
   Displaced: pants_fastent_displaced,
@@ -170,8 +170,8 @@ const CustomStyle = () => {
     const fetchStylesAndOptions = async () => {
       try {
         const [stylesResponse, optionsResponse] = await Promise.all([
-          axios.get("https://localhost:7194/api/Style"),
-          axios.get("https://localhost:7194/api/StyleOption"),
+          axios.get("https://vesttour.xyz/api/Style"),
+          axios.get("https://vesttour.xyz/api/StyleOption"),
         ]);
 
         setStyles(stylesResponse.data);
@@ -251,7 +251,7 @@ const CustomStyle = () => {
     // Cập nhật selectedImages
     setSelectedImages(prev => ({
       ...prev,
-      [styleOption.optionType]: optionTypeImages[styleOption.optionValue]
+      [styleOption.optionType]: optionTypeImages[styleOption.optionValue] ? optionTypeImages[styleOption.optionValue] : styleOption.optionValue
     }));
 
     // Thêm style vào cart
@@ -365,13 +365,13 @@ const CustomStyle = () => {
                                   handleOptionValueClick(styleOption)
                                 }
                               >
-                                <img
-                                  src={
-                                    optionTypeImages[styleOption.optionValue]
-                                  }
-                                  alt={styleOption.optionValue}
-                                  className="option-value-image"
-                                />
+                                {optionTypeImages[styleOption.optionValue] ? (
+                                  <img
+                                    src={optionTypeImages[styleOption.optionValue]}
+                                    alt={styleOption.optionValue}
+                                    className="option-value-image"
+                                  />
+                                ) : null}
                                 <span>{styleOption.optionValue}</span>
                               </li>
                             )
