@@ -92,58 +92,83 @@ import wc_vestYes from "../../../assets/img/iconCustom/wc-vestYes.png";
 
 // Map optionType to their corresponding images
 const optionTypeImages = {
+  // Jacket Style
   "single-breasted 1 button": jk_style1B1B,
   "single-breasted 2 button": jk_style1B2B,
   "single-breasted 3 button": jk_style1B3B,
   "double-breasted 2 button": jk_style2B2B,
   "double-breasted 4 button": jk_style2B4B,
   "double-breasted 6 button": jk_style2B6B,
-  mandarin: jk_styleM,
+  "mandarin": jk_styleM,
+
+  // Jacket Fit
   "Slim fit": jk_fit_slim,
-  Regular: jk_fit_regular,
-  Norch: jk_lapels_notch,
-  Peak: jk_lapels_peak,
-  Shawl: jk_lapels_shawl,
-  Standard: jk_lapelw_medium,
-  Slim: jk_lapelw_narrow,
-  Wide: jk_lapelw_wide,
+  "Regular": jk_fit_regular,
+  "Pants Slim fit": pants_fit_slim,    // Thêm mapping cho pants fit
+  "Pants Regular fit": pants_fit_regular,
+
+  // Jacket Lapels  
+  "Norch": jk_lapels_notch,
+  "Peak": jk_lapels_peak,
+  "Shawl": jk_lapels_shawl,
+
+  // Lapel Width
+  "Standard": jk_lapelw_medium,
+  "Slim": jk_lapelw_narrow,
+  "Wide": jk_lapelw_wide,
+
+  // Pocket Style
   "No pocket": jk_pocket_nopk,
   "With Flap": jk_pocket_flap,
   "Double-Welted": jk_pocket_welted,
-  Patched: jk_pocket_patched,
+  "Patched": jk_pocket_patched,
   "With flap x3": jk_pocket_flap,
   "Double-Welted x3": jk_pocket_welted,
-  // thieu slan
-  0: jk_sleeve_Button,
-  2: jk_sleeve_Button_2,
-  3: jk_sleeve_Button_3,
-  4: jk_sleeve_Button_4,
-  Ventless: jk_backstyle_ventless,
+  "Pant Patched": p_bpk_patched,      // Thêm mapping cho pants pocket
+  "Pant Patched x2": p_bpk_2patched,
+
+  // Sleeve Buttons
+  "0": jk_sleeve_Button,
+  "2": jk_sleeve_Button_2,
+  "3": jk_sleeve_Button_3, 
+  "4": jk_sleeve_Button_4,
+
+  // Back Style
+  "Ventless": jk_backstyle_ventless,
   "Center Vent": jk_backstyle_centervent,
   "Side Vent": jk_backstyle_sideVent,
-  No: jk_breastPocket_no,
-  Yes: jk_breastPocket_yes,
-  "Patched x2": jk_breastPocket_patched,
-  "slim fit": pants_fit_slim,
-  "regular fit": pants_fit_regular,
-  "no pleats": pants_pleats_no,
-  pleated: pants_pleats_pleated,
+
+  // Breast Pocket
+  "No": jk_breastPocket_no,
+  "Yes": jk_breastPocket_yes,
+
+  // Pants Pleats
+  "No pleats": pants_pleats_no,
+  "Pleated": pants_pleats_pleated,
   "Double pleats": pants_pleats_double,
-  Centered: pants_fastent_center,
-  Displaced: pants_fastent_displaced,
+
+  // Pants Fastening
+  "Centered": pants_fastent_center,
+  "Displaced": pants_fastent_displaced,
   "No button": pants_fastent_centerNobtn,
-  "Off-centered: Buttonless": pants_fastent_centerNobtn,
-  Diagonal: p_pocket_diagonal,
-  Vertical: p_pocket_vertical,
-  Rounded: p_pocket_rounded,
+  "Off-centered: Buttonless": pants_fastent_displaceNobtn,
+
+  // Side Pockets
+  "Diagonal": p_pocket_diagonal,
+  "Vertical": p_pocket_vertical,
+  "Rounded": p_pocket_rounded,
+
+  // Back Pockets
   "No Pockets": p_bpk_no,
   "Double-Welted Pocket With Button": p_bpk_2welted,
-  Patched: p_bpk_patched,
   "Flap Pockets": p_bpk_flap,
   "Double-Welted Pocket With Button x2": p_bpk_2welted,
-  "Patched x2": p_bpk_2patched,
+
+  // Pant Cuffs
   "No pant cuffs": p_cuff_no,
   "With pant cuffs": p_cuff_yes,
+
+  // Vest/Gile
   "2 piece suit": wc_vestNo,
   "3 piece suit": wc_vestYes,
 };
@@ -170,8 +195,8 @@ const CustomStyle = () => {
     const fetchStylesAndOptions = async () => {
       try {
         const [stylesResponse, optionsResponse] = await Promise.all([
-          axios.get("https://localhost:7194/api/Style"),
-          axios.get("https://localhost:7194/api/StyleOption"),
+          axios.get("https://vesttour.xyz/api/Style"),
+          axios.get("https://vesttour.xyz/api/StyleOption"),
         ]);
 
         setStyles(stylesResponse.data);

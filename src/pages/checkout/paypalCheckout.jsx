@@ -129,9 +129,8 @@ const PayPalCheckoutButton = ({
           {selectedVoucher?.voucherCode?.substring(0, 7) === 'BIGSALE' && (
             <>
               <br />
-              <span>Discount ({selectedVoucher.description}): -${(amount * selectedVoucher.discountNumber).toFixed(2)}</span>
-              <br />
-              <span>Price after discount: ${validAmount.toFixed(2)}</span>
+              <span>Voucher applied: ({selectedVoucher.voucherCode} - {selectedVoucher.description})</span>
+              
             </>
           )}
           {validShippingFee > 0 && (
@@ -146,7 +145,7 @@ const PayPalCheckoutButton = ({
             <>
               <br />
               <span className="voucher-applied">
-                Voucher applied: {selectedVoucher.voucherCode}
+                {/* Voucher applied: {selectedVoucher.voucherCode} */}
               </span>
             </>
           )}

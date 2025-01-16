@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import './CreateAccount.scss';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const CreateAccount = () => {
   const [formData, setFormData] = useState({
@@ -14,9 +16,6 @@ const CreateAccount = () => {
     roleId: 3,
     phone: ''
   });
-
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
 
   const [errors, setErrors] = useState({
     name: '',
@@ -44,43 +43,75 @@ const CreateAccount = () => {
     };
 
     // Validate name
-    if (formData.name.length < 2) {
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+      isValid = false;
+    } else if (formData.name.trim().length < 2) {
       newErrors.name = 'Name must be at least 2 characters';
+      isValid = false;
+    } else if (formData.name.trim().length > 50) {
+      newErrors.name = 'Name must not exceed 50 characters';
       isValid = false;
     }
 
     // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      newErrors.email = 'Invalid email address';
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
       isValid = false;
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = 'Invalid email address';
+        isValid = false;
+      } else if (formData.email.length > 100) {
+        newErrors.email = 'Email must not exceed 100 characters';
+        isValid = false;
+      }
     }
 
     // Validate password
-    if (formData.password.length < 6) {
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+      isValid = false;
+    } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
+      isValid = false;
+    } else if (formData.password.length > 50) {
+      newErrors.password = 'Password must not exceed 50 characters';
+      isValid = false;
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
       isValid = false;
     }
 
     // Validate date of birth
-    const today = new Date();
-    const dobDate = new Date(formData.dob);
     if (!formData.dob) {
-      newErrors.dob = 'Please select a date of birth';
+      newErrors.dob = 'Date of birth is required';
       isValid = false;
-    } else if (dobDate > today) {
-      newErrors.dob = 'Date of birth cannot be in the future';
-      isValid = false;
+    } else {
+      const today = new Date();
+      const dobDate = new Date(formData.dob);
+      const age = today.getFullYear() - dobDate.getFullYear();
+      
+      if (dobDate > today) {
+        newErrors.dob = 'Date of birth cannot be in the future';
+        isValid = false;
+      } else if (age < 16) {
+        newErrors.dob = 'Must be at least 16 years old';
+        isValid = false;
+      } else if (age > 100) {
+        newErrors.dob = 'Invalid date of birth';
+        isValid = false;
+      }
     }
 
     // Validate phone
-    const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
-    if (!formData.phone) {
-      newErrors.phone = 'Please enter a phone number';
-      isValid = false;
-    } else if (!phoneRegex.test(formData.phone)) {
-      newErrors.phone = 'Invalid phone number format';
-      isValid = false;
+    if (formData.phone) {
+      const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
+      if (!phoneRegex.test(formData.phone)) {
+        newErrors.phone = 'Invalid Vietnamese phone number format';
+        isValid = false;
+      }
     }
 
     setErrors(newErrors);
@@ -95,9 +126,9 @@ const CreateAccount = () => {
     }
 
     try {
-      const response = await axios.post('https://localhost:7194/api/User', formData);
-      setMessage('Account created successfully!');
-      setError('');
+      const response = await axios.post('https://vesttour.xyz/api/User', formData);
+      toast.success('Account created successfully!');
+      
       // Reset form
       setFormData({
         name: '',
@@ -113,26 +144,26 @@ const CreateAccount = () => {
 
       console.log(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Error creating account');
-      setMessage('');
+      toast.error(err.response?.data?.message || 'Error creating account');
     }
   };
 
   return (
     <div className="create-account-container">
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+      
       <h2 className="title">Create New Account</h2>
-      
-      {message && (
-        <div className="notification success">
-          {message}
-        </div>
-      )}
-      
-      {error && (
-        <div className="notification error">
-          ⚠️ {error}
-        </div>
-      )}
       
       <form onSubmit={handleSubmit} className="account-form">
         <div className="form-group">
@@ -208,7 +239,6 @@ const CreateAccount = () => {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            required
             className={`input-field ${errors.phone ? 'error' : ''}`}
           />
           {errors.phone && <span className="error-message">{errors.phone}</span>}

@@ -9,9 +9,9 @@ import './Checkout.scss';
 import Address from '../../layouts/components/Address/Address.jsx';
 
 const CHECKOUT_API = {
-  confirmOrder: "https://localhost:7194/api/AddCart/confirmorder",
-  fetchCart: "https://localhost:7194/api/AddCart/mycart",
-  fetchStores: "https://localhost:7194/api/Store",
+  confirmOrder: "https://vesttour.xyz/api/AddCart/confirmorder",
+  fetchCart: "https://vesttour.xyz/api/AddCart/mycart",
+  fetchStores: "https://vesttour.xyz/api/Store",
 };
 
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
@@ -114,12 +114,12 @@ const Checkout = () => {
           if (item.isCustom) {
             try {
               const [fabricRes, liningRes] = await Promise.all([
-                axios.get(`https://localhost:7194/api/Fabrics/${item.customProduct.fabricID}`),
-                axios.get(`https://localhost:7194/api/Linings/${item.customProduct.liningID}`)
+                axios.get(`https://vesttour.xyz/api/Fabrics/${item.customProduct.fabricID}`),
+                axios.get(`https://vesttour.xyz/api/Linings/${item.customProduct.liningID}`)
               ]);
 
               const styleOptionPromises = item.customProduct.styleOptionIds.map(id =>
-                axios.get(`https://localhost:7194/api/StyleOption/${id}`)
+                axios.get(`https://vesttour.xyz/api/StyleOption/${id}`)
               );
               const styleOptionResponses = await Promise.all(styleOptionPromises);
 
@@ -170,17 +170,17 @@ const Checkout = () => {
               try {
                 // Fetch fabric details
                 const fabricRes = await axios.get(
-                  `https://localhost:7194/api/Fabrics/${item.customProduct.fabricID}`
+                  `https://vesttour.xyz/api/Fabrics/${item.customProduct.fabricID}`
                 );
 
                 // Fetch lining details
                 const liningRes = await axios.get(
-                  `https://localhost:7194/api/Linings/${item.customProduct.liningID}`
+                  `https://vesttour.xyz/api/Linings/${item.customProduct.liningID}`
                 );
 
                 // Fetch style options details
                 const styleOptionPromises = item.customProduct.pickedStyleOptions.map(option =>
-                  axios.get(`https://localhost:7194/api/StyleOption/${option.styleOptionID}`)
+                  axios.get(`https://vesttour.xyz/api/StyleOption/${option.styleOptionID}`)
                 );
                 const styleOptionResponses = await Promise.all(styleOptionPromises);
 
@@ -235,7 +235,7 @@ const Checkout = () => {
       // Only fetch user data if we have both token and userId
       if (token && userId) {
         try {
-          const response = await axios.get(`https://localhost:7194/api/User/${userId}`, {
+          const response = await axios.get(`https://vesttour.xyz/api/User/${userId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -286,7 +286,7 @@ const Checkout = () => {
   useEffect(() => {
     const fetchVouchers = async () => {
       try {
-        const response = await axios.get('https://localhost:7194/api/Voucher/valid');
+        const response = await axios.get('https://vesttour.xyz/api/Voucher/valid');
         if (response.status === 200) {
           setVouchers(response.data);
         }
@@ -335,7 +335,7 @@ const Checkout = () => {
       console.log('Shipping Fee Payload:', shippingPayload);
 
       const response = await axios.post(
-        'https://localhost:7194/api/Shipping/calculate-fee',
+        'https://vesttour.xyz/api/Shipping/calculate-fee',
         shippingPayload
       );
 
@@ -422,7 +422,7 @@ const Checkout = () => {
 
   const setOrderPaid = async (orderId) => {
     try {
-      const response = await axios.put(`https://localhost:7194/api/Orders/SetPaidTrue/${orderId}`);
+      const response = await axios.put(`https://vesttour.xyz/api/Orders/SetPaidTrue/${orderId}`);
       if (response.status === 200) {
         console.log('Order marked as paid successfully');
       } else {
@@ -436,7 +436,7 @@ const Checkout = () => {
 
   const handleCreatePayment = async (orderId, userId, method, paymentDetails, amount) => {
     try {
-      const response = await axios.post('https://localhost:7194/api/Payments', {
+      const response = await axios.post('https://vesttour.xyz/api/Payments', {
         orderId: orderId,
         userId: userId,
         method: method,
@@ -495,9 +495,7 @@ const Checkout = () => {
             errors.push('Please enter a valid email address');
         }
 
-        if (!guestPhone.trim()) {
-            errors.push('Please enter your phone number');
-        } else if (!/^\d{10}$/.test(guestPhone)) {
+        if (guestPhone.trim() && !/^\d{10}$/.test(guestPhone)) {
             errors.push('Please enter a valid phone number (10 digits)');
         }
 
@@ -671,14 +669,14 @@ const Checkout = () => {
 
                     <div className="form-group">
                       <label>
-                        Phone Number <span className="required">*</span>
+                        Phone Number {/* Removed required asterisk */}
                       </label>
                       <input
                         type="text"
-                        placeholder="Enter your phone number"
+                        placeholder="Enter your phone number (optional)"
                         value={guestPhone}
                         onChange={(e) => setGuestPhone(e.target.value)}
-                        required
+                        // Removed required attribute
                       />
                     </div>
 

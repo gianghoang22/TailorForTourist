@@ -18,7 +18,7 @@ const Fabric = () => {
   const fetchFabric = async (tag) => {
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Fabrics/tag/${tag}`
+        `https://vesttour.xyz/api/Fabrics/tag/${tag}`
       );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

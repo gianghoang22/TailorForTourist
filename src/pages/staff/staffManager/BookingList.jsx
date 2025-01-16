@@ -13,6 +13,7 @@ import {
   Box,
   Chip,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import { BookingChart } from "./DashboardCharts";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -21,7 +22,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Grid, Stack, TextField } from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
 
-const BASE_URL = "https://localhost:7194/api";
+const BASE_URL = "https://vesttour.xyz/api";
 
 const fetchStoreByStaffId = async (staffId) => {
   const response = await fetch(`${BASE_URL}/Store/GetStoreByStaff/${staffId}`);
@@ -56,7 +57,6 @@ const updateBookingStatus = async (bookingId, status) => {
 const BookingList = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [dateFilter, setDateFilter] = useState("all");
   const [customDateRange, setCustomDateRange] = useState({
     startDate: null,
@@ -123,16 +123,22 @@ const BookingList = () => {
         console.log("Retrieved userId from localStorage:", userId);
 
         if (!userId) {
-          throw new Error("User ID not found");
+          console.warn("User ID not found");
+          setLoading(false);
+          return;
         }
-        const storeData = await fetchStoreByStaffId(userId);
-        const bookingsData = await fetchBookingsByStoreId(storeData.storeId);
-        setBookings(
-          Array.isArray(bookingsData) ? bookingsData : [bookingsData]
-        );
+
+        try {
+          const storeData = await fetchStoreByStaffId(userId);
+          const bookingsData = await fetchBookingsByStoreId(storeData.storeId);
+          setBookings(Array.isArray(bookingsData) ? bookingsData : [bookingsData]);
+        } catch (err) {
+          console.error("API Error:", err);
+        }
+        
         setLoading(false);
       } catch (err) {
-        setError(err.message);
+        console.error(err);
         setLoading(false);
       }
     };
@@ -187,11 +193,16 @@ const BookingList = () => {
   const currentBookings = sortedBookings.slice(indexOfFirstBooking, indexOfLastBooking);
 
   if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>
+          Booking Management
+        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
+          <CircularProgress />
+        </Box>
+      </Box>
+    );
   }
 
   return (
@@ -366,59 +377,71 @@ const BookingList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filterBookings(currentBookings).map((booking) => (
-              <TableRow key={booking.bookingId}>
-                <TableCell>{booking.bookingId}</TableCell>
-                <TableCell>{booking.guestName}</TableCell>
-                <TableCell>{booking.guestEmail}</TableCell>
-                <TableCell>{booking.guestPhone}</TableCell>
-                <TableCell>
-                  {new Date(booking.bookingDate).toLocaleDateString()}
-                </TableCell>
-                <TableCell>{booking.time}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={booking.status}
-                    style={{
-                      backgroundColor: getStatusColor(booking.status),
-                      color: "white",
-                    }}
-                  />
-                </TableCell>
-                <TableCell>{booking.note}</TableCell>
-                {/* <TableCell>{booking.assistStaffName}</TableCell> */}
-                <TableCell>
-                  <Select
-                    size="small"
-                    value={booking.status}
-                    onChange={(e) =>
-                      handleStatusChange(booking.bookingId, e.target.value)
-                    }
-                    sx={{ minWidth: 120 }}
-                  >
-                    <MenuItem value="Pending">Pending</MenuItem>
-                    <MenuItem value="Confirmed">Confirmed</MenuItem>
-                    <MenuItem value="Cancel">Cancel</MenuItem>
-                  </Select>
+            {filterBookings(currentBookings).length > 0 ? (
+              filterBookings(currentBookings).map((booking) => (
+                <TableRow key={booking.bookingId}>
+                  <TableCell>{booking.bookingId}</TableCell>
+                  <TableCell>{booking.guestName}</TableCell>
+                  <TableCell>{booking.guestEmail}</TableCell>
+                  <TableCell>{booking.guestPhone}</TableCell>
+                  <TableCell>
+                    {new Date(booking.bookingDate).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>{booking.time}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={booking.status}
+                      style={{
+                        backgroundColor: getStatusColor(booking.status),
+                        color: "white",
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>{booking.note}</TableCell>
+                  {/* <TableCell>{booking.assistStaffName}</TableCell> */}
+                  <TableCell>
+                    <Select
+                      size="small"
+                      value={booking.status}
+                      onChange={(e) =>
+                        handleStatusChange(booking.bookingId, e.target.value)
+                      }
+                      sx={{ minWidth: 120 }}
+                    >
+                      <MenuItem value="Pending">Pending</MenuItem>
+                      <MenuItem value="Confirmed">Confirmed</MenuItem>
+                      <MenuItem value="Cancel">Cancel</MenuItem>
+                    </Select>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={9} align="center">
+                  <Typography variant="subtitle1" sx={{ py: 3 }}>
+                    No bookings found
+                  </Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>
-      {/* Pagination Controls */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-        {Array.from({ length: Math.ceil(sortedBookings.length / bookingsPerPage) }, (_, index) => (
-          <Button
-            key={index}
-            onClick={() => setCurrentPage(index + 1)}
-            variant={currentPage === index + 1 ? 'contained' : 'outlined'}
-            sx={{ mx: 0.5 }}
-          >
-            {index + 1}
-          </Button>
-        ))}
-      </Box>
+      
+      {sortedBookings.length > 0 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+          {Array.from({ length: Math.ceil(sortedBookings.length / bookingsPerPage) }, (_, index) => (
+            <Button
+              key={index}
+              onClick={() => setCurrentPage(index + 1)}
+              variant={currentPage === index + 1 ? 'contained' : 'outlined'}
+              sx={{ mx: 0.5 }}
+            >
+              {index + 1}
+            </Button>
+          ))}
+        </Box>
+      )}
     </div>
   );
 };

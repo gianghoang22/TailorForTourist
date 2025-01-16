@@ -39,7 +39,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const BASE_URL = "https://localhost:7194/api";
+const BASE_URL = "https://vesttour.xyz/api";
 
 const fetchStoreByStaffId = async (staffId) => {
   const response = await fetch(`${BASE_URL}/Store/GetStoreByStaff/${staffId}`);

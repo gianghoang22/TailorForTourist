@@ -50,8 +50,10 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import BankingPayment from '../../../assets/img/elements/bankingPayment.jpg'
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
+const BASE_URL = "https://vesttour.xyz/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
 
 const fetchStoreByStaffId = async (staffId) => {
@@ -183,18 +185,18 @@ const getErrorMessage = (error) => {
   }
 
   // Xử lý các status code khác
-  switch (status) {
-    case 401:
-      return 'Your session has expired. Please login again';
-    case 403:
-      return 'You do not have permission to perform this action';
-    case 404:
-      return 'The requested information could not be found';
-    case 500:
-      return 'Something went wrong. Please try again later';
-    default:
-      return 'An error occurred. Please try again';
-  }
+  // switch (status) {
+  //   case 401:
+  //     return 'Your session has expired. Please login again';
+  //   case 403:
+  //     return 'You do not have permission to perform this action';
+  //   case 404:
+  //     return 'The requested information could not be found';
+  //   case 500:
+  //     return 'Something went wrong. Please try again later';
+  //   default:
+  //     return 'An error occurred. Please try again';
+  // }
 };
 
 // Cập nhật API interceptor
@@ -204,9 +206,7 @@ api.interceptors.response.use(
     const errorMessage = getErrorMessage(error);
     
     // Set snackbar message với thông báo thân thiện
-    setSnackbarMessage(errorMessage);
-    setSnackbarSeverity('error');
-    setSnackbarOpen(true);
+    toast.error(errorMessage);
 
     // Log chi tiết lỗi cho development
     if (process.env.NODE_ENV === 'development') {
@@ -227,9 +227,6 @@ const OrderList = () => {
   const [error, setError] = useState(null);
   const [open, setOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState("info");
   const [formState, setFormState] = useState({
     id: "",
     customerName: "",
@@ -397,9 +394,7 @@ const OrderList = () => {
         setVouchers(response.data);
       } catch (error) {
         console.error('Error fetching vouchers:', error);
-        setSnackbarMessage('Error loading vouchers');
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
+        toast.error('Error loading vouchers');
       }
     };
 
@@ -413,9 +408,7 @@ const OrderList = () => {
         setProducts(response.data);
       } catch (error) {
         console.error('Error fetching products:', error);
-        setSnackbarMessage('Error loading products');
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
+        toast.error('Error loading products');
       }
     };
     fetchProducts();
@@ -446,9 +439,7 @@ const OrderList = () => {
         setFabrics([]);
         setLinings([]);
         setStyleOptions([]);
-        setSnackbarMessage('Error loading custom data');
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
+        toast.error('Error loading custom data');
       }
     };
   
@@ -489,9 +480,7 @@ const OrderList = () => {
         setUsers(filteredUsers);
       } catch (error) {
         console.error('Error searching users:', error);
-        setSnackbarMessage('Error searching users');
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
+        toast.error('Error searching users');
       }
     }, 500),
     []
@@ -522,22 +511,29 @@ const OrderList = () => {
         console.log("Retrieved userId from localStorage:", userId);
 
         if (!userId) {
-          throw new Error("User ID not found");
+          console.warn("User ID not found");
+          setLoading(false);
+          return;
         }
-        const storeData = await fetchStoreByStaffId(userId);
-        const ordersData = await fetchOrdersByStoreId(storeData.storeId);
-        setOrders(
-          Array.isArray(ordersData) ? ordersData : [ordersData]
-        );
+
+        try {
+          const storeData = await fetchStoreByStaffId(userId);
+          const ordersData = await fetchOrdersByStoreId(storeData.storeId);
+          setOrders(Array.isArray(ordersData) ? ordersData : [ordersData]);
+        } catch (err) {
+          console.error("API Error:", err);
+          // Just log the error, don't set error state
+        }
+        
         setLoading(false);
       } catch (err) {
-        setError(err.message);
+        console.error(err);
         setLoading(false);
       }
     };
 
     fetchOrders();
-  }, [refreshData]); // Thêm refreshData vào dependencies
+  }, [refreshData]);
 
   const fetchUnpaidOrders = async () => {
     try {
@@ -562,15 +558,12 @@ const OrderList = () => {
     try {
       if (isEditMode) {
         await api.put(`/Orders/${formState.id}`, formState);
-        setSnackbarMessage("Order updated successfully");
-        setSnackbarSeverity("success");
+        toast.success("Order updated successfully");
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      setSnackbarMessage("Failed to update order");
-      setSnackbarSeverity("error");
+      toast.error("Failed to update order");
     }
-    setSnackbarOpen(true);
   };
 
   const handleEdit = (order) => {
@@ -602,17 +595,8 @@ const OrderList = () => {
         setDetailsOpen(true);
     } catch (error) {
         console.error("Error fetching order details:", error);
-        setSnackbarMessage("Failed to fetch order details");
-        setSnackbarSeverity("error");
-        setSnackbarOpen(true);
+        toast.error("Failed to fetch order details");
     }
-  };
-
-  const handleSnackbarClose = (event, reason) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setSnackbarOpen(false);
   };
 
   const handleCreateOrder = async () => {
@@ -700,14 +684,21 @@ const OrderList = () => {
       const response = await api.post('/Orders/staffcreateorder', orderPayload);
       const orderId = response.data.orderId;
       
-      setCreatedOrderId(orderId);
-      localStorage.setItem('orderId', orderId);
-      await fetchOrderDetails(orderId);
+      // Thêm log để kiểm tra
+      console.log('New order created with ID:', orderId);
+      
+      // Đảm bảo orderId là giá trị hợp lệ trước khi lưu
+      if (orderId) {
+        setCreatedOrderId(orderId);
+        localStorage.setItem('orderId', orderId);
+        await fetchOrderDetails(orderId);
+      } else {
+        throw new Error('Invalid order ID received from server');
+      }
       
       setAmount(depositAmount);
       setOpenPaymentDialog(true);
-      setSnackbarMessage('Order created successfully');
-      setSnackbarSeverity('success');
+      toast.success('Order created successfully');
       setOpen(false);
 
       // Trigger data refresh
@@ -715,11 +706,9 @@ const OrderList = () => {
 
     } catch (error) {
       console.error('Error:', error);
-      setSnackbarMessage(error.message || 'Failed to create order');
-      setSnackbarSeverity('error');
+      toast.error(error.message || 'Failed to create order');
     } finally {
       setIsCreatingOrder(false);
-      setSnackbarOpen(true);
     }
   };
 
@@ -807,7 +796,7 @@ const OrderList = () => {
       console.log('Shipping Fee Payload:', shippingPayload);
 
       const response = await axios.post(
-        'https://localhost:7194/api/Shipping/calculate-fee',
+        'https://vesttour.xyz/api/Shipping/calculate-fee',
         shippingPayload
       );
 
@@ -891,9 +880,7 @@ const OrderList = () => {
     } catch (error) {
       console.error('Error adding product:', error.message); // Log lỗi ra console
       // Có thể hiển thị thông báo lỗi cho người dùng nếu cần
-      setSnackbarMessage(error.message);
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      toast.error(error.message);
     }
   };
 
@@ -988,15 +975,10 @@ const OrderList = () => {
       setOpenCustomDialog(false);
 
       // Show success message
-      setSnackbarMessage('Custom product added successfully');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
 
     } catch (error) {
       console.error('Error adding custom product:', error);
-      setSnackbarMessage(error.message);
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      toast.error(error.message);
     }
   };
 
@@ -1010,9 +992,7 @@ const OrderList = () => {
         console.log('Active Stores fetched:', activeStores);
       } catch (error) {
         console.error('Error fetching stores:', error);
-        setSnackbarMessage('Error loading stores');
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
+        toast.error('Error loading stores');
       }
     };
 
@@ -1089,7 +1069,7 @@ const OrderList = () => {
 
       // Gọi API với async/await
       const response = await axios.post(
-        'https://localhost:7194/api/Payments', 
+        'https://vesttour.xyz/api/Payments', 
         paymentPayload,
         {
           headers: {
@@ -1104,7 +1084,7 @@ const OrderList = () => {
       if (response.data) {
         // Cập nhật trạng thái paid của order
         await axios.put(
-          `https://localhost:7194/api/Orders/SetPaidTrue/${createdOrderId}`,
+          `https://vesttour.xyz/api/Orders/SetPaidTrue/${createdOrderId}`,
           null,
           {
             headers: {
@@ -1118,16 +1098,12 @@ const OrderList = () => {
         setRefreshData(prev => !prev);
 
         setOpenPaymentDialog(false);
-        setSnackbarMessage('Payment created successfully');
-        setSnackbarSeverity('success');
-        setSnackbarOpen(true);
+        toast.success('Payment created successfully');
         setRefreshData(prev => !prev);
       }
     } catch (error) {
       console.error('Payment Error:', error); // Debug log 5
-      setSnackbarMessage(error.response?.data?.message || 'Failed to create payment');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      toast.error(error.response?.data?.message || 'Failed to create payment');
     }
   };
 
@@ -1138,22 +1114,34 @@ const OrderList = () => {
 
   const fetchOrderDetails = async (orderId) => {
     try {
-        const response = await api.get(`/Orders/${orderId}`);
-        console.log('Order Details Response:', response.data); // Kiểm tra phản hồi
-        const orderData = response.data;
+      // Validate orderId
+      if (!orderId || isNaN(orderId)) {
+        throw new Error('Invalid order ID');
+      }
 
-        // Kiểm tra xem userId có tồn tại không
-        if (orderData.userID) {
-            setUserId(orderData.userID); // Lưu userId
-        } else {
-            console.error('userId not found in order data');
-        }
+      const response = await api.get(`/Orders/${orderId}`);
+      console.log('Order Details Response:', response.data);
+      
+      if (!response.data) {
+        throw new Error('Order not found');
+      }
 
-        // Calculate total amount including shipping fee
-        const totalAmount = orderData.totalPrice + (orderData.shippingFee || 0);
-        setAmount(totalAmount);
+      const orderData = response.data;
+
+      if (orderData.userID) {
+        setUserId(orderData.userID);
+      } else {
+        toast.error('userId not found in order data');
+      }
+
+      const totalAmount = orderData.totalPrice + (orderData.shippingFee || 0);
+      setAmount(totalAmount);
     } catch (error) {
-        console.error('Error fetching order details:', error);
+      console.error('Error fetching order details:', error);
+      toast.error('Failed to fetch order details');
+      
+      // Clear invalid orderId from localStorage
+      localStorage.removeItem('orderId');
     }
   };
 
@@ -1294,9 +1282,7 @@ const OrderList = () => {
       setUnpaidDeposits(depositsNeededPayment);
     } catch (error) {
       console.error('Error fetching unpaid deposits:', error);
-      setSnackbarMessage('Error loading unpaid deposits');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      toast.error('Error loading unpaid deposits');
     } finally {
       setIsLoadingDeposits(false);
     }
@@ -1343,35 +1329,22 @@ const OrderList = () => {
         console.error('Error updating ship status:', error);
       }
 
-      // Cập nhật state orders để thay đổi balancePayment thành 0
-      setOrders(prevOrders => 
-        prevOrders.map(o => 
-          o.orderId === order.orderId 
-            ? { ...o, balancePayment: 0, paid: true }
-            : o
-        )
-      );
-
-      // Trigger data refresh
+      // Refresh data and states
       setRefreshData(prev => !prev);
-
-      // Refresh danh sách payments
       await fetchPayments();
-      
-      // Đóng dialog
+      await fetchUnpaidDeposits(); // Refresh unpaid deposits list
+      setSelectedOrderForPayment(null); // Reset selected order
+
+      // Show success message
+      toast.success('Payment processed successfully');
+
+      // Close dialogs
       setRemainingPaymentDialog(false);
       setPaymentListDialog(false);
 
-      // Hiển thị thông báo thành công
-      setSnackbarMessage('Payment processed successfully');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
-
     } catch (error) {
       console.error('Error creating payment:', error);
-      setSnackbarMessage('Failed to process payment');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      toast.error('Failed to process payment');
     }
   };
 
@@ -1470,9 +1443,7 @@ const OrderList = () => {
 
       // Validate voucher status
       if (newValue.status !== "OnGoing") {
-        setSnackbarMessage('This voucher is no longer valid');
-        setSnackbarSeverity('warning');
-        setSnackbarOpen(true);
+        toast.warning('This voucher is no longer valid');
         return;
       }
 
@@ -1491,15 +1462,11 @@ const OrderList = () => {
         }));
       }
 
-      setSnackbarMessage('Voucher applied successfully');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
+      toast.success('Voucher applied successfully');
 
     } catch (error) {
       console.error('Error applying voucher:', error);
-      setSnackbarMessage('Unable to apply voucher');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      toast.error('Unable to apply voucher');
     }
   };
 
@@ -1519,11 +1486,16 @@ const OrderList = () => {
     
     // Reset shipping fee và address khi chuyển sang pick up
     if (newMethod === 'Pick up') {
+      // Check if current voucher is FREESHIP
+      const currentVoucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
+      const shouldClearVoucher = currentVoucher?.voucherCode?.includes('FREESHIP');
+
       setCreateOrderForm(prev => ({
         ...prev,
         deliveryMethod: newMethod,
         shippingFee: 0, // Reset shipping fee về 0
         guestAddress: '', // Xóa địa chỉ
+        voucherId: shouldClearVoucher ? null : prev.voucherId // Clear FREESHIP voucher if present
       }));
       setOriginalShippingFee(0); // Reset original shipping fee
       setResetAddress(true); // Reset address component
@@ -1554,11 +1526,50 @@ const OrderList = () => {
     }
   }, [open]);
 
-  if (loading) return <CircularProgress />;
-  if (error) return <Typography color="error">{error}</Typography>;
+  // Modify the remaining payment dialog to refresh on open
+  const handleOpenRemainingPaymentDialog = async () => {
+    console.log('Opening payment dialog');
+    setIsLoadingDeposits(true);
+    try {
+      await fetchUnpaidDeposits();
+      setRemainingPaymentDialog(true);
+    } catch (error) {
+      console.error('Error loading unpaid deposits:', error);
+      toast.error('Error loading unpaid deposits');
+    } finally {
+      setIsLoadingDeposits(false);
+    }
+  };
+
+  // Replace loading and error checks with just loading
+  if (loading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>
+          Order Management
+        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
+          <CircularProgress />
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+
       <Typography variant="h4" sx={{ mb: 2 }}>
         Order Management
       </Typography>
@@ -1736,11 +1747,7 @@ const OrderList = () => {
       <StyledButton
         variant="contained"
         startIcon={<Payment />}
-        onClick={() => {
-          console.log('Opening payment dialog');
-          fetchUnpaidDeposits(); // Gọi trực tiếp khi click button
-          setRemainingPaymentDialog(true);
-        }}
+        onClick={handleOpenRemainingPaymentDialog}
         sx={{ mb: 2, ml: 2 }}
       >
         Process Payment
@@ -1762,65 +1769,77 @@ const OrderList = () => {
             </TableRow>
           </StyledTableHead>
           <TableBody>
-            {filterOrders(currentOrders).map((order) => (
-              <TableRow key={order.orderId} hover>
-                <TableCell>{order.orderId}</TableCell>
-                <TableCell>{order.guestName}</TableCell>
-                <TableCell>{order.status || 'Pending'}</TableCell>
-                <TableCell>
-                  {payments[order.orderId]?.method}
-                </TableCell>
-                <TableCell>{payments[order.orderId]?.paymentDetails}</TableCell>
-                <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
-                <TableCell>{order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}$</TableCell>
-                <TableCell>
-                  {order.balancePayment ? (
-                    <Typography
-                      color={order.balancePayment > 0 ? "error" : "success"}
-                      fontWeight="bold"
-                    >
-                      ${order.balancePayment.toFixed(2)}
-                    </Typography>
-                  ) : (
-                    "$0.00"
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Tooltip title="View Details">
-                    <IconButton onClick={() => handleViewDetails(order.orderId)} sx={{ color: "primary.main" }}>
-                      <Visibility />
-                    </IconButton>
-                  </Tooltip>
-                  {/* {order.balancePayment > 0 && (
-                    <Tooltip title="Process Payment">
-                      <IconButton 
-                        onClick={() => handleCreatePayment(order)}
-                        color="primary"
+            {filterOrders(currentOrders).length > 0 ? (
+              filterOrders(currentOrders).map((order) => (
+                <TableRow key={order.orderId} hover>
+                  <TableCell>{order.orderId}</TableCell>
+                  <TableCell>{order.guestName}</TableCell>
+                  <TableCell>{order.status || 'Pending'}</TableCell>
+                  <TableCell>
+                    {payments[order.orderId]?.method}
+                  </TableCell>
+                  <TableCell>{payments[order.orderId]?.paymentDetails}</TableCell>
+                  <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
+                  <TableCell>{order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}$</TableCell>
+                  <TableCell>
+                    {order.balancePayment ? (
+                      <Typography
+                        color={order.balancePayment > 0 ? "error" : "success"}
+                        fontWeight="bold"
                       >
-                        <Payment />
+                        ${order.balancePayment.toFixed(2)}
+                      </Typography>
+                    ) : (
+                      "$0.00"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title="View Details">
+                      <IconButton onClick={() => handleViewDetails(order.orderId)} sx={{ color: "primary.main" }}>
+                        <Visibility />
                       </IconButton>
                     </Tooltip>
-                  )} */}
+                    {/* {order.balancePayment > 0 && (
+                      <Tooltip title="Process Payment">
+                        <IconButton 
+                          onClick={() => handleCreatePayment(order)}
+                          color="primary"
+                        >
+                          <Payment />
+                        </IconButton>
+                      </Tooltip>
+                    )} */}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={9} align="center">
+                  <Typography variant="subtitle1" sx={{ py: 3 }}>
+                    No orders found
+                  </Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>
 
-      {/* Pagination Controls */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-        {Array.from({ length: Math.ceil(sortedOrders.length / ordersPerPage) }, (_, index) => (
-          <Button
-            key={index}
-            onClick={() => setCurrentPage(index + 1)}
-            variant={currentPage === index + 1 ? 'contained' : 'outlined'}
-            sx={{ mx: 0.5 }}
-          >
-            {index + 1}
-          </Button>
-        ))}
-      </Box>
+      {/* Only show pagination if there are orders */}
+      {sortedOrders.length > 0 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+          {Array.from({ length: Math.ceil(sortedOrders.length / ordersPerPage) }, (_, index) => (
+            <Button
+              key={index}
+              onClick={() => setCurrentPage(index + 1)}
+              variant={currentPage === index + 1 ? 'contained' : 'outlined'}
+              sx={{ mx: 0.5 }}
+            >
+              {index + 1}
+            </Button>
+          ))}
+        </Box>
+      )}
 
       {/* Dialog for Order Details */}
       <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} maxWidth="md" fullWidth>
@@ -1882,21 +1901,6 @@ const OrderList = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-      >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbarSeverity}
-          sx={{ width: "100%" }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
 
       {/* Create Order Dialog */}
       <Dialog 
@@ -2018,42 +2022,7 @@ const OrderList = () => {
                 loadingText="Loading stores..."
                 noOptionsText="No stores found"
               /> */}
-              <Autocomplete
-                options={vouchers.filter(voucher => voucher.status === "OnGoing")}
-                getOptionLabel={(option) => 
-                  option ? `${option.voucherCode} - ${option.description} (${option.discountNumber * 100}% off)` : ''
-                }
-                value={vouchers.find(v => v.voucherId === createOrderForm.voucherId) || null}
-                onChange={handleVoucherChange}
-                freeSolo={false}
-                disableClearable={false}
-                selectOnFocus={false}
-                clearOnBlur={true}
-                handleHomeEndKeys={false}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Select Voucher"
-                    margin="normal"
-                    variant="outlined"
-                    fullWidth
-                  />
-                )}
-                renderOption={(props, option) => (
-                  <li {...props}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="body1">
-                        {option.voucherCode} ({option.discountNumber * 100}% off)
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {option.description}
-                      </Typography>
-                    </div>
-                  </li>
-                )}
-                isOptionEqualToValue={(option, value) => option.voucherId === value?.voucherId}
-                noOptionsText="No valid vouchers available"
-              />
+             
               {/* <TextField
                 label="Shipper Partner ID"
                 type="number"
@@ -2269,6 +2238,7 @@ const OrderList = () => {
                         <TableCell>Product Code</TableCell>
                         <TableCell>Type</TableCell>
                         <TableCell>Details</TableCell>
+                        <TableCell>Note</TableCell>
                         <TableCell>Quantity</TableCell>
                         <TableCell>Price</TableCell>
                         <TableCell>Total</TableCell>
@@ -2282,6 +2252,7 @@ const OrderList = () => {
                           <TableCell>{product.productCode}</TableCell>
                           <TableCell>Regular</TableCell>
                           <TableCell>{product.name}</TableCell>
+                          <TableCell>{product.note}</TableCell>
                           <TableCell>{product.quantity}</TableCell>
                           <TableCell>${product.price}</TableCell>
                           <TableCell>${product.price * product.quantity}</TableCell>
@@ -2317,6 +2288,7 @@ const OrderList = () => {
                                 )}
                               </div>
                             </TableCell>
+                            <TableCell>{product.note}</TableCell>
                             <TableCell>{product.quantity}</TableCell>
                             <TableCell>${product.price}</TableCell>
                             <TableCell>${product.price * product.quantity}</TableCell>
@@ -2409,6 +2381,7 @@ const OrderList = () => {
                 Add Custom Product
               </Button>
 
+              
               {createOrderForm.customProducts.length > 0 && (
                 <TableContainer component={Paper} sx={{ mt: 2, mb: 2 }}>
                   <Table>
@@ -2738,7 +2711,49 @@ const OrderList = () => {
                   </Grid>
                 </Paper>
               )}
-
+ <Autocomplete
+                options={vouchers.filter(voucher => {
+                  // For Pick up method, exclude FREESHIP vouchers
+                  if (createOrderForm.deliveryMethod === 'Pick up') {
+                    return voucher.status === "OnGoing" && !voucher.voucherCode.includes('FREESHIP');
+                  }
+                  // For Delivery method, show all valid vouchers
+                  return voucher.status === "OnGoing";
+                })}
+                getOptionLabel={(option) => 
+                  option ? `${option.voucherCode} - ${option.description} (${option.discountNumber * 100}% off)` : ''
+                }
+                value={vouchers.find(v => v.voucherId === createOrderForm.voucherId) || null}
+                onChange={handleVoucherChange}
+                freeSolo={false}
+                disableClearable={false}
+                selectOnFocus={false}
+                clearOnBlur={true}
+                handleHomeEndKeys={false}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Select Voucher"
+                    margin="normal"
+                    variant="outlined"
+                    fullWidth
+                  />
+                )}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <Typography variant="body1">
+                        {option.voucherCode} ({option.discountNumber * 100}% off)
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        {option.description}
+                      </Typography>
+                    </div>
+                  </li>
+                )}
+                isOptionEqualToValue={(option, value) => option.voucherId === value?.voucherId}
+                noOptionsText="No valid vouchers available"
+              />
               <Button
                 variant="contained"
                 color="primary"
@@ -2875,7 +2890,7 @@ const OrderList = () => {
             >
               {unpaidDeposits.map((order) => (
                 <MenuItem key={order.orderId} value={order.orderId}>
-                  Order #{order.orderId} - {order.guestName}
+                  Order #{order.orderId} - {order.guestName} - {order.guestEmail}
                 </MenuItem>
               ))}
             </TextField>
