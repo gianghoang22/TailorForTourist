@@ -24,10 +24,10 @@ import { styled } from "@mui/material/styles";
 import TablePagination from "@mui/material/TablePagination";
 
 const CustomStyledTableCell = styled(TableCell)(({ theme }) => ({
-  color: 'white !important',
-  fontWeight: 'bold',
-  padding: '1rem',
-  textAlign: 'left',
+  color: "white !important",
+  fontWeight: "bold",
+  padding: "1rem",
+  textAlign: "left",
   backgroundColor: theme.palette.primary.main,
 }));
 
@@ -64,14 +64,11 @@ const ShipmentList = () => {
   const [page, setPage] = useState(0);
   const rowsPerPage = 7;
 
-  // Mảng trạng thái theo thứ tự
-  const statusOrder = [
-    "Confirming",
-    "Tailoring",
-    "Shipping",
-    "Ready",
-    "Finished",
-  ];
+  // Update the statusOrder array to be an object with different flows
+  const statusFlows = {
+    "Pick up": ["Confirming", "Tailoring", "Ready", "Finished"],
+    Delivery: ["Confirming", "Tailoring", "Shipping", "Finished"],
+  };
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -100,8 +97,8 @@ const ShipmentList = () => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
@@ -110,37 +107,47 @@ const ShipmentList = () => {
     setPage(newPage);
   };
 
-  const paginatedShipments = sortedShipments.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const paginatedShipments = sortedShipments.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   const statusStyles = {
-    Tailoring: { background: "#a5b4fc", color: "#1e1b4b" },    // Soft indigo
-    Confirming: { background: "#fecdd3", color: "#881337" },   // Soft pink
-    Shipping: { background: "#fef08a", color: "#854d0e" },     // Soft yellow
-    Ready: { background: "#bfdbfe", color: "#14532d" },        // Soft green
-    Finished: { background: "#86efac", color: "#1e3a8a" },     // Soft blue
+    Tailoring: { background: "#a5b4fc", color: "#1e1b4b" }, // Soft indigo
+    Confirming: { background: "#fecdd3", color: "#881337" }, // Soft pink
+    Shipping: { background: "#fef08a", color: "#854d0e" }, // Soft yellow
+    Ready: { background: "#bfdbfe", color: "#14532d" }, // Soft green
+    Finished: { background: "#86efac", color: "#1e3a8a" }, // Soft blue
   };
 
-  const getStatusStyles = (status) => statusStyles[status] || { background: "white", color: "white" };
+  const getStatusStyles = (status) =>
+    statusStyles[status] || { background: "white", color: "white" };
 
-  // Hàm xác định trạng thái tiếp theo
-  const getNextStatus = (currentStatus) => {
-    const currentIndex = statusOrder.indexOf(currentStatus);
-    return currentIndex < statusOrder.length - 1 ? statusOrder[currentIndex + 1] : currentStatus; // Trả về trạng thái tiếp theo
+  // Update the getNextStatus function
+  const getNextStatus = (currentStatus, deliveryMethod) => {
+    const flow = statusFlows[deliveryMethod] || statusFlows["Delivery"]; // Default to Delivery flow
+    const currentIndex = flow.indexOf(currentStatus);
+    return currentIndex < flow.length - 1
+      ? flow[currentIndex + 1]
+      : currentStatus;
   };
 
-  // Hàm cập nhật trạng thái đơn hàng
-  const updateShipmentStatus = async (id, currentStatus) => {
-    const newStatus = getNextStatus(currentStatus); // Lấy trạng thái tiếp theo
-    console.log("Updating shipment status:", id, newStatus); // Ghi log thông tin
+  // Update the updateShipmentStatus function
+  const updateShipmentStatus = async (id, currentStatus, deliveryMethod) => {
+    const newStatus = getNextStatus(currentStatus, deliveryMethod);
+    console.log("Updating shipment status:", id, newStatus);
 
     try {
-      const response = await fetch(`${BASE_URL}/Orders/update-ship-status/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newStatus),
-      });
+      const response = await fetch(
+        `${BASE_URL}/Orders/update-ship-status/${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newStatus),
+        }
+      );
 
       console.log("Response status:", response.status);
       const responseData = await response.text();
@@ -153,7 +160,9 @@ const ShipmentList = () => {
       // Cập nhật trạng thái trong state
       setShipments((prevShipments) =>
         prevShipments.map((shipment) =>
-          shipment.orderId === id ? { ...shipment, shipStatus: newStatus } : shipment
+          shipment.orderId === id
+            ? { ...shipment, shipStatus: newStatus }
+            : shipment
         )
       );
     } catch (error) {
@@ -186,7 +195,9 @@ const ShipmentList = () => {
           </TableHead>
           <TableBody>
             {paginatedShipments.map((shipment) => {
-              const { background, color } = getStatusStyles(shipment.shipStatus);
+              const { background, color } = getStatusStyles(
+                shipment.shipStatus
+              );
               return (
                 <TableRow key={shipment.orderId} hover>
                   <TableCell>{shipment.orderId}</TableCell>
@@ -213,7 +224,13 @@ const ShipmentList = () => {
                   <TableCell>
                     <Tooltip title="Update Status">
                       <IconButton
-                        onClick={() => updateShipmentStatus(shipment.orderId, shipment.shipStatus)}
+                        onClick={() =>
+                          updateShipmentStatus(
+                            shipment.orderId,
+                            shipment.shipStatus,
+                            shipment.deliveryMethod
+                          )
+                        }
                         sx={{ color: "primary.main" }}
                       >
                         <Edit />
@@ -227,17 +244,20 @@ const ShipmentList = () => {
         </Table>
       </TableContainer>
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-        {Array.from({ length: Math.ceil(shipments.length / rowsPerPage) }, (_, index) => (
-          <Button
-            key={index}
-            onClick={() => setPage(index)}
-            variant={page === index ? 'contained' : 'outlined'}
-            sx={{ mx: 0.5 }}
-          >
-            {index + 1}
-          </Button>
-        ))}
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+        {Array.from(
+          { length: Math.ceil(shipments.length / rowsPerPage) },
+          (_, index) => (
+            <Button
+              key={index}
+              onClick={() => setPage(index)}
+              variant={page === index ? "contained" : "outlined"}
+              sx={{ mx: 0.5 }}
+            >
+              {index + 1}
+            </Button>
+          )
+        )}
       </Box>
     </div>
   );

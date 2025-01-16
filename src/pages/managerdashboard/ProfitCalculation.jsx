@@ -57,25 +57,49 @@ const ProfitCalculation = () => {
     const userId = localStorage.getItem("userID");
 
     try {
-      const [bookingsResponse, storeResponse] = await Promise.all([
-        fetch("https://vesttour.xyz/api/Booking", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch(`https://vesttour.xyz/api/Store/userId/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
-
-      if (!bookingsResponse.ok || !storeResponse.ok) {
-        throw new Error("Failed to fetch data");
+      if (!token || !userId) {
+        throw new Error("Authentication required");
       }
 
-      const bookingsData = await bookingsResponse.json();
-      const storeData = await storeResponse.json();
-      const storeId = storeData.storeId;
+      // Separate the API calls to handle booking errors independently
+      let bookingsData = { data: [] }; // Default empty bookings
+      try {
+        const bookingsResponse = await fetch(
+          "https://vesttour.xyz/api/Booking",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (bookingsResponse.ok) {
+          bookingsData = await bookingsResponse.json();
+        } else {
+          console.warn(
+            "Bookings API not available, continuing with empty bookings"
+          );
+        }
+      } catch (bookingError) {
+        console.warn("Failed to fetch bookings:", bookingError);
+        // Continue execution with empty bookings
+      }
 
-      console.log("Fetched bookings data:", bookingsData);
-      console.log("Fetched store data:", storeData);
+      // Continue with store data fetch
+      const storeResponse = await fetch(
+        `https://vesttour.xyz/api/Store/userId/${userId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!storeResponse.ok) {
+        throw new Error(`Store API error: ${storeResponse.status}`);
+      }
+
+      const storeData = await storeResponse.json();
+
+      if (!storeData || !storeData.storeId) {
+        throw new Error("Store ID not found");
+      }
+      const storeId = storeData.storeId;
 
       const ordersResponse = await fetch(
         `https://vesttour.xyz/api/Orders/store/${storeId}`,
@@ -85,30 +109,49 @@ const ProfitCalculation = () => {
       );
 
       if (!ordersResponse.ok) {
-        throw new Error("Failed to fetch orders");
+        throw new Error(`Orders API error: ${ordersResponse.status}`);
       }
 
       const ordersData = await ordersResponse.json();
 
-      // Fetch details for each order
+      if (!Array.isArray(ordersData)) {
+        throw new Error("Invalid orders data format");
+      }
+
       const ordersWithDetails = await Promise.all(
         ordersData.map(async (order) => {
-          const revenueData = await calculateStoreRevenue(order.orderId);
-
-          return {
-            ...order,
-            calculatedRevenue: revenueData.storeRevenue,
-            revenueShare: revenueData.suitTotal * 0.3,
-            suitTotal: revenueData.suitTotal,
-          };
+          try {
+            const revenueData = await calculateStoreRevenue(order.orderId);
+            return {
+              ...order,
+              calculatedRevenue: revenueData.storeRevenue,
+              revenueShare: revenueData.suitTotal * 0.3,
+              suitTotal: revenueData.suitTotal,
+            };
+          } catch (err) {
+            console.error(
+              `Error calculating revenue for order ${order.orderId}:`,
+              err
+            );
+            return {
+              ...order,
+              calculatedRevenue: 0,
+              revenueShare: 0,
+              suitTotal: 0,
+            };
+          }
         })
       );
 
       setOrders(ordersWithDetails);
+      // Set bookings with empty array fallback
       setBookings(Array.isArray(bookingsData.data) ? bookingsData.data : []);
+      setError(null);
     } catch (err) {
       console.error("Error fetching data:", err);
-      setError("Failed to load data");
+      setError(err.message || "Failed to load data");
+      setOrders([]);
+      setBookings([]); // Set empty bookings array on error
     } finally {
       setLoading(false);
     }

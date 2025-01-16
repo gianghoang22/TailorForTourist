@@ -126,6 +126,7 @@ const ManagerDashboard = () => {
   const [storeInfo, setStoreInfo] = useState(null);
   const userID = localStorage.getItem("userID");
   const [ordersWithSuits, setOrdersWithSuits] = useState(new Set());
+  const [processingStatusMap, setProcessingStatusMap] = useState({});
 
   const BASE_URL = "https://vesttour.xyz/api";
 
@@ -500,9 +501,7 @@ const ManagerDashboard = () => {
   };
 
   const handleProcessingSubmit = async () => {
-    const token = localStorage.getItem("token");
     setLoading(true);
-
     try {
       // First, submit the processing data
       const processingResponse = await fetch(
@@ -511,7 +510,7 @@ const ManagerDashboard = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify({
             processingId: 0,
@@ -538,7 +537,7 @@ const ManagerDashboard = () => {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify("Processing"),
         }
@@ -548,26 +547,18 @@ const ManagerDashboard = () => {
         throw new Error("Failed to update order status");
       }
 
-      // Update local state
-      setProcessingStatuses((prev) => ({
+      // Immediately update local state
+      setProcessingStatusMap((prev) => ({
         ...prev,
         [processingData.orderId]: "Not Start",
       }));
-
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.orderId === processingData.orderId
-            ? { ...order, status: "Processing" }
-            : order
-        )
-      );
 
       setProcessingDialogOpen(false);
       setError(null);
       alert("Successfully transferred!");
 
-      // Refresh the orders to ensure everything is in sync
-      await fetchOrders();
+      // Refresh orders in the background
+      fetchOrders();
     } catch (error) {
       console.error("Error processing tailor:", error);
       setError(error.message);
@@ -807,27 +798,46 @@ const ManagerDashboard = () => {
       );
       const { data } = await response.json();
 
-      // Create object mapping from orderId to status
-      const statusMap = data.reduce((acc, processing) => {
-        acc[processing.orderId] = processing.status;
-        return acc;
-      }, {});
+      // Create a new status map
+      const newStatusMap = {};
+      data.forEach((processing) => {
+        newStatusMap[processing.orderId] = processing.status;
+      });
 
-      setProcessingStatuses(statusMap);
+      // Only update state if there are actual changes
+      setProcessingStatusMap((prevMap) => {
+        const hasChanges =
+          JSON.stringify(prevMap) !== JSON.stringify(newStatusMap);
+        return hasChanges ? newStatusMap : prevMap;
+      });
     } catch (error) {
       console.error("Error fetching processing statuses:", error);
     }
   };
 
-  // Add this useEffect to handle real-time updates
+  // Add this new effect to handle initial load and websocket connection
   useEffect(() => {
-    // Set up polling interval for status updates
-    const intervalId = setInterval(() => {
-      fetchProcessingStatuses();
-    }, 30000); // Poll every 30 seconds
+    // Initial fetch
+    fetchProcessingStatuses();
 
-    // Cleanup on component unmount
-    return () => clearInterval(intervalId);
+    // Set up WebSocket connection
+    const ws = new WebSocket("wss://vesttour.xyz/processingStatusHub");
+
+    ws.onmessage = (event) => {
+      const { orderId, status } = JSON.parse(event.data);
+      setProcessingStatusMap((prev) => ({
+        ...prev,
+        [orderId]: status,
+      }));
+    };
+
+    // Polling fallback
+    const pollInterval = setInterval(fetchProcessingStatuses, 30000);
+
+    return () => {
+      ws.close();
+      clearInterval(pollInterval);
+    };
   }, []);
 
   // Add this validation function
@@ -836,6 +846,32 @@ const ManagerDashboard = () => {
     today.setHours(0, 0, 0, 0);
     const dateToCheck = new Date(selectedDate);
     return dateToCheck >= today;
+  };
+
+  const ProcessingStatusCell = ({ orderId }) => {
+    const status = processingStatusMap[orderId];
+
+    return (
+      <TableCell>
+        <Tooltip title={`Processing Status: ${status || "Not in Action"}`}>
+          <span
+            style={{
+              backgroundColor: getProcessingStatusColor(status),
+              color: "white",
+              padding: "4px 8px",
+              borderRadius: "5px",
+              fontSize: "12px",
+              cursor: "help",
+              display: "inline-block",
+              minWidth: "80px",
+              textAlign: "center",
+            }}
+          >
+            {status || "Not in Action"}
+          </span>
+        </Tooltip>
+      </TableCell>
+    );
   };
 
   return (
@@ -1079,31 +1115,11 @@ const ManagerDashboard = () => {
                               </div>
                             )}
                           </TableCell>
-                          <TableCell>
-                            <Tooltip
-                              title={`Processing Status: ${processingStatuses[order.orderId] || "Not in Action"}`}
-                            >
-                              <span
-                                style={{
-                                  backgroundColor: getProcessingStatusColor(
-                                    processingStatuses[order.orderId]
-                                  ),
-                                  color: "white",
-                                  padding: "4px 8px",
-                                  borderRadius: "5px",
-                                  fontSize: "12px",
-                                  cursor: "help",
-                                }}
-                              >
-                                {processingStatuses[order.orderId] ||
-                                  "Not in Action"}
-                              </span>
-                            </Tooltip>
-                          </TableCell>
+                          <ProcessingStatusCell orderId={order.orderId} />
                           <TableCell>
                             <Tooltip
                               title={
-                                processingStatuses[order.orderId]
+                                processingStatusMap[order.orderId]
                                   ? "This order has already been processed"
                                   : ordersWithSuits.has(order.orderId)
                                     ? "Process tailor order"
@@ -1117,7 +1133,7 @@ const ManagerDashboard = () => {
                                   onClick={() => handleProcessTailor(order)}
                                   disabled={
                                     !ordersWithSuits.has(order.orderId) ||
-                                    processingStatuses[order.orderId] !==
+                                    processingStatusMap[order.orderId] !==
                                       undefined
                                   }
                                 >

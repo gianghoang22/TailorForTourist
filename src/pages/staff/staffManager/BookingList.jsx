@@ -41,17 +41,21 @@ const fetchBookingsByStoreId = async (storeId) => {
 };
 
 const updateBookingStatus = async (bookingId, status) => {
-  const response = await fetch(`${BASE_URL}/Booking/status/${bookingId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(status),
-  });
-  if (!response.ok) {
-    throw new Error("Failed to update booking status");
+  try {
+    const response = await fetch(`${BASE_URL}/Booking/status/${bookingId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(status),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to update booking status");
+    }
+    return response.json();
+  } catch (error) {
+    throw new Error(`Error updating status: ${error.message}`);
   }
-  return response.json();
 };
 
 const BookingList = () => {
@@ -64,6 +68,7 @@ const BookingList = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const bookingsPerPage = 7;
+  const [updatingBookingId, setUpdatingBookingId] = useState(null);
 
   const handleDateFilterChange = (event) => {
     setDateFilter(event.target.value);
@@ -148,7 +153,8 @@ const BookingList = () => {
 
   const handleStatusChange = async (bookingId, newStatus) => {
     try {
-      await updateBookingStatus(bookingId, newStatus);
+      setUpdatingBookingId(bookingId);
+
       setBookings((prevBookings) =>
         prevBookings.map((booking) =>
           booking.bookingId === bookingId
@@ -156,8 +162,19 @@ const BookingList = () => {
             : booking
         )
       );
+
+      await updateBookingStatus(bookingId, newStatus);
     } catch (err) {
+      setBookings((prevBookings) =>
+        prevBookings.map((booking) =>
+          booking.bookingId === bookingId
+            ? { ...booking, status: booking.status }
+            : booking
+        )
+      );
       setError(err.message);
+    } finally {
+      setUpdatingBookingId(null);
     }
   };
 
@@ -187,10 +204,20 @@ const BookingList = () => {
     return Object.values(bookingCountByDate);
   };
 
-  const sortedBookings = [...bookings].sort((a, b) => b.bookingId - a.bookingId);
+  const sortedBookings = [...bookings].sort(
+    (a, b) => b.bookingId - a.bookingId
+  );
   const indexOfLastBooking = currentPage * bookingsPerPage;
   const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
-  const currentBookings = sortedBookings.slice(indexOfFirstBooking, indexOfLastBooking);
+  const currentBookings = sortedBookings.slice(
+    indexOfFirstBooking,
+    indexOfLastBooking
+  );
+
+  // Add helper function to check if status is immutable
+  const isStatusImmutable = (status) => {
+    return ["Confirmed", "Cancel"].includes(status);
+  };
 
   if (loading) {
     return (
@@ -358,7 +385,6 @@ const BookingList = () => {
       </Paper>
 
       {/* Add Chart Section */}
-      
 
       <TableContainer component={Paper}>
         <Table>
@@ -377,29 +403,29 @@ const BookingList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filterBookings(currentBookings).length > 0 ? (
-              filterBookings(currentBookings).map((booking) => (
-                <TableRow key={booking.bookingId}>
-                  <TableCell>{booking.bookingId}</TableCell>
-                  <TableCell>{booking.guestName}</TableCell>
-                  <TableCell>{booking.guestEmail}</TableCell>
-                  <TableCell>{booking.guestPhone}</TableCell>
-                  <TableCell>
-                    {new Date(booking.bookingDate).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>{booking.time}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={booking.status}
-                      style={{
-                        backgroundColor: getStatusColor(booking.status),
-                        color: "white",
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>{booking.note}</TableCell>
-                  {/* <TableCell>{booking.assistStaffName}</TableCell> */}
-                  <TableCell>
+            {filterBookings(currentBookings).map((booking) => (
+              <TableRow key={booking.bookingId}>
+                <TableCell>{booking.bookingId}</TableCell>
+                <TableCell>{booking.guestName}</TableCell>
+                <TableCell>{booking.guestEmail}</TableCell>
+                <TableCell>{booking.guestPhone}</TableCell>
+                <TableCell>
+                  {new Date(booking.bookingDate).toLocaleDateString()}
+                </TableCell>
+                <TableCell>{booking.time}</TableCell>
+                <TableCell>
+                  <Chip
+                    label={booking.status}
+                    style={{
+                      backgroundColor: getStatusColor(booking.status),
+                      color: "white",
+                    }}
+                  />
+                </TableCell>
+                <TableCell>{booking.note}</TableCell>
+                {/* <TableCell>{booking.assistStaffName}</TableCell> */}
+                <TableCell>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Select
                       size="small"
                       value={booking.status}
@@ -407,41 +433,57 @@ const BookingList = () => {
                         handleStatusChange(booking.bookingId, e.target.value)
                       }
                       sx={{ minWidth: 120 }}
+                      disabled={
+                        updatingBookingId === booking.bookingId ||
+                        isStatusImmutable(booking.status)
+                      }
                     >
-                      <MenuItem value="Pending">Pending</MenuItem>
-                      <MenuItem value="Confirmed">Confirmed</MenuItem>
-                      <MenuItem value="Cancel">Cancel</MenuItem>
+                      <MenuItem value="Pending">
+                        Pending{" "}
+                        {updatingBookingId === booking.bookingId && "..."}
+                      </MenuItem>
+                      <MenuItem value="Confirmed">
+                        Confirmed{" "}
+                        {updatingBookingId === booking.bookingId && "..."}
+                      </MenuItem>
+                      <MenuItem value="Cancel">
+                        Cancel{" "}
+                        {updatingBookingId === booking.bookingId && "..."}
+                      </MenuItem>
                     </Select>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={9} align="center">
-                  <Typography variant="subtitle1" sx={{ py: 3 }}>
-                    No bookings found
-                  </Typography>
+                    {updatingBookingId === booking.bookingId && (
+                      <CircularProgress size={20} />
+                    )}
+                    {isStatusImmutable(booking.status) && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ ml: 1 }}
+                      ></Typography>
+                    )}
+                  </Box>
                 </TableCell>
               </TableRow>
-            )}
+            ))}
           </TableBody>
         </Table>
       </TableContainer>
-      
-      {sortedBookings.length > 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          {Array.from({ length: Math.ceil(sortedBookings.length / bookingsPerPage) }, (_, index) => (
+      {/* Pagination Controls */}
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+        {Array.from(
+          { length: Math.ceil(sortedBookings.length / bookingsPerPage) },
+          (_, index) => (
             <Button
               key={index}
               onClick={() => setCurrentPage(index + 1)}
-              variant={currentPage === index + 1 ? 'contained' : 'outlined'}
+              variant={currentPage === index + 1 ? "contained" : "outlined"}
               sx={{ mx: 0.5 }}
             >
               {index + 1}
             </Button>
-          ))}
-        </Box>
-      )}
+          )
+        )}
+      </Box>
     </div>
   );
 };

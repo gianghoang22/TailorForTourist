@@ -12,7 +12,9 @@ import Stack from "@mui/material/Stack";
 import MuiCard from "@mui/material/Card";
 import AppTheme from "../shared-theme/AppTheme";
 import ColorModeSelect from "../shared-theme/ColorModeSelect";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -52,13 +54,18 @@ const CreatePasswordContainer = styled(Stack)(({ theme }) => ({
   },
 }));
 
-export default function CreatePassword({ token }) {
+export default function CreatePassword() {
   const [newPassword, setNewPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [passwordError, setPasswordError] = React.useState("");
   const [confirmPasswordError, setConfirmPasswordError] = React.useState("");
+  const [openSnackbar, setOpenSnackbar] = React.useState(false);
+  const [snackbarMessage, setSnackbarMessage] = React.useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = React.useState("success");
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
 
   const validatePasswords = () => {
     let isValid = true;
@@ -88,36 +95,10 @@ export default function CreatePassword({ token }) {
     if (!validatePasswords()) return;
 
     try {
-      // First, get the refreshToken from the /api/Login/login endpoint
-      const loginResponse = await fetch(
-        "https://vesttour.xyz/api/Login/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            // Include the necessary login credentials here
-          }),
-        }
-      );
-
-      if (!loginResponse.ok) {
-        const errorText = await loginResponse.text();
-        throw new Error(
-          `Error: ${loginResponse.status} ${loginResponse.statusText} - ${errorText}`
-        );
-      }
-
-      const { refreshToken } = await loginResponse.json();
-
-      // Use the refreshToken in the reset-password request
       const requestBody = {
-        token: refreshToken,
+        token,
         newPassword,
       };
-
-      console.log("Sending request:", requestBody); // Log the request body
 
       const response = await fetch(
         "https://vesttour.xyz/api/User/reset-password",
@@ -131,17 +112,23 @@ export default function CreatePassword({ token }) {
       );
 
       if (!response.ok) {
-        const errorText = await response.text(); // Get response text
-        throw new Error(
-          `Error: ${response.status} ${response.statusText} - ${errorText}`
-        );
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to reset password");
       }
 
-      console.log("Password reset successful");
-      navigate("/signin"); // Redirect to login page after successful password reset
+      setSnackbarMessage("Password reset successful!");
+      setSnackbarSeverity("success");
+      setOpenSnackbar(true);
+
+      // Navigate after a short delay so user can see the success message
+      setTimeout(() => {
+        navigate("/signin");
+      }, 2000);
     } catch (error) {
       console.error("There was an error with the reset request:", error);
-      // Optionally, handle error state here
+      setSnackbarMessage(error.message || "Failed to reset password");
+      setSnackbarSeverity("error");
+      setOpenSnackbar(true);
     }
   };
   return (
@@ -216,6 +203,20 @@ export default function CreatePassword({ token }) {
           </Box>
         </Card>
       </CreatePasswordContainer>
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setOpenSnackbar(false)}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </AppTheme>
   );
 }

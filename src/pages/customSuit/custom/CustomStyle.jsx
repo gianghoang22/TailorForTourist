@@ -197,6 +197,8 @@ const CustomStyle = () => {
         const [stylesResponse, optionsResponse] = await Promise.all([
           axios.get("https://vesttour.xyz/api/Style"),
           axios.get("https://vesttour.xyz/api/StyleOption"),
+          axios.get("https://vesttour.xyz/api/Style"),
+          axios.get("https://vesttour.xyz/api/StyleOption"),
         ]);
 
         setStyles(stylesResponse.data);
@@ -276,7 +278,7 @@ const CustomStyle = () => {
     // Cập nhật selectedImages
     setSelectedImages(prev => ({
       ...prev,
-      [styleOption.optionType]: optionTypeImages[styleOption.optionValue]
+      [styleOption.optionType]: optionTypeImages[styleOption.optionValue] ? optionTypeImages[styleOption.optionValue] : styleOption.optionValue
     }));
 
     // Thêm style vào cart
@@ -290,9 +292,11 @@ const CustomStyle = () => {
   };
 
   const getOptionValues = (styleId, optionType) => {
-    return styleOptions.filter(
-      (option) => option.styleId === styleId && option.optionType === optionType
-    );
+    return styleOptions
+      .filter(
+        (option) => option.styleId === styleId && option.optionType === optionType
+      )
+      .filter(option => option.optionValue !== "Slant");
   };
 
   const isOptionSelected = (styleOption) => {
@@ -388,13 +392,13 @@ const CustomStyle = () => {
                                   handleOptionValueClick(styleOption)
                                 }
                               >
-                                <img
-                                  src={
-                                    optionTypeImages[styleOption.optionValue]
-                                  }
-                                  alt={styleOption.optionValue}
-                                  className="option-value-image"
-                                />
+                                {optionTypeImages[styleOption.optionValue] ? (
+                                  <img
+                                    src={optionTypeImages[styleOption.optionValue]}
+                                    alt={styleOption.optionValue}
+                                    className="option-value-image"
+                                  />
+                                ) : null}
                                 <span>{styleOption.optionValue}</span>
                               </li>
                             )

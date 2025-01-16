@@ -54,6 +54,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const BASE_URL = "https://vesttour.xyz/api"; // Update this to match your API URL
+const BASE_URL = "https://vesttour.xyz/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
 
 const fetchStoreByStaffId = async (staffId) => {
@@ -508,8 +509,6 @@ const OrderList = () => {
     const fetchOrders = async () => {
       try {
         const userId = localStorage.getItem("userID");
-        console.log("Retrieved userId from localStorage:", userId);
-
         if (!userId) {
           console.warn("User ID not found");
           setLoading(false);
@@ -533,6 +532,7 @@ const OrderList = () => {
     };
 
     fetchOrders();
+  }, [refreshData]);
   }, [refreshData]);
 
   const fetchUnpaidOrders = async () => {
@@ -797,6 +797,7 @@ const OrderList = () => {
 
       const response = await axios.post(
         'https://vesttour.xyz/api/Shipping/calculate-fee',
+        'https://vesttour.xyz/api/Shipping/calculate-fee',
         shippingPayload
       );
 
@@ -1014,6 +1015,9 @@ const OrderList = () => {
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setSnackbarMessage('Error fetching users');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -1047,7 +1051,7 @@ const OrderList = () => {
 
   // Function to handle payment form submission
   const handlePaymentSubmit = async (event) => {
-    event.preventDefault(); // Đảm bảo có dòng này
+    event.preventDefault();
     console.log('handlePaymentSubmit called'); // Debug log 1
 
     try {
@@ -1070,6 +1074,7 @@ const OrderList = () => {
       // Gọi API với async/await
       const response = await axios.post(
         'https://vesttour.xyz/api/Payments', 
+        'https://vesttour.xyz/api/Payments', 
         paymentPayload,
         {
           headers: {
@@ -1084,6 +1089,7 @@ const OrderList = () => {
       if (response.data) {
         // Cập nhật trạng thái paid của order
         await axios.put(
+          `https://vesttour.xyz/api/Orders/SetPaidTrue/${createdOrderId}`,
           `https://vesttour.xyz/api/Orders/SetPaidTrue/${createdOrderId}`,
           null,
           {
@@ -1574,171 +1580,18 @@ const OrderList = () => {
         Order Management
       </Typography>
 
-      {/* Chart Section */}
-      
-
-      {/* Enhanced Filter Section */}
-      <Paper sx={{ p: 3, mb: 3, backgroundColor: "#f8f9fa" }}>
-        <Typography
-          variant="h6"
-          sx={{ mb: 3, color: "primary.main", fontWeight: 600 }}
-        >
-          <FilterList sx={{ mr: 1, verticalAlign: "middle" }} />
-          Filter Orders
+      {/* Hiển thị thông báo nếu không có dữ liệu */}
+      {error && (
+        <Typography color="error" sx={{ mb: 2 }}>
+          {error}
         </Typography>
+      )}
 
-        <Grid container spacing={3}>
-          {/* Date Filter Column */}
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2,
-                backgroundColor: "white",
-                borderRadius: 2,
-                height: "100%",
-              }}
-            >
-              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
-                Date Range
-              </Typography>
-
-              <Box sx={{ px: 2, pb: 2 }}>
-                <TextField
-                  select
-                  label="Select Period"
-                  value={dateFilter}
-                  onChange={handleDateFilterChange}
-                  fullWidth
-                  sx={{ mb: 2 }}
-                  size="small"
-                >
-                  <MenuItem value="all">All Time</MenuItem>
-                  <MenuItem value="today">Today</MenuItem>
-                  <MenuItem value="thisWeek">This Week</MenuItem>
-                  <MenuItem value="thisMonth">This Month</MenuItem>
-                  <MenuItem value="lastMonth">Last Month</MenuItem>
-                  <MenuItem value="custom">Custom Range</MenuItem>
-                </TextField>
-
-                {dateFilter === "custom" && (
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Stack spacing={2}>
-                      <DatePicker
-                        label="Start Date"
-                        value={customDateRange.startDate}
-                        onChange={(newValue) => {
-                          setCustomDateRange((prev) => ({
-                            ...prev,
-                            startDate: newValue,
-                          }));
-                        }}
-                        slotProps={{ textField: { size: "small" } }}
-                      />
-                      <DatePicker
-                        label="End Date"
-                        value={customDateRange.endDate}
-                        onChange={(newValue) => {
-                          setCustomDateRange((prev) => ({
-                            ...prev,
-                            endDate: newValue,
-                          }));
-                        }}
-                        minDate={customDateRange.startDate}
-                        slotProps={{ textField: { size: "small" } }}
-                      />
-                    </Stack>
-                  </LocalizationProvider>
-                )}
-              </Box>
-            </Paper>
-          </Grid>
-
-          {/* Price Range Column */}
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2,
-                backgroundColor: "white",
-                borderRadius: 2,
-                height: "100%",
-              }}
-            >
-              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
-                Price Range
-              </Typography>
-
-              <Box sx={{ px: 2, pb: 2 }}>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 1 }}
-                >
-                  Select price range (USD)
-                </Typography>
-                <Typography variant="h6" sx={{ mb: 2, color: "primary.main" }}>
-                  ${priceRange[0]} - ${priceRange[1]}
-                </Typography>
-                <Slider
-                  value={priceRange}
-                  onChange={handlePriceRangeChange}
-                  valueLabelDisplay="auto"
-                  min={0}
-                  max={10000}
-                  sx={{
-                    "& .MuiSlider-thumb": {
-                      height: 24,
-                      width: 24,
-                      backgroundColor: "#fff",
-                      border: "2px solid currentColor",
-                      "&:focus, &:hover, &.Mui-active, &.Mui-focusVisible": {
-                        boxShadow: "inherit",
-                      },
-                    },
-                    "& .MuiSlider-valueLabel": {
-                      backgroundColor: "primary.main",
-                    },
-                  }}
-                />
-              </Box>
-            </Paper>
-          </Grid>
-        </Grid>
-
-        {/* Active Filters Display */}
-        <Box sx={{ mt: 2 }}>
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            {dateFilter !== "all" && (
-              <Chip
-                label={`Date: ${dateFilter}`}
-                onDelete={() => setDateFilter("all")}
-                color="primary"
-                variant="outlined"
-                size="small"
-              />
-            )}
-            {(priceRange[0] > 0 || priceRange[1] < 10000) && (
-              <Chip
-                label={`Price: $${priceRange[0]} - $${priceRange[1]}`}
-                onDelete={() => setPriceRange([0, 10000])}
-                color="primary"
-                variant="outlined"
-                size="small"
-              />
-            )}
-          </Stack>
-        </Box>
-      </Paper>
-
+      {/* Hiển thị các nút để tạo order hoặc payment */}
       <StyledButton
         variant="contained"
         startIcon={<Add />}
-        onClick={() => {
-          resetForm(); // Gọi hàm reset
-          setOpen(true);
-          setIsEditMode(false);
-        }}
+        onClick={handleAddOrder}
         sx={{ mb: 2 }}
       >
         Add Order
@@ -1753,6 +1606,7 @@ const OrderList = () => {
         Process Payment
       </StyledButton>
 
+      {/* Hiển thị bảng ngay cả khi không có dữ liệu */}
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
           <StyledTableHead>
