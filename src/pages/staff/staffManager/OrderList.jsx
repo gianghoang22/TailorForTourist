@@ -54,7 +54,6 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const BASE_URL = "https://vesttour.xyz/api"; // Update this to match your API URL
-const BASE_URL = "https://vesttour.xyz/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
 
 const fetchStoreByStaffId = async (staffId) => {
@@ -532,7 +531,6 @@ const OrderList = () => {
     };
 
     fetchOrders();
-  }, [refreshData]);
   }, [refreshData]);
 
   const fetchUnpaidOrders = async () => {
@@ -2799,6 +2797,6 @@ const OrderList = () => {
 
     </div>
   );
-};
+}
 
 export default OrderList;
