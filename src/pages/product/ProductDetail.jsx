@@ -90,14 +90,14 @@ const ProductDetailPage = () => {
   const fetchFeedbacks = async () => {
     try {
       // First fetch feedbacks
-      const feedbackResponse = await axios.get(`https://vesttour.xyz/api/Feedback/product/${id}`);
+      const feedbackResponse = await axios.get(`https://localhost:7194/api/Feedback/product/${id}`);
       const feedbackData = feedbackResponse.data;
       setFeedbacks(feedbackData);
 
       // Then fetch user details one by one
       for (const feedback of feedbackData) {
         try {
-          const userResponse = await axios.get(`https://vesttour.xyz/api/User/${feedback.userId}`);
+          const userResponse = await axios.get(`https://localhost:7194/api/User/${feedback.userId}`);
           setUserNames(prev => ({
             ...prev,
             [feedback.userId]: userResponse.data.name
@@ -121,8 +121,8 @@ const ProductDetailPage = () => {
     const fetchProduct = async () => {
       try {
         const [productResponse, storeResponse] = await Promise.all([
-          axios.get(`https://vesttour.xyz/api/Product/details/${id}`),
-          axios.get('https://vesttour.xyz/api/ProductInStore')
+          axios.get(`https://localhost:7194/api/Product/details/${id}`),
+          axios.get('https://localhost:7194/api/ProductInStore')
         ]);
 
         setProduct(productResponse.data);
@@ -190,7 +190,7 @@ const ProductDetailPage = () => {
 
       console.log("Sending product to add to cart:", productToAdd);
       // Gửi dữ liệu lên API
-      const response = await fetch("https://vesttour.xyz/api/AddCart/addtocart", {
+      const response = await fetch("https://localhost:7194/api/AddCart/addtocart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -250,7 +250,7 @@ const ProductDetailPage = () => {
 
       console.log('Feedback Data to be sent:', feedbackData);
 
-      const response = await fetch('https://vesttour.xyz/api/Feedback/feedbackforproduct', {
+      const response = await fetch('https://localhost:7194/api/Feedback/feedbackforproduct', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

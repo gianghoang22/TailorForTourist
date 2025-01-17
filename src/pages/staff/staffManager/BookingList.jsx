@@ -22,7 +22,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Grid, Stack, TextField } from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
 
-const BASE_URL = "https://vesttour.xyz/api";
+const BASE_URL = "https://localhost:7194/api";
 
 const fetchStoreByStaffId = async (staffId) => {
   const response = await fetch(`${BASE_URL}/Store/GetStoreByStaff/${staffId}`);

@@ -52,7 +52,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import BankingPayment from '../../../assets/img/elements/bankingPayment.jpg'
 import { toast } from "react-toastify";
 
-const BASE_URL = "https://vesttour.xyz/api"; // Update this to match your API URL
+const BASE_URL = "https://localhost:7194/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
 
 const fetchStoreByStaffId = async (staffId) => {
@@ -939,7 +939,7 @@ const OrderList = () => {
       console.log('Shipping Fee Payload:', shippingPayload);
 
       const response = await axios.post(
-        'https://vesttour.xyz/api/Shipping/calculate-fee',
+        'https://localhost:7194/api/Shipping/calculate-fee',
         shippingPayload
       );
 

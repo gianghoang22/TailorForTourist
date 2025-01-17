@@ -1,7 +1,7 @@
 export const calculateStoreRevenue = async (orderId) => {
   try {
     // Fetch order details from API
-    const response = await fetch(`https://vesttour.xyz/api/Orders/${orderId}/details`, {
+    const response = await fetch(`https://localhost:7194/api/Orders/${orderId}/details`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
         'Content-Type': 'application/json'

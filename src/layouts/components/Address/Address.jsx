@@ -48,7 +48,7 @@ const Address = ({ initialAddress, onAddressChange, resetAddress, setResetAddres
   const fetchProvinces = async () => {
     try {
       const response = await axios.get(
-        "https://vesttour.xyz/api/Shipping/provinces"
+        "https://localhost:7194/api/Shipping/provinces"
       );
       if (response.data) {
         setProvinces(response.data);
@@ -64,7 +64,7 @@ const Address = ({ initialAddress, onAddressChange, resetAddress, setResetAddres
 
     try {
       const response = await axios.get(
-        `https://vesttour.xyz/api/Shipping/districts?provinceId=${provinceID}`
+        `https://localhost:7194/api/Shipping/districts?provinceId=${provinceID}`
       );
       if (response.data) {
         console.log("Districts API Response:", response.data);
@@ -81,7 +81,7 @@ const Address = ({ initialAddress, onAddressChange, resetAddress, setResetAddres
 
     try {
       const response = await axios.get(
-        `https://vesttour.xyz/api/Shipping/wards?districtId=${districtId}`
+        `https://localhost:7194/api/Shipping/wards?districtId=${districtId}`
       );
       if (response.data) {
         console.log("Wards API Response:", response.data);

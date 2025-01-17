@@ -195,10 +195,10 @@ const CustomStyle = () => {
     const fetchStylesAndOptions = async () => {
       try {
         const [stylesResponse, optionsResponse] = await Promise.all([
-          axios.get("https://vesttour.xyz/api/Style"),
-          axios.get("https://vesttour.xyz/api/StyleOption"),
-          axios.get("https://vesttour.xyz/api/Style"),
-          axios.get("https://vesttour.xyz/api/StyleOption"),
+          axios.get("https://localhost:7194/api/Style"),
+          axios.get("https://localhost:7194/api/StyleOption"),
+          axios.get("https://localhost:7194/api/Style"),
+          axios.get("https://localhost:7194/api/StyleOption"),
         ]);
 
         setStyles(stylesResponse.data);

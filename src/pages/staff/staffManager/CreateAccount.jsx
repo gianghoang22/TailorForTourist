@@ -126,7 +126,7 @@ const CreateAccount = () => {
     }
 
     try {
-      const response = await axios.post('https://vesttour.xyz/api/User', formData);
+      const response = await axios.post('https://localhost:7194/api/User', formData);
       toast.success('Account created successfully!');
       
       // Reset form

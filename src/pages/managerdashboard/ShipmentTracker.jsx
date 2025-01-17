@@ -38,7 +38,7 @@ const ShipmentTracker = () => {
   useEffect(() => {
     const fetchTrackingOrders = async () => {
       try {
-        const response = await axios.get("https://vesttour.xyz/api/Shipment");
+        const response = await axios.get("https://localhost:7194/api/Shipment");
         setTrackingOrders(response.data);
       } catch (error) {
         console.error("Error fetching tracking orders:", error);
@@ -51,7 +51,7 @@ const ShipmentTracker = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("https://vesttour.xyz/api/User");
+        const response = await axios.get("https://localhost:7194/api/User");
         const customers = response.data.filter(user => user.roleId === 3);
         setUsers(customers);
       } catch (error) {
@@ -117,7 +117,7 @@ const ShipmentTracker = () => {
     }
 
     try {
-      const response = await axios.post("https://vesttour.xyz/api/Shipment", newShipment);
+      const response = await axios.post("https://localhost:7194/api/Shipment", newShipment);
       console.log("Shipment created:", response.data);
       setNewShipment({
         shipperPartnerId: 4,

@@ -10,7 +10,7 @@ export const Footer = () => {
  useEffect(() => {
     const fetchStoreInfo = async () => {
         try {
-            const response = await fetch('https://vesttour.xyz/api/Store');
+            const response = await fetch('https://localhost:7194/api/Store');
             const data = await response.json();
             const activeStore = data.find(store => store.status === 'Active');
             setStoreInfo(activeStore);

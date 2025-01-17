@@ -101,7 +101,7 @@ export default function CreatePassword() {
       };
 
       const response = await fetch(
-        "https://vesttour.xyz/api/User/reset-password",
+        "https://localhost:7194/api/User/reset-password",
         {
           method: "POST",
           headers: {

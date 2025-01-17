@@ -65,7 +65,7 @@ const ProfitCalculation = () => {
       let bookingsData = { data: [] }; // Default empty bookings
       try {
         const bookingsResponse = await fetch(
-          "https://vesttour.xyz/api/Booking",
+          "https://localhost:7194/api/Booking",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -84,7 +84,7 @@ const ProfitCalculation = () => {
 
       // Continue with store data fetch
       const storeResponse = await fetch(
-        `https://vesttour.xyz/api/Store/userId/${userId}`,
+        `https://localhost:7194/api/Store/userId/${userId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -102,7 +102,7 @@ const ProfitCalculation = () => {
       const storeId = storeData.storeId;
 
       const ordersResponse = await fetch(
-        `https://vesttour.xyz/api/Orders/store/${storeId}`,
+        `https://localhost:7194/api/Orders/store/${storeId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
