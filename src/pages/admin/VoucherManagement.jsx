@@ -408,6 +408,12 @@ const VoucherManagement = () => {
                 onChange={handleChange}
                 variant="outlined"
                 style={{ marginRight: "1rem" }}
+                inputProps={{
+                  step: "0.01",
+                  min: "0",
+                  max: "1",
+                }}
+                helperText="Enter a decimal between 0 and 1 (e.g., 0.5 for 50%)"
               />
               <TextField
                 label="Start Date"
