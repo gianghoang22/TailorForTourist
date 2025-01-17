@@ -32,7 +32,7 @@ const Appointment = () => {
 
       try {
         const response = await fetch(
-          `https://localhost:7194/api/Booking/user-booking?userId=${userId}`,
+          `https://vesttour.xyz/api/Booking/user-booking?userId=${userId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

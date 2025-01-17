@@ -42,7 +42,7 @@ const ShipperManagement = () => {
         return;
       }
 
-      const response = await fetch("https://localhost:7194/api/ShipperPartner", {
+      const response = await fetch("https://vesttour.xyz/api/ShipperPartner", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -88,7 +88,7 @@ const ShipperManagement = () => {
         return;
       }
 
-      const response = await fetch("https://localhost:7194/api/ShipperPartner", {
+      const response = await fetch("https://vesttour.xyz/api/ShipperPartner", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -128,7 +128,7 @@ const ShipperManagement = () => {
         return;
       }
 
-      const response = await fetch(`https://localhost:7194/api/ShipperPartner/${newShipper.shipperPartnerId}`, {
+      const response = await fetch(`https://vesttour.xyz/api/ShipperPartner/${newShipper.shipperPartnerId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -180,7 +180,7 @@ const ShipperManagement = () => {
             return;
         }
 
-        const response = await fetch(`https://localhost:7194/api/ShipperPartner/${shipper.shipperPartnerId}`, {
+        const response = await fetch(`https://vesttour.xyz/api/ShipperPartner/${shipper.shipperPartnerId}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",

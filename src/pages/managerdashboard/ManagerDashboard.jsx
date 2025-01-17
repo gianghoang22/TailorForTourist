@@ -128,7 +128,7 @@ const ManagerDashboard = () => {
   const [ordersWithSuits, setOrdersWithSuits] = useState(new Set());
   const [processingStatusMap, setProcessingStatusMap] = useState({});
 
-  const BASE_URL = "https://localhost:7194/api";
+  const BASE_URL = "https://vesttour.xyz/api";
 
   const fetchStoreByManagerId = async (userId) => {
     const response = await fetch(`${BASE_URL}/Store/userId/${userId}`);
@@ -395,7 +395,7 @@ const ManagerDashboard = () => {
     try {
       const userId = localStorage.getItem("userID");
       const response = await fetch(
-        `https://localhost:7194/api/Store/manager-userId/${userId}`,
+        `https://vesttour.xyz/api/Store/manager-userId/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -505,7 +505,7 @@ const ManagerDashboard = () => {
     try {
       // First, submit the processing data
       const processingResponse = await fetch(
-        "https://localhost:7194/api/ProcessingTailor",
+        "https://vesttour.xyz/api/ProcessingTailor",
         {
           method: "POST",
           headers: {
@@ -532,7 +532,7 @@ const ManagerDashboard = () => {
 
       // After successful processing, update the order status to "Processing"
       const statusUpdateResponse = await fetch(
-        `https://localhost:7194/api/Orders/updatestatus/${processingData.orderId}`,
+        `https://vesttour.xyz/api/Orders/updatestatus/${processingData.orderId}`,
         {
           method: "PATCH",
           headers: {
@@ -576,7 +576,7 @@ const ManagerDashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Orders/updatestatus/${orderId}`,
+        `https://vesttour.xyz/api/Orders/updatestatus/${orderId}`,
         {
           method: "PATCH",
           headers: {
@@ -610,7 +610,7 @@ const ManagerDashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `https://localhost:7194/api/Orders/${orderId}`,
+        `https://vesttour.xyz/api/Orders/${orderId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -789,7 +789,7 @@ const ManagerDashboard = () => {
   const fetchProcessingStatuses = async () => {
     try {
       const response = await fetch(
-        "https://localhost:7194/api/ProcessingTailor",
+        "https://vesttour.xyz/api/ProcessingTailor",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -821,7 +821,7 @@ const ManagerDashboard = () => {
     fetchProcessingStatuses();
 
     // Set up WebSocket connection
-    const ws = new WebSocket("wss://localhost:7194/processingStatusHub");
+    const ws = new WebSocket("wss://vesttour.xyz/processingStatusHub");
 
     ws.onmessage = (event) => {
       const { orderId, status } = JSON.parse(event.data);

@@ -81,7 +81,7 @@ const MeasureGuest = () => {
   }, [formData.height, formData.weight]);
 
   const getMeasurementByUserId = (userId) => {
-    fetch(`https://localhost:7194/api/Measurement/user/${userId}`)
+    fetch(`https://vesttour.xyz/api/Measurement/user/${userId}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch measurements");
@@ -175,7 +175,7 @@ const MeasureGuest = () => {
         measurementId: measurementId,
       });
 
-      fetch(`https://localhost:7194/api/Measurement/${measurementId}`, {
+      fetch(`https://vesttour.xyz/api/Measurement/${measurementId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

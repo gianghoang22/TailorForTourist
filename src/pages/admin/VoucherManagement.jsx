@@ -40,7 +40,7 @@ const VoucherManagement = () => {
     const fetchVoucherData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("https://localhost:7194/api/Voucher");
+        const response = await fetch("https://vesttour.xyz/api/Voucher");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
@@ -77,7 +77,7 @@ const VoucherManagement = () => {
             const updatedVoucher = { ...voucher, status: newStatus };
             try {
               const response = await fetch(
-                `https://localhost:7194/api/Voucher/${voucher.voucherId}`,
+                `https://vesttour.xyz/api/Voucher/${voucher.voucherId}`,
                 {
                   method: "PUT",
                   headers: {
@@ -165,7 +165,7 @@ const VoucherManagement = () => {
 
     try {
       setIsLoading(true);
-      const response = await fetch("https://localhost:7194/api/Voucher", {
+      const response = await fetch("https://vesttour.xyz/api/Voucher", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -179,7 +179,7 @@ const VoucherManagement = () => {
       }
 
       // Fetch updated data after successful addition
-      const fetchResponse = await fetch("https://localhost:7194/api/Voucher");
+      const fetchResponse = await fetch("https://vesttour.xyz/api/Voucher");
       if (!fetchResponse.ok) {
         throw new Error("Failed to refresh voucher data");
       }
@@ -254,7 +254,7 @@ const VoucherManagement = () => {
       }
 
       const response = await fetch(
-        `https://localhost:7194/api/Voucher/${editIndex}`,
+        `https://vesttour.xyz/api/Voucher/${editIndex}`,
         {
           method: "PUT",
           headers: {
