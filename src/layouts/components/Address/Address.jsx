@@ -162,7 +162,8 @@ const Address = ({ initialAddress, onAddressChange, resetAddress, setResetAddres
     if (ward && selectedDistrict) {
         setSelectedWard(ward);
         
-        const fullAddress = `${manualAddress}`;
+        const selectedProv = provinces.find(p => p.provinceID === parseInt(selectedProvince));
+        const fullAddress = `${manualAddress}, ${ward.wardName}, ${selectedDistrict.districtName}, ${selectedProv.provinceName}`;
 
         const addressData = {
             fullAddress,
@@ -170,6 +171,7 @@ const Address = ({ initialAddress, onAddressChange, resetAddress, setResetAddres
             districtId: selectedDistrict.districtID,
         };
 
+        setManualAddress(fullAddress);
         onAddressChange(addressData);
     }
     validateAddress();
@@ -178,7 +180,14 @@ const Address = ({ initialAddress, onAddressChange, resetAddress, setResetAddres
   const handleManualAddressChange = (e) => {
     const newAddress = e.target.value;
     setManualAddress(newAddress);
-    onAddressChange({ fullAddress: newAddress });
+    
+    if (selectedProvince && selectedDistrict && selectedWard) {
+        const selectedProv = provinces.find(p => p.provinceID === parseInt(selectedProvince));
+        const fullAddress = `${newAddress}, ${selectedWard.wardName}, ${selectedDistrict.districtName}, ${selectedProv.provinceName}`;
+        onAddressChange({ fullAddress });
+    } else {
+        onAddressChange({ fullAddress: newAddress });
+    }
     validateAddress();
   };
 
@@ -200,9 +209,9 @@ const Address = ({ initialAddress, onAddressChange, resetAddress, setResetAddres
           className="address-input"
           required
         />
-        {!isAddressValid && (
+        {/* {!isAddressValid && (
           <span className="error-message">Please fill in all address fields.</span>
-        )}
+        )} */}
       </div>
 
       <div className="select-group">

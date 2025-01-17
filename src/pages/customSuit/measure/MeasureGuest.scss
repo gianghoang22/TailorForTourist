@@ -70,6 +70,7 @@
         }
 
         .inline-controls {
+            position: relative;
             margin-bottom: 15px;
 
             .lb {
@@ -79,21 +80,15 @@
             }
 
             .ipgr {
-                display: flex;
-                align-items: center;
+                display: block;
 
-                .fcontrol {
-                    flex-grow: 1;
-                    padding: 8px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    font-size: 16px;
+                input.error {
+                    border-color: #dc3545;
                 }
 
                 .unit {
+                    display: inline-block;
                     margin-left: 10px;
-                    font-size: 14px;
-                    color: #666;
                 }
             }
         }
@@ -265,6 +260,20 @@
         float: left;
         margin: 1%;
         height: 280px;
+    }
+
+    .error {
+        border-color: #dc3545 !important;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 12px;
+        display: block;
+        margin-top: 4px;
+        line-height: 1;
+        clear: both;
+        width: 100%;
     }
 }
 

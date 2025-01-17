@@ -449,9 +449,9 @@ const CustomStyle = () => {
         </div>
 
         <div className="next-btn">
-          <Link to="/custom-suits/lining" onClick={handleNextClick}>
-            <button className="navigation-button">Lining</button>
-          </Link>
+          <button className="navigation-button" onClick={handleNextClick}>
+            Lining
+          </button>
         </div>
       </div>
     </div>

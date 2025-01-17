@@ -4,6 +4,7 @@ import './MeasureGuest.scss';
 import { Navigation } from '../../../layouts/components/navigation/Navigation';
 import { Footer } from '../../../layouts/components/footer/Footer';
 import { toast } from 'react-toastify';
+import * as Yup from 'yup';
 
 const MeasureGuest = () => {
   const [formData, setFormData] = useState({
@@ -99,40 +100,72 @@ const MeasureGuest = () => {
       });
   };
 
+  const validationSchema = Yup.object().shape({
+    weight: Yup.number()
+      .required("Weight is required")
+      .min(30, "Weight should be at least 30kg")
+      .max(200, "Weight cannot exceed 200kg"),
+    height: Yup.number()
+      .required("Height is required")
+      .min(100, "Height should be at least 100cm")
+      .max(250, "Height cannot exceed 250cm"),
+    neck: Yup.number()
+      .required("Neck size is required")
+      .min(30, "Neck size should be at least 30cm"),
+    hip: Yup.number()
+      .required("Hip size is required")
+      .min(60, "Hip size should be at least 60cm"),
+    waist: Yup.number()
+      .required("Waist size is required")
+      .min(50, "Waist size should be at least 50cm"),
+    armhole: Yup.number()
+      .required("Armhole size is required")
+      .min(20, "Armhole should be at least 20cm"),
+    biceps: Yup.number()
+      .required("Biceps size is required")
+      .min(20, "Biceps should be at least 20cm"),
+    pantsWaist: Yup.number()
+      .required("Pants waist size is required")
+      .min(50, "Pants waist should be at least 50cm"),
+    crotch: Yup.number()
+      .required("Crotch size is required")
+      .min(20, "Crotch should be at least 20cm"),
+    thigh: Yup.number()
+      .required("Thigh size is required")
+      .min(40, "Thigh should be at least 40cm"),
+    pantsLength: Yup.number()
+      .required("Pants length is required")
+      .min(50, "Pants length should be at least 50cm"),
+    age: Yup.number()
+      .required("Age is required")
+      .min(0, "Age cannot be negative"),
+    chest: Yup.number()
+      .required("Chest size is required")
+      .min(30, "Chest size should be at least 30cm"),
+    shoulder: Yup.number()
+      .required("Shoulder size is required")
+      .min(20, "Shoulder size should be at least 20cm"),
+    sleeveLength: Yup.number()
+      .required("Sleeve length is required")
+      .min(20, "Sleeve length should be at least 20cm"),
+    jacketLength: Yup.number()
+      .required("Jacket length is required")
+      .min(50, "Jacket length should be at least 50cm"),
+  });
 
   const validateFields = () => {
-    const newErrors = {};
-    const numberFields = [
-      "age",
-      "weight",
-      "height",
-      "chest",
-      "waist",
-      "hip",
-      "neck",
-      "armhole",
-      "biceps",
-      "shoulder",
-      "sleeveLength",
-      "jacketLength",
-      "pantsWaist",
-      "crotch",
-      "thigh",
-      "pantsLength",
-    ];
-
-    numberFields.forEach((field) => {
-      if (!formData[field]) {
-        newErrors[field] = "This field is required";
-      } else if (isNaN(formData[field]) || formData[field] < 0) {
-        newErrors[field] = "Please enter a valid number (0 or greater)";
-      } else if (formData[field] > 200) {
-        newErrors[field] = "Please enter a valid number (0-200)";
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0; // return true if no errors
+    try {
+      validationSchema.validateSync(formData, { abortEarly: false });
+      setErrors({});
+      return true;
+    } catch (validationErrors) {
+      const newErrors = {};
+      validationErrors.inner.forEach((error) => {
+        newErrors[error.path] = error.message;
+      });
+      setErrors(newErrors);
+      return false;
+    }
   };
 
   const handleUpdate = () => {
@@ -202,40 +235,20 @@ const MeasureGuest = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const numberValue = value === "" ? "" : Number(value);
 
-    const numberFields = [
-      "age",
-      "weight",
-      "height",
-      "chest",
-      "waist",
-      "hip",
-      "neck",
-      "armhole",
-      "biceps",
-      "shoulder",
-      "sleeveLength",
-      "jacketLength",
-      "pantsWaist",
-      "crotch",
-      "thigh",
-      "pantsLength",
-    ];
+    setFormData(prev => ({
+      ...prev,
+      [name]: numberValue
+    }));
 
-    // Kiểm tra nếu trường là số và giá trị không phải là số
-    if (numberFields.includes(name) && !/^\d*$/.test(value)) {
-      return; // Không cập nhật nếu giá trị không phải là số
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
     }
-
-    // Kiểm tra nếu giá trị là số âm
-    if (numberFields.includes(name) && value < 0) {
-      return; // Không cập nhật nếu giá trị âm
-    }
-
-    setFormData({
-      ...formData,
-      [name]: numberFields.includes(name) ? parseInt(value, 10) || "" : value,
-    });
   };
 
   const handleConfirm = (e) => {
@@ -295,12 +308,13 @@ const MeasureGuest = () => {
                     <input
                       name="age"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.age ? 'error' : ''}`}
                       value={formData.age || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">years</span>
+                    {errors.age && <div className="error-message">{errors.age}</div>}
                   </div>
                 </div>
                 <div className="inline-controls">
@@ -309,12 +323,13 @@ const MeasureGuest = () => {
                     <input
                       name="weight"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.weight ? 'error' : ''}`}
                       value={formData.weight || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">kg</span>
+                    {errors.weight && <div className="error-message">{errors.weight}</div>}
                   </div>
                 </div>
                 <div className="inline-controls">
@@ -323,12 +338,13 @@ const MeasureGuest = () => {
                     <input
                       name="height"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.height ? 'error' : ''}`}
                       value={formData.height || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.height && <div className="error-message">{errors.height}</div>}
                   </div>
                 </div>
               </div>
@@ -341,12 +357,13 @@ const MeasureGuest = () => {
                     <input
                       name="chest"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.chest ? 'error' : ''}`}
                       value={formData.chest || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.chest && <div className="error-message">{errors.chest}</div>}
                   </div>
                 </div>
                 <div className="inline-controls">
@@ -355,12 +372,13 @@ const MeasureGuest = () => {
                     <input
                       name="waist"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.waist ? 'error' : ''}`}
                       value={formData.waist || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.waist && <div className="error-message">{errors.waist}</div>}
                   </div>
                 </div>
                 <div className="inline-controls">
@@ -369,12 +387,13 @@ const MeasureGuest = () => {
                     <input
                       name="hip"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.hip ? 'error' : ''}`}
                       value={formData.hip || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.hip && <div className="error-message">{errors.hip}</div>}
                   </div>
                 </div>
                 <div className="inline-controls">
@@ -383,12 +402,13 @@ const MeasureGuest = () => {
                     <input
                       name="neck"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.neck ? 'error' : ''}`}
                       value={formData.neck || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.neck && <div className="error-message">{errors.neck}</div>}
                   </div>
                 </div>
                 <div className="inline-controls">
@@ -397,12 +417,13 @@ const MeasureGuest = () => {
                     <input
                       name="shoulder"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.shoulder ? 'error' : ''}`}
                       value={formData.shoulder || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.shoulder && <div className="error-message">{errors.shoulder}</div>}
                   </div>
                 </div>
               </div>
@@ -415,12 +436,13 @@ const MeasureGuest = () => {
                     <input
                       name="armhole"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.armhole ? 'error' : ''}`}
                       value={formData.armhole || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.armhole && <div className="error-message">{errors.armhole}</div>}
                   </div>
                 </div>
                 <div className="inline-controls">
@@ -429,12 +451,13 @@ const MeasureGuest = () => {
                     <input
                       name="biceps"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.biceps ? 'error' : ''}`}
                       value={formData.biceps || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.biceps && <div className="error-message">{errors.biceps}</div>}
                   </div>
                 </div>
                 <div className="inline-controls">
@@ -443,12 +466,13 @@ const MeasureGuest = () => {
                     <input
                       name="sleeveLength"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.sleeveLength ? 'error' : ''}`}
                       value={formData.sleeveLength || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.sleeveLength && <div className="error-message">{errors.sleeveLength}</div>}
                   </div>
                 </div>
                 <div className="inline-controls">
@@ -457,12 +481,13 @@ const MeasureGuest = () => {
                     <input
                       name="jacketLength"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.jacketLength ? 'error' : ''}`}
                       value={formData.jacketLength || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.jacketLength && <div className="error-message">{errors.jacketLength}</div>}
                   </div>
                 </div>
               </div>
@@ -475,12 +500,13 @@ const MeasureGuest = () => {
                     <input
                       name="pantsWaist"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.pantsWaist ? 'error' : ''}`}
                       value={formData.pantsWaist || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.pantsWaist && <div className="error-message">{errors.pantsWaist}</div>}
                   </div>
                 </div>
                 <div className="inline-controls">
@@ -489,12 +515,13 @@ const MeasureGuest = () => {
                     <input
                       name="crotch"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.crotch ? 'error' : ''}`}
                       value={formData.crotch || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.crotch && <div className="error-message">{errors.crotch}</div>}
                   </div>
                 </div>
                 <div className="inline-controls">
@@ -503,12 +530,13 @@ const MeasureGuest = () => {
                     <input
                       name="thigh"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.thigh ? 'error' : ''}`}
                       value={formData.thigh || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.thigh && <div className="error-message">{errors.thigh}</div>}
                   </div>
                 </div>
                 <div className="inline-controls">
@@ -517,12 +545,13 @@ const MeasureGuest = () => {
                     <input
                       name="pantsLength"
                       type="number"
-                      className="fcontrol"
+                      className={`fcontrol ${errors.pantsLength ? 'error' : ''}`}
                       value={formData.pantsLength || ""}
                       onChange={handleChange}
                       disabled={!isEditing}
                     />
                     <span className="unit">cm</span>
+                    {errors.pantsLength && <div className="error-message">{errors.pantsLength}</div>}
                   </div>
                 </div>
               </div>

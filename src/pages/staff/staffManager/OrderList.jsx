@@ -50,8 +50,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import BankingPayment from '../../../assets/img/elements/bankingPayment.jpg'
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from "react-toastify";
 
 const BASE_URL = "https://vesttour.xyz/api"; // Update this to match your API URL
 const EXCHANGE_API_KEY = '6aa988b722d995b95e483312';
@@ -185,18 +184,18 @@ const getErrorMessage = (error) => {
   }
 
   // Xử lý các status code khác
-  // switch (status) {
-  //   case 401:
-  //     return 'Your session has expired. Please login again';
-  //   case 403:
-  //     return 'You do not have permission to perform this action';
-  //   case 404:
-  //     return 'The requested information could not be found';
-  //   case 500:
-  //     return 'Something went wrong. Please try again later';
-  //   default:
-  //     return 'An error occurred. Please try again';
-  // }
+  switch (status) {
+    case 401:
+      return 'Your session has expired. Please login again';
+    case 403:
+      return 'You do not have permission to perform this action';
+    case 404:
+      return 'The requested information could not be found';
+    case 500:
+      return 'Something went wrong. Please try again later';
+    default:
+      return 'An error occurred. Please try again';
+  }
 };
 
 // Cập nhật API interceptor
@@ -206,7 +205,9 @@ api.interceptors.response.use(
     const errorMessage = getErrorMessage(error);
     
     // Set snackbar message với thông báo thân thiện
-    toast.error(errorMessage);
+    setSnackbarMessage(errorMessage);
+    setSnackbarSeverity('error');
+    setSnackbarOpen(true);
 
     // Log chi tiết lỗi cho development
     if (process.env.NODE_ENV === 'development') {
@@ -221,12 +222,103 @@ api.interceptors.response.use(
   }
 );
 
+// Cập nhật component ProductTable để nhận thêm props
+const ProductTable = ({ 
+  products = [], 
+  customProducts = [], 
+  onRemoveProduct, 
+  onRemoveCustomProduct,
+  fabrics = [],
+  styleOptions = [],
+  linings = []
+}) => {
+  if (products.length === 0 && customProducts.length === 0) {
+    return (
+      <Paper sx={{ p: 3, mt: 2, textAlign: 'center' }}>
+        <Typography color="text.secondary">
+          No products added yet. Click "Add Products" or "Add Custom Product" to begin.
+        </Typography>
+      </Paper>
+    );
+  }
+
+  return (
+    <TableContainer component={Paper} sx={{ mt: 2 }}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Product Code</TableCell>
+            <TableCell>Type</TableCell>
+            <TableCell>Details</TableCell>
+            <TableCell>Quantity</TableCell>
+            <TableCell>Price</TableCell>
+            <TableCell>Total</TableCell>
+            <TableCell>Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {products.map((product, index) => (
+            <TableRow key={`regular-${index}`}>
+              <TableCell>{product.productCode}</TableCell>
+              <TableCell>Regular</TableCell>
+              <TableCell>{product.name}</TableCell>
+              <TableCell>{product.quantity}</TableCell>
+              <TableCell>${product.price}</TableCell>
+              <TableCell>${product.price * product.quantity}</TableCell>
+              <TableCell>
+                <IconButton onClick={() => onRemoveProduct(index)} color="error">
+                  <Delete />
+                </IconButton>
+              </TableCell>
+            </TableRow>
+          ))}
+
+          {customProducts.map((product, index) => (
+            <TableRow key={`custom-${index}`}>
+              <TableCell>{product.productCode}</TableCell>
+              <TableCell>Custom</TableCell>
+              <TableCell>
+                <div>
+                  <strong>Fabric:</strong> {fabrics.find(f => f.fabricID === product.fabricID)?.fabricName}<br />
+                  <strong>Lining:</strong> {linings.find(l => l.liningId === product.liningID)?.liningName}<br />
+                  <strong>Style Options:</strong><br />
+                  {product.pickedStyleOptions.map(style => 
+                    styleOptions.find(s => s.styleOptionId === style.styleOptionID)?.optionValue
+                  ).join(', ')}
+                  {/* Chỉ hiển thị note khi có nội dung */}
+                  {product.note && product.note.trim() && (
+                    <>
+                      <br />
+                      <strong>Note:</strong> {product.note}
+                    </>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>{product.quantity}</TableCell>
+              <TableCell>${product.price}</TableCell>
+              <TableCell>${product.price * product.quantity}</TableCell>
+              <TableCell>
+                <IconButton onClick={() => onRemoveCustomProduct(index)} color="error">
+                  <Delete />
+                </IconButton>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
+
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [open, setOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("info");
   const [formState, setFormState] = useState({
     id: "",
     customerName: "",
@@ -321,6 +413,9 @@ const OrderList = () => {
   const [refreshData, setRefreshData] = useState(false);
   // Thêm state để lưu shipping fee gốc
   const [originalShippingFee, setOriginalShippingFee] = useState(0);
+  const [customNote, setCustomNote] = useState('');
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [isLoadingVouchers, setIsLoadingVouchers] = useState(false);
 
   const handleDateFilterChange = (event) => {
     setDateFilter(event.target.value);
@@ -387,55 +482,71 @@ const OrderList = () => {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+    
     const fetchVouchers = async () => {
+      setIsLoadingVouchers(true);
       try {
-        const response = await api.get('/Voucher/valid');
-        console.log('Valid Vouchers:', response.data);
+        const response = await api.get('/Voucher/valid', {
+          signal: controller.signal
+        });
         setVouchers(response.data);
       } catch (error) {
-        console.error('Error fetching vouchers:', error);
-        toast.error('Error loading vouchers');
+        if (!error.name === 'AbortError') {
+          console.error('Error fetching vouchers:', error);
+          toast.error('Error loading vouchers');
+        }
+      } finally {
+        setIsLoadingVouchers(false);
       }
     };
 
     fetchVouchers();
+    
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+    
     const fetchProducts = async () => {
+      setIsLoadingProducts(true);
       try {
-        const response = await api.get('/Product/products/custom-false');
+        const response = await api.get('/Product/products/custom-false', {
+          signal: controller.signal
+        });
         setProducts(response.data);
       } catch (error) {
-        console.error('Error fetching products:', error);
-        toast.error('Error loading products');
+        if (!error.name === 'AbortError') {
+          console.error('Error fetching products:', error);
+          toast.error('Error loading products');
+        }
+      } finally {
+        setIsLoadingProducts(false);
       }
     };
     fetchProducts();
+    
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+    
     const fetchCustomData = async () => {
       try {
-        // Fetch fabrics
-        const fabricsResponse = await api.get('/Fabrics');
-        setFabrics(Array.isArray(fabricsResponse.data) ? fabricsResponse.data : []);
-        console.log('Fabrics data:', fabricsResponse.data); // Thêm log để debug
-  
-        // Fetch linings
-        const liningsResponse = await api.get('/linings');
-        const liningsData = liningsResponse.data?.data || [];
-        console.log('Linings data:', liningsData);
-        setLinings(liningsData);
-  
-        // Fetch style options
-        const styleOptionsResponse = await api.get('/StyleOption');
-        setStyleOptions(Array.isArray(styleOptionsResponse.data) ? styleOptionsResponse.data : []);
-        console.log('Style options data:', styleOptionsResponse.data); // Thêm log để debug
-  
+        const [fabricsRes, liningsRes, styleOptionsRes] = await Promise.all([
+          api.get('/Fabrics'),
+          api.get('/linings'),
+          api.get('/StyleOption')
+        ]);
+        
+        setFabrics(Array.isArray(fabricsRes.data) ? fabricsRes.data : []);
+        setLinings(liningsRes.data?.data || []);
+        setStyleOptions(Array.isArray(styleOptionsRes.data) ? styleOptionsRes.data : []);
+        
       } catch (error) {
         console.error('Error fetching custom data:', error);
-        // Đặt giá trị mặc định là mảng rỗng khi có lỗi
         setFabrics([]);
         setLinings([]);
         setStyleOptions([]);
@@ -444,7 +555,9 @@ const OrderList = () => {
     };
   
     fetchCustomData();
-  }, []);
+    
+    return () => controller.abort();
+  }, []); // Empty dependency array since this should only run once
 
   useEffect(() => {
     const fetchMeasurements = async () => {
@@ -480,7 +593,9 @@ const OrderList = () => {
         setUsers(filteredUsers);
       } catch (error) {
         console.error('Error searching users:', error);
-        toast.error('Error searching users');
+        setSnackbarMessage('Error searching users');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
       }
     }, 500),
     []
@@ -508,30 +623,25 @@ const OrderList = () => {
     const fetchOrders = async () => {
       try {
         const userId = localStorage.getItem("userID");
-        if (!userId) {
-          console.warn("User ID not found");
-          setLoading(false);
-          return;
-        }
+        console.log("Retrieved userId from localStorage:", userId);
 
-        try {
-          const storeData = await fetchStoreByStaffId(userId);
-          const ordersData = await fetchOrdersByStoreId(storeData.storeId);
-          setOrders(Array.isArray(ordersData) ? ordersData : [ordersData]);
-        } catch (err) {
-          console.error("API Error:", err);
-          // Just log the error, don't set error state
+        if (!userId) {
+          throw new Error("User ID not found");
         }
-        
+        const storeData = await fetchStoreByStaffId(userId);
+        const ordersData = await fetchOrdersByStoreId(storeData.storeId);
+        setOrders(
+          Array.isArray(ordersData) ? ordersData : [ordersData]
+        );
         setLoading(false);
       } catch (err) {
-        console.error(err);
+        setError(err.message);
         setLoading(false);
       }
     };
 
     fetchOrders();
-  }, [refreshData]);
+  }, [refreshData]); // Thêm refreshData vào dependencies
 
   const fetchUnpaidOrders = async () => {
     try {
@@ -556,12 +666,15 @@ const OrderList = () => {
     try {
       if (isEditMode) {
         await api.put(`/Orders/${formState.id}`, formState);
-        toast.success("Order updated successfully");
+        setSnackbarMessage("Order updated successfully");
+        setSnackbarSeverity("success");
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast.error("Failed to update order");
+      setSnackbarMessage("Failed to update order");
+      setSnackbarSeverity("error");
     }
+    setSnackbarOpen(true);
   };
 
   const handleEdit = (order) => {
@@ -593,13 +706,31 @@ const OrderList = () => {
         setDetailsOpen(true);
     } catch (error) {
         console.error("Error fetching order details:", error);
-        toast.error("Failed to fetch order details");
+        setSnackbarMessage("Failed to fetch order details");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
     }
   };
 
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
   const handleCreateOrder = async () => {
-    setIsCreatingOrder(true);
     try {
+      const validationErrors = validateOrderForm();
+      if (Object.keys(validationErrors).length > 0) {
+        // Hiển thị tất cả các lỗi
+        Object.values(validationErrors).forEach(error => {
+          toast.error(error);
+        });
+        return;
+      }
+
+      setIsCreatingOrder(true);
       // Validation checks...
 
       // Format regular products
@@ -682,21 +813,14 @@ const OrderList = () => {
       const response = await api.post('/Orders/staffcreateorder', orderPayload);
       const orderId = response.data.orderId;
       
-      // Thêm log để kiểm tra
-      console.log('New order created with ID:', orderId);
-      
-      // Đảm bảo orderId là giá trị hợp lệ trước khi lưu
-      if (orderId) {
-        setCreatedOrderId(orderId);
-        localStorage.setItem('orderId', orderId);
-        await fetchOrderDetails(orderId);
-      } else {
-        throw new Error('Invalid order ID received from server');
-      }
+      setCreatedOrderId(orderId);
+      localStorage.setItem('orderId', orderId);
+      await fetchOrderDetails(orderId);
       
       setAmount(depositAmount);
       setOpenPaymentDialog(true);
-      toast.success('Order created successfully');
+      setSnackbarMessage('Order created successfully');
+      setSnackbarSeverity('success');
       setOpen(false);
 
       // Trigger data refresh
@@ -704,12 +828,22 @@ const OrderList = () => {
 
     } catch (error) {
       console.error('Error:', error);
-      toast.error(error.message || 'Failed to create order');
+      setSnackbarMessage(error.message || 'Failed to create order');
+      setSnackbarSeverity('error');
     } finally {
       setIsCreatingOrder(false);
+      setSnackbarOpen(true);
     }
   };
 
+  // Thêm hàm tính shippedDate
+  const calculateShippedDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 4); // Thêm 4 ngày
+    return date.toISOString().split('T')[0]; // Format về YYYY-MM-DD
+  };
+
+  // Cập nhật lại hàm handleCreateFormChange
   const handleCreateFormChange = (field, value) => {
     if (field === 'shippedDate') {
       // Nếu không có giá trị được chọn, set mặc định là 4 ngày sau
@@ -717,6 +851,7 @@ const OrderList = () => {
         value = calculateShippedDate();
       }
       
+      // Validate ngày giao hàng
       const dateError = validateShippedDate(value);
       setValidationErrors(prev => ({
         ...prev,
@@ -730,6 +865,16 @@ const OrderList = () => {
       [field]: value
     }));
   };
+
+  // Thêm useEffect để set shippedDate mặc định khi mở form
+  useEffect(() => {
+    if (open) {
+      setCreateOrderForm(prev => ({
+        ...prev,
+        shippedDate: calculateShippedDate()
+      }));
+    }
+  }, [open]);
 
   const findNearestStore = (address) => {
     if (!address || !stores.length) return;
@@ -794,7 +939,6 @@ const OrderList = () => {
       console.log('Shipping Fee Payload:', shippingPayload);
 
       const response = await axios.post(
-        'https://vesttour.xyz/api/Shipping/calculate-fee',
         'https://vesttour.xyz/api/Shipping/calculate-fee',
         shippingPayload
       );
@@ -879,7 +1023,9 @@ const OrderList = () => {
     } catch (error) {
       console.error('Error adding product:', error.message); // Log lỗi ra console
       // Có thể hiển thị thông báo lỗi cho người dùng nếu cần
-      toast.error(error.message);
+      setSnackbarMessage(error.message);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -918,22 +1064,7 @@ const OrderList = () => {
 
   const handleAddCustomProduct = async () => {
     try {
-      // Validation
-      if (!selectedFabric) {
-        throw new Error('Please select a fabric');
-      }
-      if (!selectedLining) {
-        throw new Error('Please select a lining');
-      }
-      if (selectedStyleOptions.length === 0) {
-        throw new Error('Please select at least one style option');
-      }
-      if (!measurementId) {
-        throw new Error('Please select a measurement');
-      }
-      if (customQuantity < 1) {
-        throw new Error('Quantity must be greater than 0');
-      }
+      // Validation checks...
 
       // Fetch measurement details
       const measurementResponse = await api.get(`/Measurement/${measurementId}`);
@@ -946,7 +1077,19 @@ const OrderList = () => {
         measurementDetails
       );
 
-      // Create new custom product - remove note generation
+      // Chỉ thêm additionalNote nếu có phụ phí size
+      let additionalNote = '';
+      if (priceDetails.additionalCharges.sizeCharge > 0) {
+        additionalNote = `An additional fee of $${priceDetails.additionalCharges.sizeCharge}.00 per unit has been applied due to exceeding standard measurements.`;
+      }
+
+      // Kết hợp note từ người dùng và additional note (nếu có)
+      const finalNote = [
+        customNote, // Note từ người dùng (nếu có)
+        additionalNote // Note về phụ phí (nếu có)
+      ].filter(Boolean).join('\n'); // Lọc bỏ các giá trị empty và join bằng xuống dòng
+
+      // Create new custom product
       const newCustomProduct = {
         productCode: `CUSTOM-${Date.now()}`,
         categoryID: 5,
@@ -955,12 +1098,13 @@ const OrderList = () => {
         measurementID: parseInt(measurementId),
         quantity: customQuantity,
         price: priceDetails.price,
+        note: finalNote || null, // Chỉ set note nếu có nội dung
         pickedStyleOptions: selectedStyleOptions.map(option => ({
           styleOptionID: option.styleOptionId,
         }))
       };
 
-      // Update form state without modifying the note
+      // Update form state
       setCreateOrderForm(prev => ({
         ...prev,
         customProducts: [...prev.customProducts, newCustomProduct]
@@ -971,13 +1115,19 @@ const OrderList = () => {
       setSelectedLining(null);
       setSelectedStyleOptions([]);
       setCustomQuantity(1);
+      setCustomNote('');
       setOpenCustomDialog(false);
 
       // Show success message
+      setSnackbarMessage('Custom product added successfully');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
 
     } catch (error) {
       console.error('Error adding custom product:', error);
-      toast.error(error.message);
+      setSnackbarMessage(error.message);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -991,7 +1141,9 @@ const OrderList = () => {
         console.log('Active Stores fetched:', activeStores);
       } catch (error) {
         console.error('Error fetching stores:', error);
-        toast.error('Error loading stores');
+        setSnackbarMessage('Error loading stores');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
       }
     };
 
@@ -1013,9 +1165,6 @@ const OrderList = () => {
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
-      setSnackbarMessage('Error fetching users');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
     }
   };
 
@@ -1048,66 +1197,50 @@ const OrderList = () => {
   }, []);
 
   // Function to handle payment form submission
-  const handlePaymentSubmit = async (event) => {
-    event.preventDefault();
-    console.log('handlePaymentSubmit called'); // Debug log 1
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    console.log('Payment Submit triggered');
 
     try {
+      // Validate dữ liệu
+      if (!createdOrderId) {
+        toast.error('Order ID is required');
+        return;
+      }
+
+      if (!method) {
+        toast.error('Please select payment method');
+        return;
+      }
+
+      if (!paymentDate) {
+        toast.error('Payment date is required');
+        return;
+      }
+
+      // Tạo payload
       const paymentPayload = {
         orderId: createdOrderId,
-        userId: userId,
+        userId: userId || null,
+        amount: amount,
         method: method,
         paymentDate: paymentDate,
-        paymentDetails: paymentDetails,
-        amount: amount,
-        status: "Success"
+        paymentDetails: paymentDetails
       };
 
-      console.log('Payment Payload:', paymentPayload); // Debug log 2
+      console.log('Sending payment payload:', paymentPayload);
 
-      // Kiểm tra token
-      const token = localStorage.getItem('token');
-      console.log('Token:', token); // Debug log 3
-
-      // Gọi API với async/await
-      const response = await axios.post(
-        'https://vesttour.xyz/api/Payments', 
-        'https://vesttour.xyz/api/Payments', 
-        paymentPayload,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      console.log('Payment Response:', response.data); // Debug log 4
-
+      const response = await api.post('/Payments', paymentPayload);
+      
       if (response.data) {
-        // Cập nhật trạng thái paid của order
-        await axios.put(
-          `https://vesttour.xyz/api/Orders/SetPaidTrue/${createdOrderId}`,
-          `https://vesttour.xyz/api/Orders/SetPaidTrue/${createdOrderId}`,
-          null,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          }
-        );
-
-        await fetchPayments();
-
-        setRefreshData(prev => !prev);
-
-        setOpenPaymentDialog(false);
         toast.success('Payment created successfully');
+        setOpenPaymentDialog(false);
         setRefreshData(prev => !prev);
       }
+
     } catch (error) {
-      console.error('Payment Error:', error); // Debug log 5
-      toast.error(error.response?.data?.message || 'Failed to create payment');
+      console.error('Payment creation error:', error);
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -1118,34 +1251,22 @@ const OrderList = () => {
 
   const fetchOrderDetails = async (orderId) => {
     try {
-      // Validate orderId
-      if (!orderId || isNaN(orderId)) {
-        throw new Error('Invalid order ID');
-      }
+        const response = await api.get(`/Orders/${orderId}`);
+        console.log('Order Details Response:', response.data); // Kiểm tra phản hồi
+        const orderData = response.data;
 
-      const response = await api.get(`/Orders/${orderId}`);
-      console.log('Order Details Response:', response.data);
-      
-      if (!response.data) {
-        throw new Error('Order not found');
-      }
+        // Kiểm tra xem userId có tồn tại không
+        if (orderData.userID) {
+            setUserId(orderData.userID); // Lưu userId
+        } else {
+            console.error('userId not found in order data');
+        }
 
-      const orderData = response.data;
-
-      if (orderData.userID) {
-        setUserId(orderData.userID);
-      } else {
-        toast.error('userId not found in order data');
-      }
-
-      const totalAmount = orderData.totalPrice + (orderData.shippingFee || 0);
-      setAmount(totalAmount);
+        // Calculate total amount including shipping fee
+        const totalAmount = orderData.totalPrice + (orderData.shippingFee || 0);
+        setAmount(totalAmount);
     } catch (error) {
-      console.error('Error fetching order details:', error);
-      toast.error('Failed to fetch order details');
-      
-      // Clear invalid orderId from localStorage
-      localStorage.removeItem('orderId');
+        console.error('Error fetching order details:', error);
     }
   };
 
@@ -1286,7 +1407,9 @@ const OrderList = () => {
       setUnpaidDeposits(depositsNeededPayment);
     } catch (error) {
       console.error('Error fetching unpaid deposits:', error);
-      toast.error('Error loading unpaid deposits');
+      setSnackbarMessage('Error loading unpaid deposits');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     } finally {
       setIsLoadingDeposits(false);
     }
@@ -1333,22 +1456,35 @@ const OrderList = () => {
         console.error('Error updating ship status:', error);
       }
 
-      // Refresh data and states
+      // Cập nhật state orders để thay đổi balancePayment thành 0
+      setOrders(prevOrders => 
+        prevOrders.map(o => 
+          o.orderId === order.orderId 
+            ? { ...o, balancePayment: 0, paid: true }
+            : o
+        )
+      );
+
+      // Trigger data refresh
       setRefreshData(prev => !prev);
+
+      // Refresh danh sách payments
       await fetchPayments();
-      await fetchUnpaidDeposits(); // Refresh unpaid deposits list
-      setSelectedOrderForPayment(null); // Reset selected order
-
-      // Show success message
-      toast.success('Payment processed successfully');
-
-      // Close dialogs
+      
+      // Đóng dialog
       setRemainingPaymentDialog(false);
       setPaymentListDialog(false);
 
+      // Hiển thị thông báo thành công
+      setSnackbarMessage('Payment processed successfully');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+
     } catch (error) {
       console.error('Error creating payment:', error);
-      toast.error('Failed to process payment');
+      setSnackbarMessage('Failed to process payment');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -1408,69 +1544,66 @@ const OrderList = () => {
 
   // Sửa lại hàm calculateTotalAmount
   const calculateTotalAmount = () => {
+    // Tính tổng giá sản phẩm thường
     const productTotal = selectedProducts.reduce((sum, product) => 
       sum + (product.price * product.quantity), 0);
 
+    // Tính tổng giá sản phẩm tùy chỉnh
     const customProductTotal = createOrderForm.customProducts.reduce((sum, product) => 
       sum + (product.price * product.quantity), 0);
 
-    let totalBeforeVoucher = productTotal + customProductTotal;
-    let finalTotal = totalBeforeVoucher;
+    // Tổng giá trước khi áp dụng voucher
+    let subtotal = productTotal + customProductTotal;
 
+    // Áp dụng voucher BIGSALE nếu có
     if (createOrderForm.voucherId) {
       const voucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
-      
-      if (voucher && voucher.voucherCode?.includes('BIGSALE')) {
-        const discount = totalBeforeVoucher * voucher.discountNumber;
-        finalTotal = totalBeforeVoucher - discount;
+      if (voucher?.voucherCode?.includes('BIGSALE')) {
+        const discount = subtotal * voucher.discountNumber;
+        subtotal = Math.max(0, subtotal - discount);
       }
     }
 
-    // Cộng shipping fee đã được tính toán từ trước
-    finalTotal += createOrderForm.shippingFee || 0;
+    // Cộng phí ship (đã được tính giảm giá nếu có FREESHIP voucher)
+    const finalTotal = subtotal + (createOrderForm.shippingFee || 0);
 
     return finalTotal;
   };
 
   // Sửa lại hàm handleVoucherChange
-  const handleVoucherChange = async (_, newValue) => {
+  const handleVoucherChange = async (_, selectedVoucher) => {
     try {
-      if (!newValue) {
-        // Reset voucher và shipping fee về giá trị gốc
+      console.log('Selected Voucher:', selectedVoucher); // Debug log
+      console.log('Original Shipping Fee:', originalShippingFee); // Debug log
+      
+      // Reset shipping fee về giá gốc trước khi áp dụng voucher mới
+      let newShippingFee = originalShippingFee;
+
+      if (!selectedVoucher) {
+        // Nếu không chọn voucher, reset về giá trị gốc
         setCreateOrderForm(prev => ({
           ...prev,
-          voucherId: null,
+          voucherId: 0,
           shippingFee: originalShippingFee
         }));
-        return;
-      }
-
-      // Validate voucher status
-      if (newValue.status !== "OnGoing") {
-        toast.warning('This voucher is no longer valid');
         return;
       }
 
       // Cập nhật voucherId trong form
       setCreateOrderForm(prev => ({
         ...prev,
-        voucherId: newValue.voucherId
+        voucherId: selectedVoucher.voucherId,
+        // Nếu là voucher FREESHIP, tính giảm giá shipping, ngược lại giữ shipping fee gốc
+        shippingFee: selectedVoucher.voucherCode?.includes('FREESHIP') 
+          ? Math.max(0, originalShippingFee * (1 - selectedVoucher.discountNumber))
+          : originalShippingFee
       }));
 
-      // Nếu là voucher FREESHIP, cập nhật shipping fee
-      if (newValue.voucherCode?.includes('FREESHIP')) {
-        const discountedShippingFee = originalShippingFee * (1 - newValue.discountNumber);
-        setCreateOrderForm(prev => ({
-          ...prev,
-          shippingFee: Math.max(0, discountedShippingFee)
-        }));
-      }
-
-      toast.success('Voucher applied successfully');
+      console.log('New Shipping Fee:', newShippingFee); // Debug log
 
     } catch (error) {
       console.error('Error applying voucher:', error);
-      toast.error('Unable to apply voucher');
+      toast.error('Failed to apply voucher');
     }
   };
 
@@ -1490,19 +1623,15 @@ const OrderList = () => {
     
     // Reset shipping fee và address khi chuyển sang pick up
     if (newMethod === 'Pick up') {
-      // Check if current voucher is FREESHIP
-      const currentVoucher = vouchers.find(v => v.voucherId === createOrderForm.voucherId);
-      const shouldClearVoucher = currentVoucher?.voucherCode?.includes('FREESHIP');
-
       setCreateOrderForm(prev => ({
         ...prev,
         deliveryMethod: newMethod,
-        shippingFee: 0, // Reset shipping fee về 0
-        guestAddress: '', // Xóa địa chỉ
-        voucherId: shouldClearVoucher ? null : prev.voucherId // Clear FREESHIP voucher if present
+        shippingFee: 0,
+        guestAddress: '',
+        voucherId: null // Reset voucher when switching to pick up
       }));
-      setOriginalShippingFee(0); // Reset original shipping fee
-      setResetAddress(true); // Reset address component
+      setOriginalShippingFee(0);
+      setResetAddress(true);
     } else {
       setCreateOrderForm(prev => ({
         ...prev,
@@ -1512,84 +1641,233 @@ const OrderList = () => {
     }
   };
 
-  // Thêm hàm để tính ngày giao hàng (4 ngày sau)
-  const calculateShippedDate = () => {
-    const today = new Date();
-    const shippedDate = new Date(today);
-    shippedDate.setDate(today.getDate() + 4);
-    return shippedDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
+  // Thêm hàm handleRemoveProduct
+  const handleRemoveProduct = (index) => {
+    // Remove from selectedProducts array
+    const newSelectedProducts = selectedProducts.filter((_, i) => i !== index);
+    setSelectedProducts(newSelectedProducts);
+
+    // Update createOrderForm
+    setCreateOrderForm(prev => ({
+      ...prev,
+      products: newSelectedProducts
+    }));
   };
 
-  // Sửa lại useEffect khi mở form tạo order mới
-  useEffect(() => {
-    if (open) {
-      setCreateOrderForm(prev => ({
-        ...prev,
-        shippedDate: calculateShippedDate()
-      }));
+  const validateOrderForm = () => {
+    const errors = {};
+    
+    if (!createOrderForm.storeId) {
+      errors.store = 'Please select a store';
     }
-  }, [open]);
+    
+    if (!createOrderForm.shippedDate) {
+      errors.shippedDate = 'Please select a delivery date';
+    }
+    
+    if (createOrderForm.deliveryMethod === 'Delivery' && !createOrderForm.guestAddress) {
+      errors.address = 'Please enter delivery address';
+    }
+    
+    if (selectedProducts.length === 0 && createOrderForm.customProducts.length === 0) {
+      errors.products = 'Please add at least one product';
+    }
 
-  // Modify the remaining payment dialog to refresh on open
-  const handleOpenRemainingPaymentDialog = async () => {
-    console.log('Opening payment dialog');
-    setIsLoadingDeposits(true);
-    try {
-      await fetchUnpaidDeposits();
-      setRemainingPaymentDialog(true);
-    } catch (error) {
-      console.error('Error loading unpaid deposits:', error);
-      toast.error('Error loading unpaid deposits');
-    } finally {
-      setIsLoadingDeposits(false);
-    }
+    return errors;
   };
 
-  // Replace loading and error checks with just loading
-  if (loading) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h4" sx={{ mb: 2 }}>
-          Order Management
-        </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
-          <CircularProgress />
-        </Box>
-      </Box>
-    );
-  }
+  // Thêm xử lý khi không có dữ liệu
+  const renderNoDataMessage = (message) => (
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      p: 3 
+    }}>
+      <Typography variant="h6" color="text.secondary" gutterBottom>
+        {message}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        Data will appear here once available
+      </Typography>
+    </Box>
+  );
+
+  if (loading) return <CircularProgress />;
+  if (error) return <Typography color="error">{error}</Typography>;
 
   return (
     <div>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-
       <Typography variant="h4" sx={{ mb: 2 }}>
         Order Management
       </Typography>
 
-      {/* Hiển thị thông báo nếu không có dữ liệu */}
-      {error && (
-        <Typography color="error" sx={{ mb: 2 }}>
-          {error}
-        </Typography>
-      )}
+      {/* Chart Section */}
+      
 
-      {/* Hiển thị các nút để tạo order hoặc payment */}
+      {/* Enhanced Filter Section */}
+      <Paper sx={{ p: 3, mb: 3, backgroundColor: "#f8f9fa" }}>
+        <Typography
+          variant="h6"
+          sx={{ mb: 3, color: "primary.main", fontWeight: 600 }}
+        >
+          <FilterList sx={{ mr: 1, verticalAlign: "middle" }} />
+          Filter Orders
+        </Typography>
+
+        <Grid container spacing={3}>
+          {/* Date Filter Column */}
+          <Grid item xs={12} md={6}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                backgroundColor: "white",
+                borderRadius: 2,
+                height: "100%",
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
+                Date Range
+              </Typography>
+
+              <Box sx={{ px: 2, pb: 2 }}>
+                <TextField
+                  select
+                  label="Select Period"
+                  value={dateFilter}
+                  onChange={handleDateFilterChange}
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  size="small"
+                >
+                  <MenuItem value="all">All Time</MenuItem>
+                  <MenuItem value="today">Today</MenuItem>
+                  <MenuItem value="thisWeek">This Week</MenuItem>
+                  <MenuItem value="thisMonth">This Month</MenuItem>
+                  <MenuItem value="lastMonth">Last Month</MenuItem>
+                  <MenuItem value="custom">Custom Range</MenuItem>
+                </TextField>
+
+                {dateFilter === "custom" && (
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Stack spacing={2}>
+                      <DatePicker
+                        label="Start Date"
+                        value={customDateRange.startDate}
+                        onChange={(newValue) => {
+                          setCustomDateRange((prev) => ({
+                            ...prev,
+                            startDate: newValue,
+                          }));
+                        }}
+                        slotProps={{ textField: { size: "small" } }}
+                      />
+                      <DatePicker
+                        label="End Date"
+                        value={customDateRange.endDate}
+                        onChange={(newValue) => {
+                          setCustomDateRange((prev) => ({
+                            ...prev,
+                            endDate: newValue,
+                          }));
+                        }}
+                        minDate={customDateRange.startDate}
+                        slotProps={{ textField: { size: "small" } }}
+                      />
+                    </Stack>
+                  </LocalizationProvider>
+                )}
+              </Box>
+            </Paper>
+          </Grid>
+
+          {/* Price Range Column */}
+          <Grid item xs={12} md={6}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                backgroundColor: "white",
+                borderRadius: 2,
+                height: "100%",
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
+                Price Range
+              </Typography>
+
+              <Box sx={{ px: 2, pb: 2 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 1 }}
+                >
+                  Select price range (USD)
+                </Typography>
+                <Typography variant="h6" sx={{ mb: 2, color: "primary.main" }}>
+                  ${priceRange[0]} - ${priceRange[1]}
+                </Typography>
+                <Slider
+                  value={priceRange}
+                  onChange={handlePriceRangeChange}
+                  valueLabelDisplay="auto"
+                  min={0}
+                  max={10000}
+                  sx={{
+                    "& .MuiSlider-thumb": {
+                      height: 24,
+                      width: 24,
+                      backgroundColor: "#fff",
+                      border: "2px solid currentColor",
+                      "&:focus, &:hover, &.Mui-active, &.Mui-focusVisible": {
+                        boxShadow: "inherit",
+                      },
+                    },
+                    "& .MuiSlider-valueLabel": {
+                      backgroundColor: "primary.main",
+                    },
+                  }}
+                />
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
+
+        {/* Active Filters Display */}
+        <Box sx={{ mt: 2 }}>
+          <Stack direction="row" spacing={1} flexWrap="wrap">
+            {dateFilter !== "all" && (
+              <Chip
+                label={`Date: ${dateFilter}`}
+                onDelete={() => setDateFilter("all")}
+                color="primary"
+                variant="outlined"
+                size="small"
+              />
+            )}
+            {(priceRange[0] > 0 || priceRange[1] < 10000) && (
+              <Chip
+                label={`Price: $${priceRange[0]} - $${priceRange[1]}`}
+                onDelete={() => setPriceRange([0, 10000])}
+                color="primary"
+                variant="outlined"
+                size="small"
+              />
+            )}
+          </Stack>
+        </Box>
+      </Paper>
+
       <StyledButton
         variant="contained"
         startIcon={<Add />}
-        onClick={handleAddOrder}
+        onClick={() => {
+          resetForm(); // Gọi hàm reset
+          setOpen(true);
+          setIsEditMode(false);
+        }}
         sx={{ mb: 2 }}
       >
         Add Order
@@ -1598,13 +1876,16 @@ const OrderList = () => {
       <StyledButton
         variant="contained"
         startIcon={<Payment />}
-        onClick={handleOpenRemainingPaymentDialog}
+        onClick={() => {
+          console.log('Opening payment dialog');
+          fetchUnpaidDeposits(); // Gọi trực tiếp khi click button
+          setRemainingPaymentDialog(true);
+        }}
         sx={{ mb: 2, ml: 2 }}
       >
         Process Payment
       </StyledButton>
 
-      {/* Hiển thị bảng ngay cả khi không có dữ liệu */}
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
           <StyledTableHead>
@@ -1661,15 +1942,19 @@ const OrderList = () => {
                         </IconButton>
                       </Tooltip>
                     )} */}
+                    {/* <IconButton 
+                      onClick={() => handleRemoveProduct(index)}
+                      color="error"
+                    >
+                      <Delete />
+                    </IconButton> */}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell colSpan={9} align="center">
-                  <Typography variant="subtitle1" sx={{ py: 3 }}>
-                    No orders found
-                  </Typography>
+                  {renderNoDataMessage("No orders found")}
                 </TableCell>
               </TableRow>
             )}
@@ -1677,21 +1962,19 @@ const OrderList = () => {
         </Table>
       </TableContainer>
 
-      {/* Only show pagination if there are orders */}
-      {sortedOrders.length > 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          {Array.from({ length: Math.ceil(sortedOrders.length / ordersPerPage) }, (_, index) => (
-            <Button
-              key={index}
-              onClick={() => setCurrentPage(index + 1)}
-              variant={currentPage === index + 1 ? 'contained' : 'outlined'}
-              sx={{ mx: 0.5 }}
-            >
-              {index + 1}
-            </Button>
-          ))}
-        </Box>
-      )}
+      {/* Pagination Controls */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        {Array.from({ length: Math.ceil(sortedOrders.length / ordersPerPage) }, (_, index) => (
+          <Button
+            key={index}
+            onClick={() => setCurrentPage(index + 1)}
+            variant={currentPage === index + 1 ? 'contained' : 'outlined'}
+            sx={{ mx: 0.5 }}
+          >
+            {index + 1}
+          </Button>
+        ))}
+      </Box>
 
       {/* Dialog for Order Details */}
       <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} maxWidth="md" fullWidth>
@@ -1753,6 +2036,21 @@ const OrderList = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
 
       {/* Create Order Dialog */}
       <Dialog 
@@ -1898,8 +2196,8 @@ const OrderList = () => {
               {createOrderForm.deliveryMethod === 'Delivery' && (
                 <>
                   <Autocomplete
-                    options={stores}
-                    getOptionLabel={(option) => option.name || ''}
+                    options={stores || []}
+                    getOptionLabel={(option) => option?.name || ''}
                     value={nearestStore || null}
                     onChange={(_, newValue) => {
                       setNearestStore(newValue);
@@ -1915,23 +2213,24 @@ const OrderList = () => {
                         margin="normal"
                         variant="outlined"
                         fullWidth
-                        helperText="Select the nearest store"
+                        helperText={stores?.length ? "Select the nearest store" : "No stores available"}
                       />
                     )}
                     renderOption={(props, option) => (
-                      <li {...props}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <Typography variant="body1">{option.name}</Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            {option.address}
-                          </Typography>
-                        </div>
-                      </li>
+                      option ? (
+                        <li {...props}>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <Typography variant="body1">{option.name || 'Unnamed Store'}</Typography>
+                            <Typography variant="caption" color="textSecondary">
+                              {option.address || 'No address available'}
+                            </Typography>
+                          </div>
+                        </li>
+                      ) : null
                     )}
-                    isOptionEqualToValue={(option, value) => option.storeId === value.storeId}
-                    loading={stores.length === 0}
+                    noOptionsText="No stores available"
+                    loading={isLoadingProducts}
                     loadingText="Loading stores..."
-                    noOptionsText="No stores found"
                   />
 
                   {nearestStore && (
@@ -1979,8 +2278,8 @@ const OrderList = () => {
 
               {createOrderForm.deliveryMethod === 'Pick up' && (
                 <Autocomplete
-                  options={stores}
-                  getOptionLabel={(option) => option.name || ''}
+                  options={stores || []}
+                  getOptionLabel={(option) => option?.name || ''}
                   value={nearestStore || null}
                   onChange={(_, newValue) => {
                     setNearestStore(newValue);
@@ -1996,23 +2295,24 @@ const OrderList = () => {
                       margin="normal"
                       variant="outlined"
                       fullWidth
-                      helperText="Select the nearest store"
+                      helperText={stores?.length ? "Select the nearest store" : "No stores available"}
                     />
                   )}
                   renderOption={(props, option) => (
-                    <li {...props}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <Typography variant="body1">{option.name}</Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {option.address}
-                        </Typography>
-                      </div>
-                    </li>
+                    option ? (
+                      <li {...props}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <Typography variant="body1">{option.name || 'Unnamed Store'}</Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            {option.address || 'No address available'}
+                          </Typography>
+                        </div>
+                      </li>
+                    ) : null
                   )}
-                  isOptionEqualToValue={(option, value) => option.storeId === value.storeId}
-                  loading={stores.length === 0}
+                  noOptionsText="No stores available"
+                  loading={isLoadingProducts}
                   loadingText="Loading stores..."
-                  noOptionsText="No stores found"
                 />
               )}
               <TextField
@@ -2082,80 +2382,22 @@ const OrderList = () => {
                 Add Products
               </Button>
 
-              {selectedProducts.length > 0 && (
-                <TableContainer component={Paper} sx={{ mt: 2, mb: 2 }}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Product Code</TableCell>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Details</TableCell>
-                        <TableCell>Note</TableCell>
-                        <TableCell>Quantity</TableCell>
-                        <TableCell>Price</TableCell>
-                        <TableCell>Total</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {/* Regular Products */}
-                      {selectedProducts.map((product, index) => (
-                        <TableRow key={`regular-${index}`}>
-                          <TableCell>{product.productCode}</TableCell>
-                          <TableCell>Regular</TableCell>
-                          <TableCell>{product.name}</TableCell>
-                          <TableCell>{product.note}</TableCell>
-                          <TableCell>{product.quantity}</TableCell>
-                          <TableCell>${product.price}</TableCell>
-                          <TableCell>${product.price * product.quantity}</TableCell>
-                          <TableCell>
-                            <IconButton onClick={() => handleRemoveProduct(index)}>
-                              <Delete />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      
-                      {/* Custom Products */}
-                      {createOrderForm.customProducts.map((product, index) => {
-                        const fabric = fabrics.find(f => f.fabricID === product.fabricID);
-                        return (
-                          <TableRow key={`custom-${index}`}>
-                            <TableCell>{product.productCode}</TableCell>
-                            <TableCell>Custom</TableCell>
-                            <TableCell>
-                              <div>
-                                <strong>Fabric:</strong> {fabric?.fabricName}<br />
-                                <strong>Style Options:</strong><br />
-                                {product.pickedStyleOptions.map((option, i) => (
-                                  <span key={i}>
-                                    {styleOptions.find(so => so.styleOptionId === option.styleOptionID)?.optionValue}<br />
-                                  </span>
-                                ))}
-                                {product.note && (
-                                  <>
-                                    <br />
-                                    <strong>Note:</strong> {product.note}
-                                  </>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>{product.note}</TableCell>
-                            <TableCell>{product.quantity}</TableCell>
-                            <TableCell>${product.price}</TableCell>
-                            <TableCell>${product.price * product.quantity}</TableCell>
-                            <TableCell>
-                              <IconButton onClick={() => handleRemoveCustomProduct(index)}>
-                                <Delete />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
+              <ProductTable 
+                products={selectedProducts || []}
+                customProducts={createOrderForm.customProducts || []}
+                onRemoveProduct={handleRemoveProduct}
+                onRemoveCustomProduct={(index) => {
+                  const newCustomProducts = (createOrderForm.customProducts || [])
+                    .filter((_, i) => i !== index);
+                  setCreateOrderForm(prev => ({
+                    ...prev,
+                    customProducts: newCustomProducts
+                  }));
+                }}
+                fabrics={fabrics || []}
+                styleOptions={styleOptions || []}
+                linings={linings || []}
+              />
 
               {/* Dialog để thêm sản phẩm */}
               <Dialog 
@@ -2233,8 +2475,7 @@ const OrderList = () => {
                 Add Custom Product
               </Button>
 
-              
-              {createOrderForm.customProducts.length > 0 && (
+              {/* {createOrderForm.customProducts.length > 0 && (
                 <TableContainer component={Paper} sx={{ mt: 2, mb: 2 }}>
                   <Table>
                     <TableHead>
@@ -2281,7 +2522,7 @@ const OrderList = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
-              )}
+              )} */}
 
               {/* Dialog cho custom product */}
               <Dialog 
@@ -2558,30 +2799,27 @@ const OrderList = () => {
                             />
                           </ListItem>
                         )}
+                        
                       </List>
                     </Grid>
                   </Grid>
                 </Paper>
               )}
- <Autocomplete
+              <Autocomplete
                 options={vouchers.filter(voucher => {
-                  // For Pick up method, exclude FREESHIP vouchers
+                  // Only show valid vouchers
+                  const isValid = voucher.status === "OnGoing";
+                  
+                  // If delivery method is Pick up, filter out FREESHIP vouchers
                   if (createOrderForm.deliveryMethod === 'Pick up') {
-                    return voucher.status === "OnGoing" && !voucher.voucherCode.includes('FREESHIP');
+                    return isValid && !voucher.voucherCode.includes('FREESHIP');
                   }
-                  // For Delivery method, show all valid vouchers
-                  return voucher.status === "OnGoing";
+                  
+                  return isValid;
                 })}
-                getOptionLabel={(option) => 
-                  option ? `${option.voucherCode} - ${option.description} (${option.discountNumber * 100}% off)` : ''
-                }
-                value={vouchers.find(v => v.voucherId === createOrderForm.voucherId) || null}
+                getOptionLabel={(option) => `${option.voucherCode} - ${option.description}` || ''}
+                value={vouchers.find(voucher => voucher.voucherId === createOrderForm.voucherId) || null}
                 onChange={handleVoucherChange}
-                freeSolo={false}
-                disableClearable={false}
-                selectOnFocus={false}
-                clearOnBlur={true}
-                handleHomeEndKeys={false}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -2591,20 +2829,6 @@ const OrderList = () => {
                     fullWidth
                   />
                 )}
-                renderOption={(props, option) => (
-                  <li {...props}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="body1">
-                        {option.voucherCode} ({option.discountNumber * 100}% off)
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {option.description}
-                      </Typography>
-                    </div>
-                  </li>
-                )}
-                isOptionEqualToValue={(option, value) => option.voucherId === value?.voucherId}
-                noOptionsText="No valid vouchers available"
               />
               <Button
                 variant="contained"
@@ -2623,11 +2847,14 @@ const OrderList = () => {
       <Dialog open={openPaymentDialog} onClose={() => setOpenPaymentDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>Create Payment</DialogTitle>
         <DialogContent>
-          <form 
+          <Box 
+            component="form" 
             onSubmit={(e) => {
-              console.log('Form submitted'); // Debug log 6
+              console.log('Form submitted'); // Debug log
               handlePaymentSubmit(e);
             }}
+            noValidate
+            sx={{ mt: 2 }}
           >
             <TextField
               label="Order ID"
@@ -2662,7 +2889,8 @@ const OrderList = () => {
               margin="normal"
             >
               <MenuItem value="Cash">Cash</MenuItem>
-              <MenuItem value="Banking">Banking Payment</MenuItem>
+              <MenuItem value="Banking">Internet Banking</MenuItem>
+              <MenuItem value="Visa">Visa Card</MenuItem>
             </TextField>
             {method === 'Banking' && (
               <div>
@@ -2703,13 +2931,16 @@ const OrderList = () => {
               type="submit"
               variant="contained" 
               color="primary"
+              fullWidth
+              sx={{ mt: 3, mb: 2 }}
               onClick={(e) => {
-                console.log('Submit button clicked'); // Debug log 7
+                console.log('Payment button clicked'); // Debug log
+                handlePaymentSubmit(e);
               }}
             >
               Create Payment
             </Button>
-          </form>
+          </Box>
         </DialogContent>
       </Dialog>
 
@@ -2742,7 +2973,7 @@ const OrderList = () => {
             >
               {unpaidDeposits.map((order) => (
                 <MenuItem key={order.orderId} value={order.orderId}>
-                  Order #{order.orderId} - {order.guestName} - {order.guestEmail}
+                  Order #{order.orderId} - {order.guestName}
                 </MenuItem>
               ))}
             </TextField>
@@ -2782,6 +3013,7 @@ const OrderList = () => {
             </>
           )}
         </DialogContent>
+
         <DialogActions>
           <Button onClick={() => setRemainingPaymentDialog(false)}>Cancel</Button>
           <Button 
@@ -2797,6 +3029,6 @@ const OrderList = () => {
 
     </div>
   );
-}
+};
 
 export default OrderList;
