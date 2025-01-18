@@ -109,7 +109,7 @@ const CustomLining = () => {
   };
 
   const getMeasurementByUserId = (userId) => {
-    fetch(`https://vesttour.xyz/api/Measurement/user/${userId}`)
+    return fetch(`https://vesttour.xyz/api/Measurement/user/${userId}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch measurements");
@@ -119,12 +119,11 @@ const CustomLining = () => {
       .then((data) => {
         console.log("Fetched measurements:", data);
         setFormData(data); // Populate form with fetched data
-        if (data.measurementId) {
-          measurementId = data.measurementId;
-        }
+        return data.measurementId; // Return measurementId
       })
       .catch((error) => {
         console.error("Error fetching measurements:", error);
+        return null; // Return null in case of error
       });
   };
 
@@ -145,16 +144,16 @@ const CustomLining = () => {
         return;
       }
 
-      // Kiểm tra measurementId
-      // const measurementId = localStorage.getItem("measurementId");
-      // if (!measurementId) {
-      //   // Nếu chưa có measurementId, chuyển đến trang measureGuest
-      //   toast.info("Please complete your measurements first");
-      //   // Lưu trạng thái hiện tại để quay lại sau
-      //   localStorage.setItem("returnToCustomization", "true");
-      //   navigate("/measure-guest");
-      //   return;
-      // }
+      // Lấy measurementId từ API
+      const measurementId = await getMeasurementByUserId(userID); // Wait for the measurementId
+
+      if (!measurementId) {
+        // Nếu chưa có measurementId, chuyển đến trang measureGuest
+        toast.info("Please complete your measurements first");
+        localStorage.setItem("returnToCustomization", "true");
+        navigate("/measure-guest");
+        return;
+      }
 
       const payload = {
         userId: parseInt(userID),
@@ -163,7 +162,7 @@ const CustomLining = () => {
           categoryID: 5,
           fabricID: completeSuit.fabricId,
           liningID: completeSuit.lining.id,
-          measurementID: parseInt(measurementId),
+          measurementID: parseInt(measurementId), // Now this should have a valid value
           pickedStyleOptions: completeSuit.styles.map(style => ({
             styleOptionID: style.id
           })),
@@ -171,8 +170,6 @@ const CustomLining = () => {
       };
 
       console.log("Sending payload:", payload);
-
-      await getMeasurementByUserId(userId);
 
       const response = await axios.post(API_URL, payload, {
         headers: {
@@ -182,7 +179,6 @@ const CustomLining = () => {
       });
 
       if (response.status === 200 || response.status === 201) {
-        // Xóa flag returnToCustomization sau khi thành công
         localStorage.removeItem("returnToCustomization");
         toast.success("Added to cart successfully");
         navigate("/measure");
