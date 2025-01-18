@@ -60,7 +60,7 @@ const CustomLining = () => {
   const [error, setError] = useState(null);
   const [selectedLining, setSelectedLining] = useState(null);
   const userId = localStorage.getItem("userID");
-  const measurementId = localStorage.getItem("measurementId");
+  const measurementId = useState(null);
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
@@ -108,6 +108,26 @@ const CustomLining = () => {
     });
   };
 
+  const getMeasurementByUserId = (userId) => {
+    fetch(`https://vesttour.xyz/api/Measurement/user/${userId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch measurements");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Fetched measurements:", data);
+        setFormData(data); // Populate form with fetched data
+        if (data.measurementId) {
+          measurementId = data.measurementId;
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching measurements:", error);
+      });
+  };
+
   const handleNextClick = async () => {
     try {
       // Kiểm tra đăng nhập
@@ -151,6 +171,8 @@ const CustomLining = () => {
       };
 
       console.log("Sending payload:", payload);
+
+      await getMeasurementByUserId(userId);
 
       const response = await axios.post(API_URL, payload, {
         headers: {
