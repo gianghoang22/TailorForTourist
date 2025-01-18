@@ -313,7 +313,7 @@ const Checkout = () => {
         districtId: addressData?.districtId,
         nearestStore: nearestStore
       });
-      setShippingFee(2);
+      setShippingFee(1);
       return;
     }
 
@@ -348,7 +348,7 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error('Lỗi tính phí vận chuyển:', error);
-      setShippingFee(2);
+      setShippingFee(1);
     }
   };
 

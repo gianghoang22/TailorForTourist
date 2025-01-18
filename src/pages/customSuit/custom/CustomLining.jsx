@@ -65,6 +65,7 @@ const CustomLining = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    getMeasurementByUserId(userId);
     const fetchLinings = async () => {
       try {
         const response = await fetch("https://vesttour.xyz/api/Linings");
@@ -108,23 +109,19 @@ const CustomLining = () => {
     });
   };
 
-  const getMeasurementByUserId = (userId) => {
-    return fetch(`https://vesttour.xyz/api/Measurement/user/${userId}`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch measurements");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log("Fetched measurements:", data);
-        setFormData(data); // Populate form with fetched data
-        return data.measurementId; // Return measurementId
-      })
-      .catch((error) => {
-        console.error("Error fetching measurements:", error);
-        return null; // Return null in case of error
-      });
+  const getMeasurementByUserId = async (userId) => {
+    try {
+      const response = await fetch(`https://vesttour.xyz/api/Measurement/user/${userId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch measurements");
+      }
+      const data = await response.json();
+      console.log("Fetched measurements:", data);
+      return data.measurementId; // Trả về measurementId
+    } catch (error) {
+      console.error("Error fetching measurements:", error);
+      return null; // Trả về null nếu có lỗi
+    }
   };
 
   const handleNextClick = async () => {
@@ -144,14 +141,10 @@ const CustomLining = () => {
         return;
       }
 
-      // Lấy measurementId từ API
-      const measurementId = await getMeasurementByUserId(userID); // Wait for the measurementId
-
-      if (!measurementId) {
-        // Nếu chưa có measurementId, chuyển đến trang measureGuest
+      const measurementID = await getMeasurementByUserId(userId);
+      // Kiểm tra measurementId
+      if (!measurementID) {
         toast.info("Please complete your measurements first");
-        localStorage.setItem("returnToCustomization", "true");
-        navigate("/measure-guest");
         return;
       }
 
@@ -162,7 +155,7 @@ const CustomLining = () => {
           categoryID: 5,
           fabricID: completeSuit.fabricId,
           liningID: completeSuit.lining.id,
-          measurementID: parseInt(measurementId), // Now this should have a valid value
+          measurementID: parseInt(measurementID),
           pickedStyleOptions: completeSuit.styles.map(style => ({
             styleOptionID: style.id
           })),
@@ -179,6 +172,7 @@ const CustomLining = () => {
       });
 
       if (response.status === 200 || response.status === 201) {
+        // Xóa flag returnToCustomization sau khi thành công
         localStorage.removeItem("returnToCustomization");
         toast.success("Added to cart successfully");
         navigate("/measure");
