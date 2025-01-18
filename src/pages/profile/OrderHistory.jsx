@@ -301,7 +301,7 @@ const OrderHistory = () => {
                             {paymentMethod ? paymentMethod.method : "Paypal"}
                           </td>
                           <td>
-                            ${order.note || ""}
+                            {order.note || ""}
                           </td>
                           <td>
                             <button
